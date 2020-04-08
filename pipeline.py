@@ -13,12 +13,16 @@ from baseCalling import base_calling
 def get_parser():
 
     parser = argparse.ArgumentParser(description='A Pipeline to process fast5.')
-    parser.add_argument("-i",
+    required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
+
+    # required argumnets:
+    required.add_argument("-i",
                         "--input",
                         type=str,
                         dest="input",
                         help='input path')
-    parser.add_argument("-r",
+    required.add_argument("-r",
                         "--ref",
                         type=str,
                         dest="reference",
@@ -33,9 +37,9 @@ def read_flowcell_info(config):
     info_dict = dict()
     base_path = os.path.join(config["paths"]["baseDir"]+input)
     if not os.path.exists(config["paths"]["outputDir"]+input):
-         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
-    # else:
-    #      sys.exit("a flowcell with the same ID already exists!!")
+        shutil.copytree(base_path,config["paths"]["outputDir"]+input)
+    else:
+        sys.exit("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -97,16 +101,12 @@ def transfer_data(config):
     Trnasfer Project_ and FASTQC_Project_ to the user's directory
     """
     group=config["data"]["Sample_Project"].split("_")[2]
-    final_path = group+"/sequencing_data/"+config["input"]["name"]
-    final_path = "processing/rabbani/nanopore_pipeline/final_path/"+config["input"]["name"] # To be removed, just for test
-    print(final_path)
+    final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
     if not os.path.exists(config["paths"]["groupDir"]+final_path):
-         os.mkdir(config["paths"]["groupDir"]+final_path)
-         print(final_path)
-         final_path = os.path.join(config["paths"]["groupDir"],final_path)
-         print(final_path)
-    # else:
-    #      sys.exit("a flowcell with the same ID already exists!!")
+        os.mkdir(config["paths"]["groupDir"]+final_path)
+        final_path = os.path.join(config["paths"]["groupDir"],final_path)
+    else:
+        sys.exit("a flowcell with the same ID already exists!!")
     fastq = config["info_dict"]["flowcell_path"]+"/Project_"+config["data"]["Sample_Project"]
     fastqc = config["info_dict"]["flowcell_path"]+"/FASTQC_Project_"+config["data"]["Sample_Project"]
     shutil.copytree(fastq,final_path+"/Project_"+config["data"]["Sample_Project"])
