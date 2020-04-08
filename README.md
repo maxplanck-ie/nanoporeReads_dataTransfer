@@ -5,7 +5,7 @@ A pipeline to transfer the Nanopore reads to the end users
 python pipeline.py -i path_to_flowcell -r organism
 
 # Example input path:
-
+```bash
 ../path/to/flowcell/
 ├── drift_correction_FAL82553_acfbfd23.csv
 ├── duty_time_FAL82553_acfbfd23.csv
@@ -16,7 +16,7 @@ python pipeline.py -i path_to_flowcell -r organism
 ├── Samplesheet.csv
 ├── sequencing_summary_FAL82553_acfbfd23.txt
 └── throughput_FAL82553_acfbfd23.csv
-
+```
 # Example output path for bioinfo. core:
 ```bash
 ../output_path/to/flowcell/
@@ -48,7 +48,7 @@ python pipeline.py -i path_to_flowcell -r organism
         └── Sample_name.fastq.gz
 ```
 # Example output path for a user:
-
+```bash
 ../user_path/to/flowcell/
 ├── FASTQC_Project_number_User_PI
 │   └── Sample_its_name
@@ -73,3 +73,4 @@ python pipeline.py -i path_to_flowcell -r organism
         ├── organism_genome.mmi
         ├── sample.bam
         └── sample.bam.bai
+```
