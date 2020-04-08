@@ -37,9 +37,9 @@ def read_flowcell_info(config):
     info_dict = dict()
     base_path = os.path.join(config["paths"]["baseDir"]+input)
     if not os.path.exists(config["paths"]["outputDir"]+input):
-         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
-    # else:
-    #      sys.exit("a flowcell with the same ID already exists!!")
+        shutil.copytree(base_path,config["paths"]["outputDir"]+input)
+    else:
+        sys.exit("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
