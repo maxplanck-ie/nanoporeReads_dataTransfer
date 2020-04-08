@@ -36,11 +36,12 @@ def mapping_rna(config):
     """
     Mapping RNA using minimap2
     """
+    genome_index(config)
     organism = config["data"]["ref"]
 
     cmd = config["mapping"]["mapping_cmd"]+ " "
-    cmd += config["mapping"]["mapping_rna_options"]+ " "
-    cmd += config["transcripts"][organism] + " "
+    cmd += config["mapping"]["mapping_rna_options"]
+    cmd += " --junc-bed "+config["transcripts"][organism] + " "
     cmd += config["data"]["mapping"] + "/" + organism + "_genome.fa "
     cmd += config["info_dict"]["fastq"]+ "/" + config["data"]["Sample_Name"]+".fastq.gz |"
     cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
