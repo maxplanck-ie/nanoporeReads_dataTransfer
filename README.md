@@ -17,8 +17,8 @@ python pipeline.py -i path_to_flowcell -r organism
 ├── sequencing_summary_FAL82553_acfbfd23.txt
 └── throughput_FAL82553_acfbfd23.csv
 
-# Example output path for bioinfo core:
-
+# Example output path for bioinfo. core:
+```bash
 ../output_path/to/flowcell/
 ├── drift_correction_FAL82553_acfbfd23.csv
 ├── duty_time_FAL82553_acfbfd23.csv
@@ -46,8 +46,8 @@ python pipeline.py -i path_to_flowcell -r organism
 └── Project_number_User_PI
     └── Sample_its_name
         └── Sample_name.fastq.gz
-
-# Example output path for a user
+```
+# Example output path for a user:
 
 ../user_path/to/flowcell/
 ├── FASTQC_Project_number_User_PI
