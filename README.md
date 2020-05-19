@@ -1,4 +1,4 @@
-# nanpore_reads_dataTransfer
+# nanoporeReads_dataTransfer
 A pipeline to transfer the Nanopore reads to the end users
 
 # Usage
