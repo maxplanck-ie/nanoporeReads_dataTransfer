@@ -39,7 +39,7 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        sys.exit("a flowcell with the same ID already exists!!")
+        print("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -77,24 +77,29 @@ def read_samplesheet(config):
     data=dict()
     for index, row in sample_sheet.iterrows():
         assert(row["Sample_ID"] not in data.keys())
-        data[row["Sample_ID"]] = {"Sample_Name": row["Sample_Name"], "Sample_Project": row["Sample_Project"],
-                                  "barcode_kits": row["barcode_kits"]}
-    config["data"] = data
-    print("data to process: ", config.items("data"))
-    return bc_kit
+        data[row["Sample_ID"]] = dict({"Sample_Name": row["Sample_Name"], "Sample_Project": row["Sample_Project"],
+                                       "barcode_kits": row["barcode_kits"],"index_id": row["index_id"], "Sample_ID": row["Sample_ID"]})
+    return bc_kit, data
 
-def rename_fastq(config):
-    fastq_path = config["info_dict"]["fastq"]
-    sample_name = config["data"]["Sample_Name"]
-    if config["data"]["barcode_kits"] is not "no_bc":
-        barcode = config["data"]["barcode_kits"]
-        fastq_path = os.path.join(fastq_path,barcode)
-        config["info_dict"]["fastq"] = fastq_path
-
-    cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(fastq_path,fastq_path,sample_name)
-    cmd += "rm {}/fastq_runid*.fastq.gz".format(fastq_path)
-    sp.check_call(cmd, shell=True)
-
+def rename_fastq(config, data):
+    fastq = os.path.join(config["info_dict"]["flowcell_path"],"fastq")
+    for k, v in data.items():    
+        bs_fastq = fastq
+        if v["barcode_kits"] is not "no_bc":
+           bs = v["index_id"].split("BP")[1]
+           print(bs)
+           bs_fastq = os.path.join(fastq,"barcode"+bs)
+        else:
+           assert(len(data)==1)
+        if not os.path.exists(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]):
+           os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"])
+        os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/"+v["Sample_ID"])
+        sample_path = os.path.join(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
+        sample_name = v["Sample_Name"]
+        cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(bs_fastq,sample_path,sample_name)
+        #cmd += "rm {}/fastq_runid*.fastq.gz".format(bs_fastq)
+        sp.check_call(cmd, shell=True)
+   #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes? 
 
 def transfer_data(config):
     """
@@ -133,12 +138,14 @@ def main():
     print("data has been copied over to rapiuds")
     config["info_dict"]=info_dict
     print(config.items("info_dict"))
-    bc_kit = read_samplesheet(config)
+    bc_kit,data = read_samplesheet(config)
     print("base-calling starts with bc_kit "+bc_kit)
-    base_calling(config, bc_kit)
-    sys.exit("renaming fastq files starts")
-    rename_fastq(config) #TODO
-    fastq_qc(config)
+    #base_calling(config, bc_kit)
+    print("renaming fastq files starts")
+    #rename_fastq(config, data)
+    print("QC")
+    fastq_qc(config,data)
+    sys.exit("qc done!")
     transfer_data(config)
     if "RNA" in config["info_dict"]["kit"]:
         mapping_rna(config)
