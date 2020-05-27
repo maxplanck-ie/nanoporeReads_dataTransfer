@@ -64,58 +64,63 @@ def read_flowcell_info(config):
 
     return None
 
-def read_samplesheet(config, ref_genome):
+def read_samplesheet(config):
     """
         read samplesheet
     """
     sample_sheet = pd.read_csv(config["info_dict"]["flowcell_path"]+"/Samplesheet.csv",
                                sep = ",", skiprows=[0])
+    print(sample_sheet)
     sample_sheet = sample_sheet.fillna("no_bc")
-    config["data"]=dict()
+    assert(len(sample_sheet["barcode_kits"].unique())==1)
+    bc_kit = sample_sheet["barcode_kits"].unique()[0]
+    data=dict()
     for index, row in sample_sheet.iterrows():
-        if index == 0:
-            config["data"]["Sample_Name"] = row["Sample_Name"]
-            config["data"]["Sample_Project"] = row["Sample_Project"]
-            config["data"]["barcode_kits"] = row["barcode_kits"]
+        assert(row["Sample_ID"] not in data.keys())
+        data[row["Sample_ID"]] = dict({"Sample_Name": row["Sample_Name"], "Sample_Project": row["Sample_Project"],
+                                       "barcode_kits": row["barcode_kits"],"index_id": row["index_id"], "Sample_ID": row["Sample_ID"]})
+    return bc_kit, data
+
+def rename_fastq(config, data):
+    fastq = os.path.join(config["info_dict"]["flowcell_path"],"fastq")
+    for k, v in data.items():    
+        bs_fastq = fastq
+        if v["barcode_kits"] is not "no_bc":
+           bs = v["index_id"].split("BP")[1]
+           bs_fastq = os.path.join(fastq,"barcode"+bs)
         else:
-            config["data"]["Sample_Name"].append(row["Sample_Name"])
-            config["data"]["Sample_Project"].append(row["Sample_Project"])
-            config["data"]["barcode_kits"].append(row["barcode_kits"])
-    config["data"]["ref"] = ref_genome
+           assert(len(data)==1)
+        if not os.path.exists(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]):
+           os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"])
+        os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/"+v["Sample_ID"])
+        sample_path = os.path.join(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
+        sample_name = v["Sample_Name"]
+        cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(bs_fastq,sample_path,sample_name)
+        #cmd += "rm {}/fastq_runid*.fastq.gz".format(bs_fastq)
+        sp.check_call(cmd, shell=True)
+   #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes? 
 
-def rename_fastq(config):
-    fastq_path = config["info_dict"]["fastq"]
-    sample_name = config["data"]["Sample_Name"]
-    if config["data"]["barcode_kits"] is not "no_bc":
-        barcode = config["data"]["barcode_kits"]
-        fastq_path = os.path.join(fastq_path,barcode)
-        config["info_dict"]["fastq"] = fastq_path
-
-    cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(fastq_path,fastq_path,sample_name)
-    cmd += "rm {}/fastq_runid*.fastq.gz".format(fastq_path)
-    sp.check_call(cmd, shell=True)
-
-
-def transfer_data(config):
+def transfer_data(config, data, ref):
     """
     Trnasfer Project_ and FASTQC_Project_ to the user's directory
     """
-    group=config["data"]["Sample_Project"].split("_")[2]
-    final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
-    if not os.path.exists(config["paths"]["groupDir"]+final_path):
-        os.mkdir(config["paths"]["groupDir"]+final_path)
-        final_path = os.path.join(config["paths"]["groupDir"],final_path)
-    else:
-        sys.exit("a flowcell with the same ID already exists!!")
-    fastq = config["info_dict"]["flowcell_path"]+"/Project_"+config["data"]["Sample_Project"]
-    fastqc = config["info_dict"]["flowcell_path"]+"/FASTQC_Project_"+config["data"]["Sample_Project"]
-    shutil.copytree(fastq,final_path+"/Project_"+config["data"]["Sample_Project"])
-    shutil.copytree(fastqc,final_path+"/FASTQC_Project_"+config["data"]["Sample_Project"])
-    analysis = final_path+"/Analysis_"+config["data"]["Sample_Project"]
-    os.mkdir(analysis)
-    os.mkdir(analysis+"/mapping_on_"+config["data"]["ref"])
-    config["data"]["analysis"] = analysis
-    config["data"]["mapping"] = analysis+"/mapping_on_"+config["data"]["ref"]
+    for k, v in data.items():
+        group=v["Sample_Project"].split("_")[2]
+        final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
+        if not os.path.exists(config["paths"]["groupDir"]+final_path):
+            os.mkdir(config["paths"]["groupDir"]+final_path)
+        final_path = os.path.join(config["paths"]["groupDir"]+final_path)
+        
+        if not os.path.exists(final_path+"/Project_"+v["Sample_Project"]):
+            fastq = config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]
+            shutil.copytree(fastq,final_path+"/Project_"+v["Sample_Project"])
+        if not os.path.exists(final_path+"/FASTQC_Project_"+v["Sample_Project"]):
+            fastqc = config["info_dict"]["flowcell_path"]+"/FASTQC_Project_"+v["Sample_Project"]
+            shutil.copytree(fastqc,final_path+"/FASTQC_Project_"+v["Sample_Project"])
+            analysis = final_path+"/Analysis_"+v["Sample_Project"]
+            os.mkdir(analysis)
+            os.mkdir(analysis+"/mapping_on_"+ref)
+
 
 
 
@@ -123,15 +128,25 @@ def main():
     args = get_parser().parse_args()
 
     config = configparser.ConfigParser()
-    config.read_file(open("./config.ini","r"))
+    config.read_file(open(os.path.join(os.path.dirname(__file__), 'config.ini'),'r'))
+    
     config["input"]=dict([("name",os.path.basename(os.path.realpath(args.input)))])
+   
+    print("flowcell is found")
     info_dict = read_flowcell_info(config)
+    print("data has been copied over to rapiuds")
     config["info_dict"]=info_dict
-    read_samplesheet(config, args.reference)
-    base_calling(config)
-    rename_fastq(config)
-    fastq_qc(config)
-    transfer_data(config)
+    
+    bc_kit,data = read_samplesheet(config)
+    print("base-calling starts with bc_kit "+bc_kit)
+    base_calling(config, bc_kit)
+    print("renaming fastq files starts")
+    rename_fastq(config, data)
+    print("QC")
+    fastq_qc(config,data)
+    print("transfer data")
+    transfer_data(config, data, args.reference)
+    
     if "RNA" in config["info_dict"]["kit"]:
         mapping_rna(config)
     else:
