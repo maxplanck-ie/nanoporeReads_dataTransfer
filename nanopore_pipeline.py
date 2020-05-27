@@ -39,7 +39,7 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        print("a flowcell with the same ID already exists!!")
+        sys.exit("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -87,7 +87,6 @@ def rename_fastq(config, data):
         bs_fastq = fastq
         if v["barcode_kits"] is not "no_bc":
            bs = v["index_id"].split("BP")[1]
-           print(bs)
            bs_fastq = os.path.join(fastq,"barcode"+bs)
         else:
            assert(len(data)==1)
@@ -101,26 +100,27 @@ def rename_fastq(config, data):
         sp.check_call(cmd, shell=True)
    #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes? 
 
-def transfer_data(config):
+def transfer_data(config, data, ref):
     """
     Trnasfer Project_ and FASTQC_Project_ to the user's directory
     """
-    group=config["data"]["Sample_Project"].split("_")[2]
-    final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
-    if not os.path.exists(config["paths"]["groupDir"]+final_path):
-        os.mkdir(config["paths"]["groupDir"]+final_path)
-        final_path = os.path.join(config["paths"]["groupDir"],final_path)
-    else:
-        sys.exit("a flowcell with the same ID already exists!!")
-    fastq = config["info_dict"]["flowcell_path"]+"/Project_"+config["data"]["Sample_Project"]
-    fastqc = config["info_dict"]["flowcell_path"]+"/FASTQC_Project_"+config["data"]["Sample_Project"]
-    shutil.copytree(fastq,final_path+"/Project_"+config["data"]["Sample_Project"])
-    shutil.copytree(fastqc,final_path+"/FASTQC_Project_"+config["data"]["Sample_Project"])
-    analysis = final_path+"/Analysis_"+config["data"]["Sample_Project"]
-    os.mkdir(analysis)
-    os.mkdir(analysis+"/mapping_on_"+config["data"]["ref"])
-    config["data"]["analysis"] = analysis
-    config["data"]["mapping"] = analysis+"/mapping_on_"+config["data"]["ref"]
+    for k, v in data.items():
+        group=v["Sample_Project"].split("_")[2]
+        final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
+        if not os.path.exists(config["paths"]["groupDir"]+final_path):
+            os.mkdir(config["paths"]["groupDir"]+final_path)
+        final_path = os.path.join(config["paths"]["groupDir"]+final_path)
+        
+        if not os.path.exists(final_path+"/Project_"+v["Sample_Project"]):
+            fastq = config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]
+            shutil.copytree(fastq,final_path+"/Project_"+v["Sample_Project"])
+        if not os.path.exists(final_path+"/FASTQC_Project_"+v["Sample_Project"]):
+            fastqc = config["info_dict"]["flowcell_path"]+"/FASTQC_Project_"+v["Sample_Project"]
+            shutil.copytree(fastqc,final_path+"/FASTQC_Project_"+v["Sample_Project"])
+            analysis = final_path+"/Analysis_"+v["Sample_Project"]
+            os.mkdir(analysis)
+            os.mkdir(analysis+"/mapping_on_"+ref)
+
 
 
 
@@ -129,24 +129,24 @@ def main():
 
     config = configparser.ConfigParser()
     config.read_file(open(os.path.join(os.path.dirname(__file__), 'config.ini'),'r'))
-    print(config.sections())
+    
     config["input"]=dict([("name",os.path.basename(os.path.realpath(args.input)))])
-    config["ref"] = dict([("ref",args.reference)])
-    print(config.items("input"))
+   
     print("flowcell is found")
     info_dict = read_flowcell_info(config)
     print("data has been copied over to rapiuds")
     config["info_dict"]=info_dict
-    print(config.items("info_dict"))
+    
     bc_kit,data = read_samplesheet(config)
     print("base-calling starts with bc_kit "+bc_kit)
-    #base_calling(config, bc_kit)
+    base_calling(config, bc_kit)
     print("renaming fastq files starts")
-    #rename_fastq(config, data)
+    rename_fastq(config, data)
     print("QC")
     fastq_qc(config,data)
-    sys.exit("qc done!")
-    transfer_data(config)
+    print("transfer data")
+    transfer_data(config, data, args.reference)
+    
     if "RNA" in config["info_dict"]["kit"]:
         mapping_rna(config)
     else:
