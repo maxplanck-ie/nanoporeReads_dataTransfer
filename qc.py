@@ -12,7 +12,7 @@ def fastq_qc(config,data):
         fastqc = os.path.join(fastqc+"/Sample_"+v["Sample_ID"])
     
         cmd = config["nanocomp"]["qc_cmd"]
-        cmd += " --fastq {}".format(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/"+v["Sample_ID"]+"/"+v["Sample_Name"]+".fastq.gz")
+        cmd += " --fastq {}".format(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"]+"/"+v["Sample_Name"]+".fastq.gz")
         cmd += " -o {} ".format(fastqc)
         cmd += config["nanocomp"]["qc_options"]+" "+v["Sample_Name"]
         print(cmd)

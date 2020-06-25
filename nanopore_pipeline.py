@@ -27,6 +27,10 @@ def get_parser():
                         type=str,
                         dest="reference",
                         help='reference genome')
+    required.add_argument("-p",
+                        type=str,
+                        dest="protocol",
+                        help='sequencing protocol, eithr dna or rna (cDNA data can be considerded ad rna too)')
     return parser
 
 def read_flowcell_info(config):
@@ -39,7 +43,7 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        sys.exit("a flowcell with the same ID already exists!!")
+        print("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -92,7 +96,7 @@ def rename_fastq(config, data):
            assert(len(data)==1)
         if not os.path.exists(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]):
            os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"])
-        os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/"+v["Sample_ID"])
+        os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
         sample_path = os.path.join(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
         sample_name = v["Sample_Name"]
         cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(bs_fastq,sample_path,sample_name)
@@ -139,19 +143,19 @@ def main():
     
     bc_kit,data = read_samplesheet(config)
     print("base-calling starts with bc_kit "+bc_kit)
-    base_calling(config, bc_kit)
+    #base_calling(config, bc_kit)
     print("renaming fastq files starts")
-    rename_fastq(config, data)
+    #rename_fastq(config, data)
     print("QC")
-    fastq_qc(config,data)
+    #fastq_qc(config,data)
     print("transfer data")
     transfer_data(config, data, args.reference)
-    
-    if "RNA" in config["info_dict"]["kit"]:
-        mapping_rna(config)
+    print(config["info_dict"]["kit"])
+    if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna'):
+        mapping_rna(config,data, args.reference)
     else:
         mapping_dna(config)
 
-
+   #TODO contamination report on bam
 if __name__== "__main__":
     main()
