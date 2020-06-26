@@ -43,7 +43,7 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        print("a flowcell with the same ID already exists!!")
+        sys.exit("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -87,7 +87,7 @@ def read_samplesheet(config):
 
 def rename_fastq(config, data):
     fastq = os.path.join(config["info_dict"]["flowcell_path"],"fastq")
-    for k, v in data.items():    
+    for k, v in data.items():
         bs_fastq = fastq
         if v["barcode_kits"] is not "no_bc":
            bs = v["index_id"].split("BP")[1]
@@ -102,7 +102,7 @@ def rename_fastq(config, data):
         cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(bs_fastq,sample_path,sample_name)
         #cmd += "rm {}/fastq_runid*.fastq.gz".format(bs_fastq)
         sp.check_call(cmd, shell=True)
-   #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes? 
+   #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes?
 
 def transfer_data(config, data, ref):
     """
@@ -114,7 +114,7 @@ def transfer_data(config, data, ref):
         if not os.path.exists(config["paths"]["groupDir"]+final_path):
             os.mkdir(config["paths"]["groupDir"]+final_path)
         final_path = os.path.join(config["paths"]["groupDir"]+final_path)
-        
+
         if not os.path.exists(final_path+"/Project_"+v["Sample_Project"]):
             fastq = config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]
             shutil.copytree(fastq,final_path+"/Project_"+v["Sample_Project"])
@@ -127,12 +127,9 @@ def transfer_data(config, data, ref):
 
 
 
-def report_contamination():
-    hg38_genome = config["contamination_report"]["human_genome"]
-    mm10_genome = 
-    hg38_rRNA = 
-    mm10_rRNA = 
-    return None
+def report_contamination(config, data, protocol):
+    if protocol == 'rna':
+        mapping_rna_contamination(config, data)
 
 
 
@@ -141,21 +138,21 @@ def main():
 
     config = configparser.ConfigParser()
     config.read_file(open(os.path.join(os.path.dirname(__file__), 'config.ini'),'r'))
-    
+
     config["input"]=dict([("name",os.path.basename(os.path.realpath(args.input)))])
-   
+
     print("flowcell is found")
     info_dict = read_flowcell_info(config)
     print("data has been copied over to rapiuds")
     config["info_dict"]=info_dict
-    
+
     bc_kit,data = read_samplesheet(config)
     print("base-calling starts with bc_kit "+bc_kit)
-    #base_calling(config, bc_kit)
+    base_calling(config, bc_kit)
     print("renaming fastq files starts")
-    #rename_fastq(config, data)
+    rename_fastq(config, data)
     print("QC")
-    #fastq_qc(config,data)
+    fastq_qc(config,data)
     print("transfer data")
     transfer_data(config, data, args.reference)
     print(config["info_dict"]["kit"])
@@ -164,8 +161,7 @@ def main():
     else:
         mapping_dna(config)
     print("data has been mapped")
-   #TODO contamination report on bam
-    report_contamination()
+    report_contamination(config, data, args.protocol)
 
 
 if __name__== "__main__":

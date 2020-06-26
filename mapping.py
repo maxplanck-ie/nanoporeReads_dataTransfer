@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import subprocess as sp
-import os 
+import os
 
 def genome_index(config, ref, path):
     """
@@ -37,12 +37,12 @@ def mapping_rna(config, data, ref):
    Mapping RNA using minimap2
    """
    # TODO different organism on the same flowcell
-   for k, v in data.items():	
+   for k, v in data.items():
         group=v["Sample_Project"].split("_")[2]
         final_path = config["paths"]["groupDir"]+"/"+group+"/sequencing_data/"+config["input"]["name"]
         analysis_dir = final_path+"/Analysis_"+v["Sample_Project"]+"/mapping_on_"+ref
         os.mkdir(analysis_dir+"/"+v["Sample_ID"])
-        #genome_index(config,ref, analysis_dir)
+        genome_index(config,ref, analysis_dir)
         cmd = config["mapping"]["mapping_cmd"]+ " "
         cmd += config["mapping"]["mapping_rna_options"]
         cmd += " --junc-bed "+config["transcripts"][ref] + " "
@@ -54,6 +54,71 @@ def mapping_rna(config, data, ref):
         cmd += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+".bam"
         print(cmd)
         sp.check_call(cmd, shell=True)
+
+
+def mapping_rna_contamination(config, data):
+   """
+   Mapping RNA using minimap2 to several genomes and rRNA to look for hte contamiantion
+   """
+   # TODO different organism on the same flowcell or different projects!
+   h_transcripts = config["transcripts"]["hg38"]
+   m_transcripts = config["transcripts"]["mm10"]
+   os.mkdir(config["info_dict"]["flowcell_path"]+"/contamination_report")
+   report_dir = config["info_dict"]["flowcell_path"]+"/contamination_report/"
+   for ref in ["hg38","mm10", "human_rRNA", "mouse_rRNA"]:
+        genome_index(config,ref, report_dir)
+   for k, v in data.items():
+        bams = ""
+        names = ""
+        analysis_dir = report_dir+v["Sample_Project"]
+        if not os.path.exists(analysis_dir):
+            os.mkdir(analysis_dir)
+
+        if not os.path.exists(analysis_dir+"/"+v["Sample_ID"]):
+            os.mkdir(analysis_dir+"/"+v["Sample_ID"])
+        for index, ref in enumerate(["hg38","mm10"]):
+            transcripts = h_transcripts
+            organism = "hGenome"
+            if index == 1:
+                transcripts= m_transcripts
+                organism = "mGenome"
+            cmd = config["mapping"]["mapping_cmd"]+ " "
+            cmd += config["mapping"]["mapping_rna_options"]
+            cmd += " --junc-bed "+transcripts + " "
+            cmd += report_dir + ref + "_genome.fa "
+            cmd += config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"]+"/"+v["Sample_Name"]+".fastq.gz | "
+            cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
+            cmd += " -o "+ analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+"."+organism+".bam ; "
+            cmd += config["mapping"]["samtools_cmd"]+ " index "
+            cmd += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+"."+organism+".bam"
+            print(cmd)
+            bams += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+"."+organism+".bam "
+            names += organism+" "
+            sp.check_call(cmd, shell=True)
+        for index, ref in enumerate(["human_rRNA", "mouse_rRNA"]):
+            organism = "hrRNA"
+            if index == 1:
+                organism = "mrRNA"
+            cmd = config["mapping"]["mapping_cmd"]+" "
+            cmd += config["mapping"]["mapping_dna_options"]+" "
+            cmd += report_dir + ref + "_genome.fa "
+            cmd += config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"]+"/"+v["Sample_Name"]+".fastq.gz | "
+            cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
+            cmd += " -o "+ analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+"."+organism+".bam ; "
+            cmd += config["mapping"]["samtools_cmd"]+ " index "
+            cmd += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+"."+organism+".bam"
+            print(cmd)
+            bams += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+"."+organism+".bam "
+            names += organism+" "
+            sp.check_call(cmd, shell=True)
+
+        cmd = config["nanocomp"]["qc_cmd"]
+        cmd += " --bam {}".format(bams)
+        cmd += " -o {} ".format(analysis_dir + "/"+v["Sample_ID"]+"/")
+        cmd += config["nanocomp"]["qc_options"]+" "+names
+        print(cmd)
+        sp.check_call(cmd, shell=True)
+
 
 
 # def transcriptome_index(config):
@@ -88,4 +153,3 @@ def mapping_rna(config, data, ref):
 #     cmd += config["data"]["mapping"] + "/" +config["data"]["Sample_Name"]+".bam"
 #     print(cmd)
 #     sp.check_call(cmd, shell=True)
-
