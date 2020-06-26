@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import subprocess as sp
+import os 
 
 def genome_index(config, ref, path):
     """
@@ -40,16 +41,17 @@ def mapping_rna(config, data, ref):
         group=v["Sample_Project"].split("_")[2]
         final_path = config["paths"]["groupDir"]+"/"+group+"/sequencing_data/"+config["input"]["name"]
         analysis_dir = final_path+"/Analysis_"+v["Sample_Project"]+"/mapping_on_"+ref
-        genome_index(config,ref, analysis_dir)
+        os.mkdir(analysis_dir+"/"+v["Sample_ID"])
+        #genome_index(config,ref, analysis_dir)
         cmd = config["mapping"]["mapping_cmd"]+ " "
         cmd += config["mapping"]["mapping_rna_options"]
         cmd += " --junc-bed "+config["transcripts"][ref] + " "
-        cmd += config["data"]["mapping"] + "/" + ref + "_genome.fa "
+        cmd += analysis_dir + "/" + ref + "_genome.fa "
         cmd += config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"]+"/"+v["Sample_Name"]+".fastq.gz | "
         cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
-        cmd += " -o "+ analysis_dir + "/" +v["Sample_Name"]+".bam ; "
+        cmd += " -o "+ analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+".bam ; "
         cmd += config["mapping"]["samtools_cmd"]+ " index "
-        cmd += analysis_dir + "/" +v["Sample_Name"]+".bam"
+        cmd += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+".bam"
         print(cmd)
         sp.check_call(cmd, shell=True)
 

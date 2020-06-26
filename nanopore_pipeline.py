@@ -127,6 +127,14 @@ def transfer_data(config, data, ref):
 
 
 
+def report_contamination():
+    hg38_genome = config["contamination_report"]["human_genome"]
+    mm10_genome = 
+    hg38_rRNA = 
+    mm10_rRNA = 
+    return None
+
+
 
 def main():
     args = get_parser().parse_args()
@@ -155,7 +163,10 @@ def main():
         mapping_rna(config,data, args.reference)
     else:
         mapping_dna(config)
-
+    print("data has been mapped")
    #TODO contamination report on bam
+    report_contamination()
+
+
 if __name__== "__main__":
     main()
