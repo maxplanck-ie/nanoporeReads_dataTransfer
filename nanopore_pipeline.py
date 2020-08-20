@@ -72,7 +72,7 @@ def read_samplesheet(config):
     """
         read samplesheet
     """
-    sample_sheet = pd.read_csv(config["info_dict"]["flowcell_path"]+"/Samplesheet.csv",
+    sample_sheet = pd.read_csv(config["info_dict"]["flowcell_path"]+"/SampleSheet.csv",
                                sep = ",", skiprows=[0])
     print(sample_sheet)
     sample_sheet = sample_sheet.fillna("no_bc")
@@ -109,7 +109,7 @@ def transfer_data(config, data, ref):
     Trnasfer Project_ and FASTQC_Project_ to the user's directory
     """
     for k, v in data.items():
-        group=v["Sample_Project"].split("_")[2]
+        group=v["Sample_Project"].split("_")[-1].lower()
         final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
         if not os.path.exists(config["paths"]["groupDir"]+final_path):
             os.mkdir(config["paths"]["groupDir"]+final_path)
@@ -148,6 +148,7 @@ def main():
 
     bc_kit,data = read_samplesheet(config)
     print("base-calling starts with bc_kit "+bc_kit)
+    print("data: ",data)
     base_calling(config, bc_kit)
     print("renaming fastq files starts")
     rename_fastq(config, data)
@@ -158,8 +159,8 @@ def main():
     print(config["info_dict"]["kit"])
     if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna'):
         mapping_rna(config,data, args.reference)
-    else:
-        mapping_dna(config)
+    #else:
+    #    mapping_dna(config)
     print("data has been mapped")
     report_contamination(config, data, args.protocol)
 

@@ -38,7 +38,7 @@ def mapping_rna(config, data, ref):
    """
    # TODO different organism on the same flowcell
    for k, v in data.items():
-        group=v["Sample_Project"].split("_")[2]
+        group=v["Sample_Project"].split("_")[-1].lower()
         final_path = config["paths"]["groupDir"]+"/"+group+"/sequencing_data/"+config["input"]["name"]
         analysis_dir = final_path+"/Analysis_"+v["Sample_Project"]+"/mapping_on_"+ref
         os.mkdir(analysis_dir+"/"+v["Sample_ID"])
