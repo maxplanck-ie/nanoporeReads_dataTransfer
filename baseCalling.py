@@ -23,7 +23,7 @@ def base_calling(config,bc_kit):
         cmd += config["guppy_basecaller"]["base_calling_barcode_options"]
     else:
         cmd += " -q 0 " # TODO test on sampels with barcodes
-    # RNA
+    #Direct RNA sequencing
     if "RNA" in config["info_dict"]["kit"]:
         cmd += " "+config["guppy_basecaller"]["base_calling_RNA_options"]
    
