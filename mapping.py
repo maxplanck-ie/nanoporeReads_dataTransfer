@@ -34,12 +34,12 @@ def mapping_dna(config):
 
 def mapping_rna(config, data, ref):
    """
-   Mapping RNA using minimap2
+   Mapping RNA/cDNA using minimap2
    """
    # TODO different organism on the same flowcell
    for k, v in data.items():
         group=v["Sample_Project"].split("_")[-1].lower()
-        final_path = config["paths"]["groupDir"]+"/"+group+"/sequencing_data/"+config["input"]["name"]
+        final_path = config["paths"]["groupDir"]+group+"/sequencing_data/OxfordNanopore/"+config["input"]["name"]
         analysis_dir = final_path+"/Analysis_"+v["Sample_Project"]+"/mapping_on_"+ref
         os.mkdir(analysis_dir+"/"+v["Sample_ID"])
         genome_index(config,ref, analysis_dir)
@@ -58,7 +58,7 @@ def mapping_rna(config, data, ref):
 
 def mapping_rna_contamination(config, data):
    """
-   Mapping RNA using minimap2 to several genomes and rRNA to look for hte contamiantion
+   Mapping RNA/cDNA using minimap2 to several genomes and rRNA to look for hte contamiantion
    """
    # TODO different organism on the same flowcell or different projects!
    h_transcripts = config["transcripts"]["hg38"]

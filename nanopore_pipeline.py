@@ -30,7 +30,8 @@ def get_parser():
     required.add_argument("-p",
                         type=str,
                         dest="protocol",
-                        help='sequencing protocol, eithr dna or rna (cDNA data can be considerded ad rna too)')
+                        help='sequencing protocol. This information is needed for mapping.'
+                             'valid options are dna, rna or cdna')
     return parser
 
 def read_flowcell_info(config):
@@ -51,7 +52,7 @@ def read_flowcell_info(config):
     info_dict["fast5"] = os.path.join(flowcell_path,"fast5")
 
     summary_file = [filename for filename in os.listdir(flowcell_path) if filename.startswith("final_summary")]
-    if summary_file is []:
+    if summary_file == []:
          sys.exit("final summary file doesnt exist.")
     assert len(summary_file) == 1
     summary_file = os.path.join(flowcell_path,summary_file[0])
@@ -88,10 +89,17 @@ def read_samplesheet(config):
 def rename_fastq(config, data):
     fastq = os.path.join(config["info_dict"]["flowcell_path"],"fastq")
     for k, v in data.items():
+        print(k, v)
         bs_fastq = fastq
         if v["barcode_kits"] is not "no_bc":
-           bs = v["index_id"].split("BP")[1]
+           if "BP" in v["index_id"]:
+               bs = v["index_id"].split("BP")[1]
+           elif "BC" in v["index_id"]:
+               bs = v["index_id"].split("BC")[1]
+           else:
+               sys.exit("ERROR! index_id {} is not acceptable. The id should start with BP or BC! Check the sampleSheet!".format(v["index_id"]))
            bs_fastq = os.path.join(fastq,"barcode"+bs)
+           v["index_id"] = "barcode"+bs
         else:
            assert(len(data)==1)
         if not os.path.exists(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]):
@@ -110,7 +118,7 @@ def transfer_data(config, data, ref):
     """
     for k, v in data.items():
         group=v["Sample_Project"].split("_")[-1].lower()
-        final_path = "/"+group+"/sequencing_data/"+config["input"]["name"]
+        final_path = "/"+group+"/sequencing_data/OxfordNanopore/"+config["input"]["name"]
         if not os.path.exists(config["paths"]["groupDir"]+final_path):
             os.mkdir(config["paths"]["groupDir"]+final_path)
         final_path = os.path.join(config["paths"]["groupDir"]+final_path)
@@ -153,11 +161,12 @@ def main():
     print("renaming fastq files starts")
     rename_fastq(config, data)
     print("QC")
-    fastq_qc(config,data)
+    pycoQc(config,data)
     print("transfer data")
     transfer_data(config, data, args.reference)
     print(config["info_dict"]["kit"])
-    if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna'):
+    if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna') or (args.protocol == 'cdna'):
+        print("minimap2 starts")
         mapping_rna(config,data, args.reference)
     #else:
     #    mapping_dna(config)
