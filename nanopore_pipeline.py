@@ -44,7 +44,7 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        sys.exit("a flowcell with the same ID already exists!!")
+        print("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -63,7 +63,9 @@ def read_flowcell_info(config):
                 if info_dict["flowcell"] not in config["flowcell"]["compatible_flowcells"]:
                     sys.exit("flowcell id is not valid!")
                 info_dict["kit"] = line.split(":")[2]
-                if info_dict["kit"] not in config["flowcell"]["compatible_kits"]:
+                if info_dict["kit"].endswith("\n"):
+                    info_dict["kit"] = info_dict["kit"].split("\n")[0]
+                if str(info_dict["kit"]) not in config["flowcell"]["compatible_kits"]:
                     sys.exit("kit id is not valid!")
                 return info_dict
 
