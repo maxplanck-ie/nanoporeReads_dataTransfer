@@ -44,7 +44,7 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        sys.exit("a flowcell with the same ID already exists!!")
+        print("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5"):
@@ -163,13 +163,14 @@ def main():
     print("renaming fastq files starts")
     rename_fastq(config, data)
     print("QC")
-    pycoQc(config,data)
+    pycoQc_fastq(config,data,bc_kit)
     print("transfer data")
     transfer_data(config, data, args.reference)
     print(config["info_dict"]["kit"])
     if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna') or (args.protocol == 'cdna'):
         print("minimap2 starts")
         mapping_rna(config,data, args.reference)
+        pycoQc_bam(config,data, bc_kit, args.reference)
     #else:
     #    mapping_dna(config)
     print("data has been mapped")
