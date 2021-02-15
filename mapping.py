@@ -11,25 +11,33 @@ def genome_index(config, ref, path):
     cmd += config["mapping"]["mapping_cmd"] +" "+ config["mapping"]["index_options"] + " "
     cmd += path + "/" + ref + "_genome.mmi "
     cmd += path + "/" + ref + "_genome.fa "
+    print(cmd)
     sp.check_call(cmd, shell=True)
 
 
-def mapping_dna(config):
+def mapping_dna(config, data, ref):
     """
     Mapping DNA using minimap2
     """
-    genome_index(config)
-    organism = config["data"]["ref"]
+    for k, v in data.items():
+        group=v["Sample_Project"].split("_")[-1].lower()
+        final_path = config["paths"]["groupDir"]+group+"/sequencing_data/OxfordNanopore/"+config["input"]["name"]
+        analysis_dir = final_path+"/Analysis_"+v["Sample_Project"]+"/mapping_on_"+ref
+        os.mkdir(analysis_dir+"/"+v["Sample_ID"])
+        genome_index(config,ref, analysis_dir)
 
-    cmd = config["mapping"]["mapping_cmd"]+" "
-    cmd += config["mapping"]["mapping_dna_options"]+" "
-    cmd += config["data"]["mapping"] + "/" + organism + "_genome.fa "
-    cmd += config["info_dict"]["fastq"]+ "/" + config["data"]["Sample_Name"]+".fastq.gz |"
-    cmd += config["mapping"]["samtools_cmd"]+" sort "+config["mapping"]["samtools_options"]
-    cmd += " -o "+ config["data"]["mapping"] + "/" +config["data"]["Sample_Name"]+".bam ; "
-    cmd += config["mapping"]["samtools_cmd"]+ " index "
-    cmd += config["data"]["mapping"] + "/" +config["data"]["Sample_Name"]+".bam"
-    sp.check_call(cmd, shell=True)
+        #organism = config["data"]["ref"]
+
+        cmd = config["mapping"]["mapping_cmd"]+" "
+        cmd += config["mapping"]["mapping_dna_options"]+" "
+        cmd += analysis_dir + "/" + ref + "_genome.fa "
+        cmd += config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"]+"/"+v["Sample_Name"]+".fastq.gz | "
+        cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
+        cmd += " -o "+ analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+".bam ; "
+        cmd += config["mapping"]["samtools_cmd"]+ " index "
+        cmd += analysis_dir + "/"+v["Sample_ID"]+"/" +v["Sample_Name"]+".bam"
+        print(cmd)
+        sp.check_call(cmd, shell=True)
 
 
 def mapping_rna(config, data, ref):

@@ -21,7 +21,7 @@ def fastq_qc(config,data):
 
 def pycoQc_fastq(config, data, bc_kit):
     wd = os.path.join(config["info_dict"]["flowcell_path"])
-    if bc_kit is not "no_bc":
+    if bc_kit not in ["no_bc"]:
         cmd = config["pycoQc"]["barcodeSplit"]
         cmd += wd+"/fastq/sequencing_summary.txt "
         cmd += "-o "+wd
@@ -32,19 +32,20 @@ def pycoQc_fastq(config, data, bc_kit):
             if not os.path.exists(wd+"/FASTQC_Project_"+v["Sample_Project"]):
                 os.mkdir(wd+"/FASTQC_Project_"+v["Sample_Project"])
             barcode = v["index_id"]
-            os.mkdir(fastqc+"/Sample_"+v["Sample_ID"])
-            fastqc = os.path.join(fastqc+"/Sample_"+v["Sample_ID"])
-            cmd = config["pycoQc"]["pycoQc"]+" "
-            cmd += wd+"/sequencing_summary_"+barcode+".txt "
-            cmd += "-o "+fastqc+"/pycoqc_"+barcode+".html"
-            print(cmd)
-            sp.check_call(cmd, shell=True)
+            if not os.path.exists(fastqc+"/Sample_"+v["Sample_ID"]):
+                os.mkdir(fastqc+"/Sample_"+v["Sample_ID"])
+                fastqc = os.path.join(fastqc+"/Sample_"+v["Sample_ID"])
+                cmd = config["pycoQc"]["pycoQc"]+" "
+                cmd += wd+"/sequencing_summary_"+barcode+".txt "
+                cmd += "-o "+fastqc+"/pycoqc_"+barcode+".html"
+                print(cmd)
+                sp.check_call(cmd, shell=True)
 
-        cmd = config["pycoQc"]["pycoQc"]+" "
-        cmd += wd+"/fastq/sequencing_summary.txt "
-        cmd += "-o "+wd+"/pycoqc.html"
-        print(cmd)
-        sp.check_call(cmd, shell=True)
+        #cmd = config["pycoQc"]["pycoQc"]+" "
+        #cmd += wd+"/fastq/sequencing_summary.txt "
+        #cmd += "-o "+wd+"/pycoqc.html"
+        #print(cmd)
+        #sp.check_call(cmd, shell=True)
     else:
         assert(len(data.items()) == 1)
         project_name = list(data.values())[0]["Sample_Project"]

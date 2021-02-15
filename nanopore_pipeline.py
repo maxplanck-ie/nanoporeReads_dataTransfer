@@ -47,9 +47,9 @@ def read_flowcell_info(config):
         print("a flowcell with the same ID already exists!!")
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
-    if not os.path.exists(flowcell_path+"/fast5"):
+    if not os.path.exists(flowcell_path+"/fast5_pass"):
          sys.exit("fast5 path doesnt exist.")
-    info_dict["fast5"] = os.path.join(flowcell_path,"fast5")
+    info_dict["fast5"] = os.path.join(flowcell_path,"fast5_pass")
 
     summary_file = [filename for filename in os.listdir(flowcell_path) if filename.startswith("final_summary")]
     if summary_file == []:
@@ -94,24 +94,31 @@ def rename_fastq(config, data):
         print(k, v)
         bs_fastq = fastq
         if v["barcode_kits"] is not "no_bc":
-           if "BP" in v["index_id"]:
-               bs = v["index_id"].split("BP")[1]
-           elif "BC" in v["index_id"]:
-               bs = v["index_id"].split("BC")[1]
-           else:
-               sys.exit("ERROR! index_id {} is not acceptable. The id should start with BP or BC! Check the sampleSheet!".format(v["index_id"]))
+           bs = v["index_id"]
+           bs = [s for s in " ".join(list(bs)).split() if s.isdigit()]
+           bs = "".join(bs)
+           # if "BP" in v["index_id"]:
+           #     bs = v["index_id"].split("BP")[1]
+           # elif "BC" in v["index_id"]:
+           #     bs = v["index_id"].split("BC")[1]
+           # elif "NB" in v["index_id"]:
+           #     bs = v["index_id"].split("NB")[1]
+           # else:
+           #     sys.exit("ERROR! index_id {} is not acceptable. The id should start with BP or BC! Check the sampleSheet!".format(v["index_id"]))
+           print("bs:", bs)
            bs_fastq = os.path.join(fastq,"barcode"+bs)
            v["index_id"] = "barcode"+bs
         else:
            assert(len(data)==1)
         if not os.path.exists(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]):
            os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"])
-        os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
-        sample_path = os.path.join(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
-        sample_name = v["Sample_Name"]
-        cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(bs_fastq,sample_path,sample_name)
-        #cmd += "rm {}/fastq_runid*.fastq.gz".format(bs_fastq)
-        sp.check_call(cmd, shell=True)
+        if not os.path.exists(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"]):
+            os.mkdir(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
+            sample_path = os.path.join(config["info_dict"]["flowcell_path"]+"/Project_"+v["Sample_Project"]+"/Sample_"+v["Sample_ID"])
+            sample_name = v["Sample_Name"]
+            cmd = "cat {}/*.fastq.gz > {}/{}.fastq.gz ;".format(bs_fastq,sample_path,sample_name)
+            #cmd += "rm {}/fastq_runid*.fastq.gz".format(bs_fastq)
+            sp.check_call(cmd, shell=True)
    #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes?
 
 def transfer_data(config, data, ref):
@@ -169,10 +176,11 @@ def main():
     print(config["info_dict"]["kit"])
     if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna') or (args.protocol == 'cdna'):
         print("minimap2 starts")
-        mapping_rna(config,data, args.reference)
+        mapping_rna(config, data, args.reference)
         pycoQc_bam(config,data, bc_kit, args.reference)
-    #else:
-    #    mapping_dna(config)
+    else:
+        mapping_dna(config, data, args.reference)
+        pycoQc_bam(config,data, bc_kit, args.reference)
     print("data has been mapped")
     report_contamination(config, data, args.protocol)
 
