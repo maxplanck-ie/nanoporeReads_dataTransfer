@@ -2,15 +2,15 @@
 import subprocess as sp
 import os
 
-def genome_index(config, ref, path):
+def genome_index(config, path):
     """
     Generating genome indices for minimap2
     """
-    reference = config["genome"][ref]
-    cmd = "ln -s " + reference + " " + path + "/" + ref + "_genome.fa;"
+    reference = config["organism"]
+    cmd = "ln -s " + reference + " " + path + "/" + reference + "_genome.fa;"
     cmd += config["mapping"]["mapping_cmd"] +" "+ config["mapping"]["index_options"] + " "
-    cmd += path + "/" + ref + "_genome.mmi "
-    cmd += path + "/" + ref + "_genome.fa "
+    cmd += path + "/" + reference + "_genome.mmi "
+    cmd += path + "/" + reference + "_genome.fa "
     print(cmd)
     sp.check_call(cmd, shell=True)
 
