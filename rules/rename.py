@@ -13,11 +13,11 @@ rule bc_split:
         if config["bc_kit"] != "no_bc":
             cmd = config["pycoQc"]["barcodeSplit"]
             cmd += "fastq/sequencing_summary.txt "
-            cmd += "-o fastq/; touch {output.file}"
+            cmd += "-o fastq/; touch " + output.file
             print(cmd)
             sp.check_call(cmd, shell=True)
         else:
-            sp.check_call("touch {output.file}", shell=True)
+            sp.check_call("touch "+output.file, shell=True)
 
 
 rule file_rename:

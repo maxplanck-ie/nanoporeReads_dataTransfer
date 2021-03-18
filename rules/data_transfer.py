@@ -4,6 +4,7 @@ import subprocess as sp
 import sys
 import os
 import warnings
+import shutil
 
 
 # Trnasfer Project_ and FASTQC_Project_ to the user's directory
@@ -27,7 +28,7 @@ rule data_transfer:
         analysis = os.path.join(final_path,"Analysis_"+this_sample["Sample_Project"])
         if not os.path.exists(analysis):
             os.mkdir(analysis)
-            os.mkdir(analysis+"/mapping_on_"+ref)
-        analysis = analysis+"/mapping_on_"+ref
+            os.mkdir(analysis+"/mapping_on_"+config["organism"])
+        analysis = analysis+"/mapping_on_"+config["organism"]
         os.mkdir(analysis+"/Sample_"+wildcards.sample_id)
         sp.check_call("touch "+output.transferred, shell = True)

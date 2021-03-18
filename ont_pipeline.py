@@ -48,9 +48,9 @@ def read_flowcell_info(config):
         print("a flowcell with the same ID already exists!!") # todo should be changed to sys.exit
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
-    if not os.path.exists(flowcell_path+"/fast5_pass"):
+    if not os.path.exists(flowcell_path+"/fast5"):
          sys.exit("fast5 path doesnt exist.")
-    info_dict["fast5"] = os.path.join(flowcell_path,"fast5_pass")
+    info_dict["fast5"] = os.path.join(flowcell_path,"fast5")
 
     summary_file = [filename for filename in os.listdir(flowcell_path) if filename.startswith("final_summary")]
     if summary_file == []:
@@ -107,6 +107,8 @@ def main():
         sys.exit("input does path not exist")
     else:
         config["input"]=dict([("name",os.path.basename(os.path.realpath(args.input)))])
+        config["organism"] = args.reference
+        config["protocol"] = args.protocol
 
     # read the flowcell info & copy it over from dont_touch_this to rapidus
     info_dict = read_flowcell_info(config)

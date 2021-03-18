@@ -3,7 +3,7 @@ paths:
   baseDir: /data/processing3/leily/guppy/
 #outputDir=/rapidus/data/sequencing_data/
   outputDir: /data/processing3/leily/guppy/output/
-  groupDir: /data/
+  groupDir: /data/processing3/leily/guppy/LOG/
 #logDir=/rapidus/data/sequencing_data/LOG/
   logDir: /data/processing3/leily/guppy/LOG/
 

@@ -11,6 +11,8 @@ import pandas as pd
 include: os.path.join("rules", "baseCalling.py")
 include: os.path.join("rules", "qc.py")
 include: os.path.join("rules", "rename.py")
+include: os.path.join("rules", "data_transfer.py")
+include: os.path.join("rules", "mapping.py")
 
 
 def run_basecalling():
@@ -29,17 +31,12 @@ def run_data_transfer():
     return file_list
 
 
-# def run_mapping():
-#     if ("RNA" in config["info_dict"]["kit"]) or (args.protocol == 'rna') or (args.protocol == 'cdna'):
-#         print("minimap2 starts")
-#         mapping_rna(config, data, args.reference)
-#         pycoQc_bam(config,data, bc_kit, args.reference)
-#     else:
-#         mapping_dna(config, data, args.reference)
-#         pycoQc_bam(config,data, bc_kit, args.reference)
-#     print("data has been mapped")
-#
-#
+def run_mapping():
+    file_list = []
+    file_list.append([expand("{sample_id}.bam", sample_id = config["data"].keys())])
+    return file_list
+
+
 # def run_contamination_report():
 #     report_contamination(config, data, args.protocol)
 
@@ -48,13 +45,14 @@ rule all:
     input:
         run_basecalling(),
         expand("bc.split"),
-        run_pycoqc()
-        run_data_transfer()
-        # run_mapping()
+        run_pycoqc(),
+        run_data_transfer(),
+        run_mapping(),
+        # run_bam_qc(),
         # run_contamination_report()
 
 
 
-onsuccess:
-    shell("rm bs.split")
+#onsuccess:
+#    shell("rm bs.split")
 # onerror:
