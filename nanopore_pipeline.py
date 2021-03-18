@@ -49,7 +49,7 @@ def read_flowcell_info(config):
     info_dict["flowcell_path"] = flowcell_path
     if not os.path.exists(flowcell_path+"/fast5_pass"):
          sys.exit("fast5 path doesnt exist.")
-    info_dict["fast5"] = os.path.join(flowcell_path,"fast5_pass")
+    info_dict["fast5"] = os.path.join(flowcell_path)
 
     summary_file = [filename for filename in os.listdir(flowcell_path) if filename.startswith("final_summary")]
     if summary_file == []:
