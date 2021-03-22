@@ -6,9 +6,10 @@ import warnings
 
 rule bc_split:
     input:
-        fastq = "fastq"
+        fastq = "fastq",
+        demux = "demux.done"
     output:
-        file = temp("bc.split")
+        file = "bc.split"
     run:
         if config["bc_kit"] != "no_bc":
             cmd = config["pycoQc"]["barcodeSplit"]
@@ -22,8 +23,8 @@ rule bc_split:
 
 rule file_rename:
     input:
+        fastq = "fastq",
         bc_split = "bc.split",
-        fastq = "fastq"
     output:
         rename = temp("{sample_id}_renamed.done")
     run:

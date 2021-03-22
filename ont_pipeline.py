@@ -48,9 +48,9 @@ def read_flowcell_info(config):
         print("a flowcell with the same ID already exists!!") # todo should be changed to sys.exit
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
-    if not os.path.exists(flowcell_path+"/fast5"):
+    if not os.path.exists(flowcell_path+"/fast5_pass"):
          sys.exit("fast5 path doesnt exist.")
-    info_dict["fast5"] = os.path.join(flowcell_path,"fast5")
+    info_dict["fast5"] = os.path.join(flowcell_path)
 
     summary_file = [filename for filename in os.listdir(flowcell_path) if filename.startswith("final_summary")]
     if summary_file == []:
@@ -78,10 +78,10 @@ def read_samplesheet(config):
     """
     sample_sheet = pd.read_csv(config["info_dict"]["flowcell_path"]+"/SampleSheet.csv",
                                sep = ",", skiprows=[0])
-    print(sample_sheet)
     sample_sheet = sample_sheet.fillna("no_bc")
     assert(len(sample_sheet["barcode_kits"].unique())==1)
     bc_kit = sample_sheet["barcode_kits"].unique()[0]
+    print(sample_sheet)
     data=dict()
     for index, row in sample_sheet.iterrows():
         assert(row["Sample_ID"] not in data.keys())
@@ -130,6 +130,7 @@ def main():
     snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
                      --configfile "+configFile+" \
                      --directory " + output_directory
+                     # +" --dag | dot -Tpdf > dag.pdf"
     sp.check_output(snakemake_cmd, shell = True)
 
 if __name__== "__main__":

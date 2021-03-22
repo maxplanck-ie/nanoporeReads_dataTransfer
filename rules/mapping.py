@@ -2,19 +2,6 @@
 import subprocess as sp
 import os
 
-def genome_index(config, path):
-    """
-    Generating genome indices for minimap2
-    """
-    reference = config["organism"]
-    cmd = "ln -s " + reference + " " + path + "/" + reference + "_genome.fa;"
-    cmd += config["mapping"]["mapping_cmd"] +" "+ config["mapping"]["index_options"] + " "
-    cmd += path + "/" + reference + "_genome.mmi "
-    cmd += path + "/" + reference + "_genome.fa "
-    print(cmd)
-    sp.check_call(cmd, shell=True)
-
-
 
 
 def mapping_rna_contamination(config, data):
@@ -122,11 +109,11 @@ rule mapping_data:
     output:
         mapped = "{sample_id}.bam"
     run:
+        this_sample = config["data"][wildcards.sample_id]
         group=this_sample["Sample_Project"].split("_")[-1].lower()
         final_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore/"+config["input"]["name"])
         analysis = os.path.join(final_path,"Analysis_"+this_sample["Sample_Project"])
         analysis = analysis+"/mapping_on_"+config["organism"]
-        genome_index(config, analysis)
         mapping_path = os.path.join(analysis, "/Sample_"+wildcards.sample_id)
         cmd = config["mapping"]["mapping_cmd"]+ " "
         if ("RNA" in config["info_dict"]["kit"]) or (config["protocol"] == 'rna') or (config["protocol"] == 'cdna'):
@@ -134,7 +121,7 @@ rule mapping_data:
             cmd += " --junc-bed "+config["transcripts"][config["organism"]] + " "
         else:
             cmd += config["mapping"]["mapping_dna_options"]+" "
-        cmd += analysis_dir + "/" + config["organism"] + "_genome.fa "
+        cmd += analysis + "/" + config["organism"] + "_genome.fa "
         cmd += config["info_dict"]["flowcell_path"]+"/Project_"+this_sample["Sample_Project"]+"/Sample_"+this_sample["Sample_ID"]+"/"+this_sample["Sample_Name"]+".fastq.gz | "
         cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
         cmd += " -o "+ mapping_path+"/" +this_sample["Sample_Name"]+".bam ; "

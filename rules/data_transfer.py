@@ -7,6 +7,20 @@ import warnings
 import shutil
 
 
+def genome_index(config, path):
+    """
+    Generating genome indices for minimap2
+    """
+    reference = config["organism"]
+    reference_fa = config["genome"][reference]
+    cmd = "ln -s " + reference_fa + " " + path + "/" + reference + "_genome.fa;"
+    cmd += config["mapping"]["mapping_cmd"] +" "+ config["mapping"]["index_options"] + " "
+    cmd += path + "/" + reference + "_genome.mmi "
+    cmd += path + "/" + reference + "_genome.fa "
+    print(cmd)
+    sp.check_call(cmd, shell=True)
+
+
 # Trnasfer Project_ and FASTQC_Project_ to the user's directory
 rule data_transfer:
     input:
@@ -29,6 +43,7 @@ rule data_transfer:
         if not os.path.exists(analysis):
             os.mkdir(analysis)
             os.mkdir(analysis+"/mapping_on_"+config["organism"])
-        analysis = analysis+"/mapping_on_"+config["organism"]
-        os.mkdir(analysis+"/Sample_"+wildcards.sample_id)
+            genome_index(config, analysis+"/mapping_on_"+config["organism"])
+        analysis_dir = analysis+"/mapping_on_"+config["organism"]
+        os.mkdir(analysis_dir+"/Sample_"+wildcards.sample_id)
         sp.check_call("touch "+output.transferred, shell = True)

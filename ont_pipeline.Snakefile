@@ -16,7 +16,7 @@ include: os.path.join("rules", "mapping.py")
 
 
 def run_basecalling():
-    return [expand("fastq")]
+    return "fastq"
 
 
 def run_pycoqc():
@@ -53,6 +53,6 @@ rule all:
 
 
 
-#onsuccess:
-#    shell("rm bs.split")
+onsuccess:
+   shell("rm bs.split")
 # onerror:

@@ -20,56 +20,59 @@ rule pycoQc_fastq:
             bs = "".join(bs)
             print("bs:", bs)
             barcode = "barcode"+bs
-            fastqc = os.path.join(os.path.join("FASTQC_Project_"+this_sample["Sample_Project"],
+            fastqc_path = os.path.join(os.path.join("FASTQC_Project_"+this_sample["Sample_Project"],
                                                "Sample_"+this_sample["Sample_ID"]))
-            if not os.path.exists(fastqc):
-                os.mkdir(fastqc)
+            if not os.path.exists(fastqc_path):
+                os.mkdir(fastqc_path)
 
                 cmd = config["pycoQc"]["pycoQc"]+" "
                 cmd += "fastq/sequencing_summary_"+barcode+".txt "
-                cmd += "-o "+fastqc+"/pycoqc_"+barcode+".html"
+                cmd += "-o "+fastqc_path+"/pycoqc_"+barcode+".html"
                 print(cmd)
                 sp.check_call(cmd, shell=True)
             else:
-                warnings.warn("This directory: ",fastqc, "already exists, computing qc is skipped "
+                warnings.warn("This directory already exists, computing qc is skipped "
                               "and the folder stays untouched.")
 
             sp.check_call("touch "+output.fastqc, shell=True)
         else:
             assert(len(config["data"])==1)
             project_name = list(config["data"].values())[0]["Sample_Project"]
-            fastqc = os.path.join("FASTQC_Project_"+project_name)
-            print(fastqc)
+            fastqc_path = os.path.join("FASTQC_Project_"+project_name)
+            print(fastqc_path)
             assert(os.path.exists("FASTQC_Project_"+project_name) == 0)
             os.mkdir("FASTQC_Project_"+project_name)
             cmd = config["pycoQc"]["pycoQc"]+" "
             cmd += "fastq/sequencing_summary.txt "
-            cmd += "-o "+fastqc+"/pycoqc.html"
+            cmd += "-o "+fastqc_path+"/pycoqc.html"
             print(cmd)
             sp.check_call(cmd, shell=True)
+            sp.check_call("touch "+output.fastqc, shell=True)
 
 
 rule pycoQc_bam:
     input:
-
+        mapped = "{sample_id}.bam"
     output:
-
+        bam_qc = "{sample_id}.bam.qc"
     run:
+        this_sample = config["data"][wildcards.sample_id]
+        sample_project = this_sample["Sample_Project"]
+        bam = this_sample["Sample_Name"]+".bam"
+        group=sample_project.split("_")[-1].lower()
+        final_path = config["paths"]["groupDir"]+group+"/sequencing_data/OxfordNanopore/"+config["input"]["name"]
+        path_to_bam = final_path+"/Analysis_"+sample_project+"/mapping_on_"+ref+"/"+wildcards.sample_id
+        bam = os.path.join(path_to_bam, bam)
+        cmd = config["pycoQc"]["pycoQc"]+" "
         if bc_kit  == 'no_bc':
             assert(len(data.items()) == 1)
-            sample_project = list(data.values())[0]["Sample_Project"]
-            sample_id = list(data.values())[0]["Sample_ID"]
-            bam = list(data.values())[0]["Sample_Name"]+".bam"
-            group=sample_project.split("_")[-1].lower()
-            final_path = config["paths"]["groupDir"]+group+"/sequencing_data/OxfordNanopore/"+config["input"]["name"]
-            path_to_bam = final_path+"/Analysis_"+sample_project+"/mapping_on_"+ref+"/"+sample_id
-            bam = os.path.join(path_to_bam, bam)
-            cmd = config["pycoQc"]["pycoQc"]+" "
             cmd += wd+"/fastq/sequencing_summary.txt "
-            cmd += " -a "+bam
-            cmd += " -o "+path_to_bam+"/pycoqc_bam.html"
-            print(cmd)
-            sp.check_call(cmd, shell=True)
+        else:
+            cmd += wd+"/sequencing_summary_"+v["index_id"]+".txt "
+        cmd += " -a "+bam
+        cmd += " -o "+path_to_bam+"/pycoqc_bam.html"
+        print(cmd)
+        sp.check_call(cmd, shell=True)
 #     else:
 #         for k, v in data.items():
 #             group=v["Sample_Project"].split("_")[-1].lower()

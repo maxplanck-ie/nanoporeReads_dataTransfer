@@ -8,16 +8,17 @@ rule basecalling:
     input:
         fast5 = config["info_dict"]["fast5"]
     output:
-        fastq = directory("fastq")
+        fastq = directory("fastq"),
+        demux = temp("demux.done")
     run:
         cmd = config["guppy_basecaller"]["base_calling_cmd"]
         fast5 = config["info_dict"]["fast5"]
         os.mkdir(output.fastq)
         fastq = os.path.join(output.fastq)
         flowcell=config["info_dict"]["flowcell"]
-        barcode = False
-        if config["bc_kit"] is not "no_bc":
-            barcode = True
+        barcode = True
+        if config["bc_kit"] == "no_bc":
+            barcode = False
         kit=config["info_dict"]["kit"]
         cmd += " -i {} -s {} --flowcell {} --kit {} ".format(fast5,
                                                              fastq,
@@ -34,3 +35,4 @@ rule basecalling:
 
         print(cmd)
         sp.check_call(cmd, shell=True)
+        sp.check_call("touch "+output.demux, shell=True)
