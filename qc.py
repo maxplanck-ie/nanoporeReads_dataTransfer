@@ -77,3 +77,17 @@ def pycoQc_bam(config, data, bc_kit, ref):
         cmd += " -o "+path_to_bam+"/pycoqc_bam.html"
         print(cmd)
         sp.check_call(cmd, shell=True)
+    else:
+        for k, v in data.items():
+            group=v["Sample_Project"].split("_")[-1].lower()
+            final_path = config["paths"]["groupDir"]+group+"/sequencing_data/OxfordNanopore/"+config["input"]["name"]
+            analysis_dir = final_path+"/Analysis_"+v["Sample_Project"]+"/mapping_on_"+ref
+            analysis_dir = analysis_dir+"/"+v["Sample_ID"]
+            bam = os.path.join(analysis_dir, v["Sample_Name"]+".bam")
+            barcode = v["index_id"]
+            cmd = config["pycoQc"]["pycoQc"]+" "
+            cmd += wd+"/sequencing_summary_"+barcode+".txt "
+            cmd += " -a "+bam
+            cmd += " -o "+analysis_dir+"/pycoqc_"+barcode+".html"
+            print(cmd)
+            sp.check_call(cmd, shell=True)
