@@ -21,16 +21,21 @@ def genome_index(config, path):
     sp.check_call(cmd, shell=True)
 
 
-# Trnasfer Project_ and FASTQC_Project_ to the user's directory
+# Trnasfer Project_ and FASTQC_Project_ to the user's directory and generates the Analysis_ folder directly under the users path
 rule data_transfer:
     input:
         fastqc = "{sample_id}_qc.done"
     output:
-        transferred = temp("{sample_id}.transferred")
+        transferred = "{sample_id}.transferred"
     run:
         this_sample = config["data"][wildcards.sample_id]
         group=this_sample["Sample_Project"].split("_")[-1].lower()
-        final_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore/"+config["input"]["name"])
+        group_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore")
+        if not os.path.exists(group_path):
+            group_path = os.path.join(config["paths"]["external_groupDir"],group,"sequencing_data/OxfordNanopore")
+            if not os.path.exists(group_path):
+                os.makedirs(group_path)
+        final_path = os.path.join(group_path, config["input"]["name"])
         if not os.path.exists(final_path):
             os.mkdir(final_path)
         if not os.path.exists(final_path+"/Project_"+this_sample["Sample_Project"]):
@@ -45,5 +50,8 @@ rule data_transfer:
             os.mkdir(analysis+"/mapping_on_"+config["organism"])
             genome_index(config, analysis+"/mapping_on_"+config["organism"])
         analysis_dir = analysis+"/mapping_on_"+config["organism"]
-        os.mkdir(analysis_dir+"/Sample_"+wildcards.sample_id)
+        try:
+            os.mkdir(analysis_dir+"/Sample_"+wildcards.sample_id)
+        except:
+            warnings.warn("{} already exists!!".format(analysis_dir+"/Sample_"+wildcards.sample_id))
         sp.check_call("touch "+output.transferred, shell = True)

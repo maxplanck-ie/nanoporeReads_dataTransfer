@@ -16,7 +16,16 @@ include: os.path.join("rules", "mapping.py")
 
 
 def run_basecalling():
-    return "fastq"
+    return [expand("demux.done")]
+
+
+def run_bc_split():
+    return [expand("bc.split")]
+
+def run_rename():
+    file_list = []
+    file_list.append([expand("{sample_id}_renamed.done", sample_id = config["data"].keys())])
+    return file_list
 
 
 def run_pycoqc():
@@ -33,7 +42,13 @@ def run_data_transfer():
 
 def run_mapping():
     file_list = []
-    file_list.append([expand("{sample_id}.bam", sample_id = config["data"].keys())])
+    file_list.append([expand("{sample_id}.mapped", sample_id = config["data"].keys())])
+    return file_list
+
+
+def run_bamqc():
+    file_list = []
+    file_list.append([expand("{sample_id}.bam.qc", sample_id = config["data"].keys())])
     return file_list
 
 
@@ -43,16 +58,18 @@ def run_mapping():
 
 rule all:
     input:
-        run_basecalling(),
-        expand("bc.split"),
+        "demux.done",
+        "bc.split",
+        run_rename(),
         run_pycoqc(),
         run_data_transfer(),
         run_mapping(),
-        # run_bam_qc(),
+        run_bamqc(),
+        # run_bamCompare()
         # run_contamination_report()
 
 
 
-onsuccess:
-   shell("rm bs.split")
+# onsuccess:
+#     shell("rm demux.done bc.split *.transferred *renamed.done *qc.done *.mapped *bam.qc")
 # onerror:

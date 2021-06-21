@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import sys
 import os
+import warnings
 import argparse
 import configparser
 import shutil
 import pandas as pd
 import subprocess as sp
 import yaml
+import glob
 # from qc import *
 # from mapping import *
 # from baseCalling import base_calling
@@ -33,6 +35,11 @@ def get_parser():
                         dest="protocol",
                         help='sequencing protocol. This information is needed for mapping.'
                              'valid options are dna, rna or cdna')
+    required.add_argument("--custom_cfg",
+                        action="store_true",
+                        default=False,
+                        dest="custom_cfg",
+                        help='use custom config file')
     return parser
 
 def read_flowcell_info(config):
@@ -45,32 +52,41 @@ def read_flowcell_info(config):
     if not os.path.exists(config["paths"]["outputDir"]+input):
         shutil.copytree(base_path,config["paths"]["outputDir"]+input)
     else:
-        print("a flowcell with the same ID already exists!!") # todo should be changed to sys.exit
+        warnings.warn("a flowcell with the same ID already exists!! Does not overwrite") # TODO should be changed to sys.exit
     flowcell_path = os.path.join(config["paths"]["outputDir"]+input)
     info_dict["flowcell_path"] = flowcell_path
-    if not os.path.exists(flowcell_path+"/fast5_pass"):
+    if glob.glob(flowcell_path+"/fast5*") == []: # Use both fast5_pass and fast5_fail
          sys.exit("fast5 path doesnt exist.")
     info_dict["fast5"] = os.path.join(flowcell_path)
 
     summary_file = [filename for filename in os.listdir(flowcell_path) if filename.startswith("final_summary")]
     if summary_file == []:
-         sys.exit("final summary file doesnt exist.")
-    assert len(summary_file) == 1
-    summary_file = os.path.join(flowcell_path,summary_file[0])
-    with open(summary_file,"r") as f:
-        for line in f.readlines():
-            if line.startswith("protocol="):
-                info_dict["flowcell"] = line.split(":")[1]
-                if info_dict["flowcell"] not in config["flowcell"]["compatible_flowcells"]:
-                    sys.exit("flowcell id is not valid!")
-                info_dict["kit"] = line.split(":")[2]
-                if info_dict["kit"].endswith("\n"):
-                    info_dict["kit"] = info_dict["kit"].split("\n")[0]
-                if str(info_dict["kit"]) not in config["flowcell"]["compatible_kits"]:
-                    sys.exit("kit id is not valid!")
-                return info_dict
+         warnings.warn("final summary file doesnt exist. It uses the -c in guppy.")
+         config["no_kit_info"] = True
+         config["custom_cfg"] = True
+    else:
+        config["no_kit_info"] = False
+        assert len(summary_file) == 1
+        summary_file = os.path.join(flowcell_path,summary_file[0])
+        with open(summary_file,"r") as f:
+            for line in f.readlines():
+                if line.startswith("protocol="):
+                    try:
+                        info_dict["flowcell"] = line.split(":")[1]
+                        if info_dict["flowcell"] not in config["flowcell"]["compatible_flowcells"]:
+                            sys.exit("flowcell id is not valid!")
+                        info_dict["kit"] = line.split(":")[2]
+                        if info_dict["kit"].endswith("\n"):
+                            info_dict["kit"] = info_dict["kit"].split("\n")[0]
+                        if str(info_dict["kit"]) not in config["flowcell"]["compatible_kits"]:
+                            sys.exit("kit id is not valid!")
+                    except:
+                        warnings.warn("final summary format is incorrect! It uses the -c in guppy.")
+                        config["no_kit_info"] = True
+                        config["custom_cfg"] = True
 
-    return None
+    return info_dict
+
 
 def read_samplesheet(config):
     """
@@ -103,12 +119,14 @@ def main():
 
     # read config
     config = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'config.yaml')))
-    if not os.path.exists(os.path.basename(os.path.realpath(args.input))):
-        sys.exit("input does path not exist")
+    root = config["paths"]["baseDir"]
+    if not os.path.exists(os.path.join(root, os.path.basename(os.path.realpath(args.input)))):
+        sys.exit("input path does not exist")
     else:
         config["input"]=dict([("name",os.path.basename(os.path.realpath(args.input)))])
         config["organism"] = args.reference
         config["protocol"] = args.protocol
+        config["custom_cfg"] = args.custom_cfg
 
     # read the flowcell info & copy it over from dont_touch_this to rapidus
     info_dict = read_flowcell_info(config)
@@ -123,14 +141,17 @@ def main():
     configFile = os.path.join(config["paths"]["outputDir"], args.input, "pipeline_config.yaml")
     with open(configFile, 'w') as f:
         yaml.dump(config, f, default_flow_style=False)
-
+    print("run_snakemake")
     #run snakemake
     output_directory = os.path.join(config["paths"]["outputDir"], args.input)
     snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
     snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
                      --configfile "+configFile+" \
-                     --directory " + output_directory
-                     # +" --dag | dot -Tpdf > dag.pdf"
+                     --directory " + output_directory \
+                     # +" 2> "+os.path.join(output_directory, "snakemake.log ")
+                     #  +" --debug-dag "
+                     # + " --dag | dot -Tpdf > dag.pdf"
+
     sp.check_output(snakemake_cmd, shell = True)
 
 if __name__== "__main__":
