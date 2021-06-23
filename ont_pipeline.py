@@ -147,9 +147,10 @@ def main():
     snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
     snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
                      --configfile "+configFile+" \
-                     --directory " + output_directory \
+                     --directory " + output_directory  \
+                     + " --debug-dag "
                      # +" 2> "+os.path.join(output_directory, "snakemake.log ")
-                     #  +" --debug-dag "
+
                      # + " --dag | dot -Tpdf > dag.pdf"
 
     sp.check_output(snakemake_cmd, shell = True)

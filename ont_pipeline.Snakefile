@@ -2,15 +2,18 @@
 import os
 import yaml
 import pandas as pd
+import warnings
+import subprocess as sp
+
 
 # f = open("config.yaml")
 # globals().update(yaml.load(f))
 # f.close()
 
 # include paths:
-include: os.path.join("rules", "baseCalling.py")
+include: os.path.join("rules", "baseCalling.Snakefile")
 include: os.path.join("rules", "qc.py")
-include: os.path.join("rules", "rename.py")
+include: os.path.join("rules", "rename.Snakefile")
 include: os.path.join("rules", "data_transfer.py")
 include: os.path.join("rules", "mapping.py")
 
@@ -58,16 +61,15 @@ def run_bamqc():
 
 rule all:
     input:
-        "demux.done",
-        "bc.split",
+        run_basecalling(),
+        run_bc_split(),
         run_rename(),
         run_pycoqc(),
         run_data_transfer(),
         run_mapping(),
         run_bamqc(),
-        # run_bamCompare()
+        # # run_bamCompare()
         # run_contamination_report()
-
 
 
 # onsuccess:
