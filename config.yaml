@@ -1,11 +1,9 @@
 paths:
-  # baseDir: /dont_touch_this/solexa_runs/
-  baseDir: /scratch/local/nanopore_data/
+  baseDir: /dont_touch_this/solexa_runs/
   outputDir: /scratch/local/nanopore_data/
-  groupDir: /scratch/local/nanopore_data/guppy_v5
-  # groupDir: /data/
+  groupDir: /data/
   external_groupDir: /scratch/local/external_nanopore_data/
-  logDir: /data/processing3/leily/guppy/LOG/
+  logDir: 
 
 guppy_basecaller:
 #base_calling_cmd =/package/guppy-3.4.3/bin/guppy_basecaller

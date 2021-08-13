@@ -141,15 +141,23 @@ def main():
     configFile = os.path.join(config["paths"]["outputDir"], args.input, "pipeline_config.yaml")
     with open(configFile, 'w') as f:
         yaml.dump(config, f, default_flow_style=False)
-    print("run_snakemake")
     #run snakemake
     output_directory = os.path.join(config["paths"]["outputDir"], args.input)
     snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
+    # snakemake log file
+    fnames = glob.glob(os.path.join(output_directory, 'ont_run-[0-9]*.log'))
+    if len(fnames) == 0:
+        n = 1  # no matching files, then this is the first run
+    else:
+        fnames.sort(key=os.path.getctime)
+        n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
+    # append the new run number to the file name
+    logfile_name = "ont_run-{}.log".format(n)
     snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
                      --configfile "+configFile+" \
                      --directory " + output_directory  \
-                     + " --debug-dag "
-                     # +" 2> "+os.path.join(output_directory, "snakemake.log ")
+                     + " --debug-dag " \
+                     +" 2> "+os.path.join(output_directory, logfile_name)
 
                      # + " --dag | dot -Tpdf > dag.pdf"
 
