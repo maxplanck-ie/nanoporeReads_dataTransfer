@@ -6,6 +6,7 @@ A pipeline to transfer the Nanopore reads to the end users
 module load anaconda3;
 python pipeline.py -i flowcell -r organism
 ```
+
 # Example input path:
 ```bash
 ../path/to/flowcell/
