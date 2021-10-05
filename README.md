@@ -6,6 +6,7 @@ A pipeline to transfer the Nanopore reads to the end users
 conda activate ont;
 python pipeline.py -i flowcell -r organism -p protocol
 ```
+
 # Example input path:
 ```bash
 ../path/to/flowcell/
