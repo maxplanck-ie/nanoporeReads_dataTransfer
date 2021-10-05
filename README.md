@@ -49,6 +49,7 @@ python pipeline.py -i flowcell -r organism -p protocol
     └── Sample_its_name
         └── Sample_name.fastq.gz
 ```
+
 # Example output path for a user:
 ```bash
 ../user_path/to/flowcell/
