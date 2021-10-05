@@ -76,7 +76,11 @@ rule pycoQc_bam:
         sample_project = this_sample["Sample_Project"]
         bam = this_sample["Sample_Name"]+".bam"
         group=sample_project.split("_")[-1].lower()
-        final_path = os.path.join(config["paths"]["groupDir"], group, "sequencing_data/OxfordNanopore",config["input"]["name"])
+        group_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore")
+        if not os.path.exists(group_path):
+            group_path = os.path.join(config["paths"]["external_groupDir"],group,"sequencing_data/OxfordNanopore")
+        final_path = os.path.join(group_path, config["input"]["name"])
+        # final_path = os.path.join(config["paths"]["groupDir"], group, "sequencing_data/OxfordNanopore",config["input"]["name"])
         path_to_bam = os.path.join(final_path,"Analysis_"+sample_project,"mapping_on_"+config["organism"],"Sample_"+wildcards.sample_id)
         bam = os.path.join(path_to_bam, bam)
 

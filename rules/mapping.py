@@ -114,7 +114,11 @@ rule mapping_data:
     run:
         this_sample = config["data"][wildcards.sample_id]
         group=this_sample["Sample_Project"].split("_")[-1].lower()
-        final_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore",config["input"]["name"])
+        group_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore")
+        if not os.path.exists(group_path):
+            group_path = os.path.join(config["paths"]["external_groupDir"],group,"sequencing_data/OxfordNanopore")
+        final_path = os.path.join(group_path, config["input"]["name"])
+        # final_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore",config["input"]["name"])
         analysis = os.path.join(final_path,"Analysis_"+this_sample["Sample_Project"])
         analysis = analysis+"/mapping_on_"+config["organism"]
         mapping_path = os.path.join(analysis, "Sample_"+wildcards.sample_id)
