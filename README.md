@@ -3,8 +3,8 @@ A pipeline to transfer the Nanopore reads to the end users
 
 # Usage
 ```bash
-module load anaconda3;
-python pipeline.py -i flowcell -r organism
+conda activate ont;
+python pipeline.py -i flowcell -r organism -p protocol
 ```
 # Example input path:
 ```bash
