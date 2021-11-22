@@ -9,38 +9,82 @@ import pandas as pd
 import subprocess as sp
 import yaml
 import glob
-# from qc import *
-# from mapping import *
-# from baseCalling import base_calling
+from threading import Event
+import signal
+import requests
 
-def get_parser():
+
+gotHUP = Event()
+
+def breakSleep(signo, _frame):
+    gotHUP.set()
+
+
+def sleep(config):
+    print("go to sleep")
+    gotHUP.wait(timeout=float(config['options']['sleep_time'])*60*60) # in second
+    gotHUP.clear()
+
+signal.signal(signal.SIGHUP, breakSleep)
+
+
+def get_parser(): # TODO can be removed!
 
     parser = argparse.ArgumentParser(description='A Pipeline to process fast5.')
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
 
-    # required argumnets:
-    required.add_argument("-i",
-                        "--input",
-                        type=str,
-                        dest="input",
-                        help='input path')
-    required.add_argument("-r",
-                        "--ref",
-                        type=str,
-                        dest="reference",
-                        help='reference genome')
-    required.add_argument("-p",
-                        type=str,
-                        dest="protocol",
-                        help='sequencing protocol. This information is needed for mapping.'
-                             'valid options are dna, rna or cdna')
-    required.add_argument("--custom_cfg",
-                        action="store_true",
-                        default=False,
-                        dest="custom_cfg",
-                        help='use custom config file')
     return parser
+
+
+def find_new_flowcell(config):
+    """
+    look for new flowcells with `transfer.final` and `SampleSheet.csv`
+    """
+    base_path = os.path.join(config["paths"]["baseDir"])
+    dirs = glob.glob(os.path.join(base_path, "*/transfer.final"))
+    for dir in dirs:
+        flowcell = os.path.dirname(dir)
+        print(os.path.basename(flowcell))
+        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+                print("flowcell already exists")
+                sleep(config)
+            else:
+                print("I found a new flowcell!")
+                config["input"]=dict([("name",os.path.basename(flowcell))])
+                return os.path.basename(flowcell)
+        else:
+            print("there is no samplesheet")
+            sleep(config)
+
+
+def query_parkour(config, flowcell):
+    """
+
+    """
+    fc = flowcell.split("_")[3]
+    d = {'flowcell_id': fc}
+    res = requests.get(config["parkour"]["url"],\
+                       auth=(config["parkour"]["user"], config["parkour"]["password"]), params=d)
+    if res.status_code == 200: # Flowcell exists!
+        info_dict = res.json()
+        first_key = list(info_dict.keys())[0]
+        first_entry = list(info_dict[first_key].keys())[0]
+        organism = info_dict[first_key][first_entry][-1]
+        protocol = info_dict[first_key][first_entry][-2]
+        if 'cDNA' in protocol:
+            protocol = 'cdna'
+        elif 'DNA' in protocol:
+            protocol = 'dna'
+        elif "RNA" in protocol:
+            protocol = 'RNA'
+        config["organism"] = organism
+        config["protocol"] = protocol
+    else:
+        print("flowcell does not exist")
+
+
 
 def read_flowcell_info(config):
     """
@@ -120,13 +164,9 @@ def main():
     # read config
     config = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'config.yaml')))
     root = config["paths"]["baseDir"]
-    if not os.path.exists(os.path.join(root, os.path.basename(os.path.realpath(args.input)))):
-        sys.exit("input path does not exist")
-    else:
-        config["input"]=dict([("name",os.path.basename(os.path.realpath(args.input)))])
-        config["organism"] = args.reference
-        config["protocol"] = args.protocol
-        config["custom_cfg"] = args.custom_cfg
+
+    flowcell = find_new_flowcell(config)
+    query_parkour(config, flowcell)
 
     # read the flowcell info & copy it over from dont_touch_this to rapidus
     info_dict = read_flowcell_info(config)

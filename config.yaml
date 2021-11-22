@@ -1,9 +1,17 @@
+options:
+  sleep_time: 1440 #in minute
+
 paths:
   baseDir: /dont_touch_this/solexa_runs/
   outputDir: /scratch/local/nanopore_data/
   groupDir: /data/
   external_groupDir: /scratch/local/external_nanopore_data/
-  logDir: 
+  logDir:
+
+parkour:
+  url: https://parkour.ie-freiburg.mpg.de/api/analysis_list/analysis_list/
+  user: stats@ie-freiburg.mpg.de
+  password: (tJAk>p'UM<'\y9~
 
 guppy_basecaller:
 #base_calling_cmd =/package/guppy-3.4.3/bin/guppy_basecaller
