@@ -1,19 +1,27 @@
+options:
+  sleep_time: 1 #in hour
+
 paths:
-  baseDir: /dont_touch_this/solexa_runs/
-  outputDir: /scratch/local/nanopore_data/
-  groupDir: /data/
-  external_groupDir: /scratch/local/external_nanopore_data/
-  logDir: 
+  baseDir: /path/to/ont/files
+  outputDir: /path/to/trnasfer/input/
+  groupDir: /root/to/transfer
+  external_groupDir: /root/to/transfer/external/
+  logDir:
+  deepseq_qc: /path/to/deepseq/qc/
+
+parkour:
+  url: parkour/api/url
+  user: account
+  password: password
 
 guppy_basecaller:
-#base_calling_cmd =/package/guppy-3.4.3/bin/guppy_basecaller
-  base_calling_cmd: /data/processing1/leily/guppy-5.0.7/ont-guppy/bin/guppy_basecaller
+  base_calling_cmd: path/to/guppy_basecaller
   base_calling_options: --recursive --compress_fastq --device cuda:0 --num_callers 10 --chunk_size 500 --chunks_per_runner 768 --gpu_runners_per_device 8
 # guppy benchmark: https://esr-nz.github.io/gpu_basecalling_testing/gpu_benchmarking.html
   base_calling_barcode_options: --trim_barcodes --num_barcode_threads 10
   base_calling_RNA_options: --reverse_sequence true --u_substitution true --trim_strategy rna
-  dna_model: /data/processing1/leily/guppy-5.0.7/ont-guppy/data/dna_r9.4.1_450bps_sup.cfg
-  rna_model: /data/processing1/leily/guppy-5.0.7/ont-guppy/data/rna_r9.4.1_70bps_hac.cfg
+  dna_model: /path/to/guppy/dna/model.cfg
+  rna_model: /path/to/guppy/rna/model.cfg
 
 flowcell:
   compatible_flowcells: FLO-MIN106
@@ -22,25 +30,25 @@ flowcell:
 
 mapping:
   index_options: -t 5 -K 20M -x map-ont -d
-  mapping_cmd: /package/anaconda3/envs/minimap2-2.17/bin/minimap2
+  mapping_cmd: path/to/minimap2
   mapping_dna_options: -t 2 -K 10M -ax map-ont -L
   mapping_rna_options: -t 4 -K 10M -ax splice -L -u f
-  samtools_cmd: /package/anaconda3/envs/samtools-1.10/bin/samtools
+  samtools_cmd: /path/to/samtools
   samtools_options: -@ 4
-  bedtools_cmd: /package/anaconda3/envs/bedtools2-2.27.0/bin/bedtools
+  bedtools_cmd: /path/to/bedtools
   bedtools_option: -s -split -name
 
 nanocomp:
-  qc_cmd: /package/anaconda3/envs/nanocomp-1.1.0/bin/NanoComp
+  qc_cmd: /path/to/NanoComp
   qc_options: -t 20 --names
 
 pycoQc:
-  barcodeSplit: /package/anaconda3/envs/pycoqc-2.5.0.23/bin/Barcode_split -u -v -f
-  pycoQc: /package/anaconda3/envs/pycoqc-2.5.0.23/bin/pycoQC --summary_file
+  barcodeSplit: /path/to/pycoqc/Barcode_split -u -v -f
+  pycoQc: /path/to/pycoqc/bin/pycoQC --summary_file
 
 genome:
   dm6: /data/repository/organisms/dm6_ensembl/genome_fasta/genome.fa
-  mm10: /data/repository/organisms/GRCm38_ensembl/genome_fasta/genome.fa
+  mouse: /data/repository/organisms/GRCm38_ensembl/genome_fasta/genome.fa #mm10
   hg38: /data/repository/organisms/GRCh38_ensembl/genome_fasta/genome.fa
   lambdaPhage: /data/repository/fastq_screen/LambdaPhage/genome.fa
   human_rRNA: /data/manke/group/ryan/rRNA/human_rRNA.fa
@@ -48,7 +56,7 @@ genome:
 
 transcripts:
   dm6:  /data/repository/organisms/dm6_ensembl/ensembl/release-93/genes.bed
-  mm10: /data/repository/organisms/GRCm38_ensembl/ensembl/release-91/genes.bed
+  mouse: /data/repository/organisms/GRCm38_ensembl/ensembl/release-91/genes.bed #mm10
   hg38: /data/repository/organisms/GRCh38_ensembl/ensembl/release-91/genes.bed
 
 contamination_report:
