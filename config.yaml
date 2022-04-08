@@ -1,5 +1,5 @@
 options:
-  sleep_time: 1440 #in minute
+  sleep_time: 1 #in hour
 
 paths:
   baseDir: /dont_touch_this/solexa_runs/
@@ -7,6 +7,7 @@ paths:
   groupDir: /data/
   external_groupDir: /scratch/local/external_nanopore_data/
   logDir:
+  deepseq_qc: /rapidus/data/SAMBA/seq_share/01_Parkour/Sequence\ Quality/
 
 parkour:
   url: https://parkour.ie-freiburg.mpg.de/api/analysis_list/analysis_list/
@@ -48,7 +49,7 @@ pycoQc:
 
 genome:
   dm6: /data/repository/organisms/dm6_ensembl/genome_fasta/genome.fa
-  mm10: /data/repository/organisms/GRCm38_ensembl/genome_fasta/genome.fa
+  mouse: /data/repository/organisms/GRCm38_ensembl/genome_fasta/genome.fa #mm10
   hg38: /data/repository/organisms/GRCh38_ensembl/genome_fasta/genome.fa
   lambdaPhage: /data/repository/fastq_screen/LambdaPhage/genome.fa
   human_rRNA: /data/manke/group/ryan/rRNA/human_rRNA.fa
@@ -56,7 +57,7 @@ genome:
 
 transcripts:
   dm6:  /data/repository/organisms/dm6_ensembl/ensembl/release-93/genes.bed
-  mm10: /data/repository/organisms/GRCm38_ensembl/ensembl/release-91/genes.bed
+  mouse: /data/repository/organisms/GRCm38_ensembl/ensembl/release-91/genes.bed #mm10
   hg38: /data/repository/organisms/GRCh38_ensembl/ensembl/release-91/genes.bed
 
 contamination_report:

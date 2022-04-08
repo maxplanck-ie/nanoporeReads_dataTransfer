@@ -19,6 +19,7 @@ include: os.path.join("rules", "mapping.py")
 
 
 def run_basecalling():
+    print(config["custom_cfg"])
     return [expand("demux.done")]
 
 
