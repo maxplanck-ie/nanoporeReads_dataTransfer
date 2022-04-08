@@ -3,8 +3,8 @@ A pipeline to transfer the Nanopore reads to the end users
 
 # Usage
 ```bash
-conda activate ont;
-python pipeline.py -i flowcell -r organism -p protocol
+mamba activate ont;
+python pipeline.py
 ```
 # Example input path:
 ```bash
@@ -32,19 +32,6 @@ python pipeline.py -i flowcell -r organism -p protocol
 ├── sequencing_summary_FAL82553_acfbfd23.txt
 ├── throughput_FAL82553_acfbfd23.csv
 ├── FASTQC_Project_number_User_PI
-│   └── Sample_its_name
-|       ├── NanoComp_20200408_1503.log
-│       ├── NanoComp_lengths.png
-│       ├── NanoComp_log_length.png
-│       ├── NanoComp_number_of_reads.png
-│       ├── NanoComp_OverlayHistogram.html
-│       ├── NanoComp_OverlayHistogram_Normalized.html
-│       ├── NanoComp_OverlayLogHistogram.html
-│       ├── NanoComp_OverlayLogHistogram_Normalized.html
-│       ├── NanoComp_quals.png
-│       ├── NanoComp-report.html
-│       ├── NanoComp_total_throughput.png
-│       └── NanoStats.txt
 └── Project_number_User_PI
     └── Sample_its_name
         └── Sample_name.fastq.gz
@@ -53,19 +40,6 @@ python pipeline.py -i flowcell -r organism -p protocol
 ```bash
 ../user_path/to/flowcell/
 ├── FASTQC_Project_number_User_PI
-│   └── Sample_its_name
-|       ├── NanoComp_20200408_1503.log
-│       ├── NanoComp_lengths.png
-│       ├── NanoComp_log_length.png
-│       ├── NanoComp_number_of_reads.png
-│       ├── NanoComp_OverlayHistogram.html
-│       ├── NanoComp_OverlayHistogram_Normalized.html
-│       ├── NanoComp_OverlayLogHistogram.html
-│       ├── NanoComp_OverlayLogHistogram_Normalized.html
-│       ├── NanoComp_quals.png
-│       ├── NanoComp-report.html
-│       ├── NanoComp_total_throughput.png
-│       └── NanoStats.txt
 ├── Project_number_User_PI
 |   └── Sample_its_name
 |       └── Sample_name.fastq.gz
