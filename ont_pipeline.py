@@ -12,7 +12,7 @@ import glob
 from threading import Event
 import signal
 import requests
-
+import misc.sendEmail as email
 
 gotHUP = Event()
 
@@ -41,6 +41,7 @@ def find_new_flowcell(config):
     """
     look for new flowcells with `transfer.final` and `SampleSheet.csv`
     """
+    print(config)
     base_path = os.path.join(config["paths"]["baseDir"])
     dirs = glob.glob(os.path.join(base_path, "*/transfer.final"))
     for dir in dirs:
@@ -56,16 +57,23 @@ def find_new_flowcell(config):
                     print("flowcell {} already exists and analysed".format(os.path.basename(flowcell)))
                     continue
                 else:
-                    print("I found an unfinished flowcell: {}".format(os.path.basename(flowcell)))
+                    msg = "I found an unfinished flowcell: {}".format(os.path.basename(flowcell))
+                    email.sendEmail(msg, "unfinished flowcell", config['email']['from'], config['email']['to'],
+                                    config['email']['host'])
                     config["input"]=dict([("name",os.path.basename(flowcell))])
                     return os.path.basename(flowcell)
             else:
-                print("I found a new flowcell: {}".format(os.path.basename(flowcell)))
+                msg = "I found a new flowcell: {}".format(os.path.basename(flowcell))
+                email.sendEmail(msg, "new flowcell", config['email']['from'], config['email']['to'],
+                                config['email']['host'])
                 config["input"]=dict([("name",os.path.basename(flowcell))])
                 return os.path.basename(flowcell)
         else:
-            print("there is no samplesheet for ", flowcell)
-            continue
+            msg = "there is no samplesheet for {}".format(flowcell)
+            print(config['email']['from'], config['email']['to'])
+            email.sendEmail(msg, "no SampleSheet", config['email']['from'], config['email']['to'],
+                            config['email']['host'])
+            continue #TODO this can be changed with exit()
             # sleep(config)
     sleep(config)
 
@@ -99,7 +107,9 @@ def query_parkour(config, flowcell):
         print(protocol)
         return True
     else:
-        print("flowcell does not exist in aprkour", flowcell)
+        msg = "flowcell does not exist in aprkour {}".format(flowcell)
+        email.sendEmail(msg, "no parkour record", config['email']['from'], config['email']['to'],
+                        config['email']['host'])
         return False
 
 
@@ -198,7 +208,7 @@ def main():
     flowcell = find_new_flowcell(config)
     print("start to query parkour")
     qp = query_parkour(config, flowcell)
-    if qp: #TODO find a way to deal with re-sequencing data!
+    if qp: #TODO this can be removed in the future when all runs are in parkour
         # read the flowcell info & copy it over from dont_touch_this to rapidus
         info_dict = read_flowcell_info(config)
         config["info_dict"]=info_dict
