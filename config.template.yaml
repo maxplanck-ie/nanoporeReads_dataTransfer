@@ -64,3 +64,8 @@ human_genome: /path/to/genome.fa
 human_rRNA: /path/to/human_rRNA.fa
 mouse_genome: /path/to/genome.fa
 mouse_rRNA: /path/to/mouse_rRNA.fa
+
+email:
+  from: a@host
+  to: c@host
+  host: mail.host

@@ -22,7 +22,7 @@ rule pycoQc_fastq:
     input:
         rename = "{sample_id}_renamed.done"
     output:
-        fastqc = touch("{sample_id}_qc.done")
+        fastqc = temp(touch("{sample_id}_qc.done"))
     log:
         out ="LOG/fastqc_{sample_id}.log.out",
         err = "LOG/fastqc_{sample_id}.log.err"
@@ -73,11 +73,17 @@ rule pycoQc_fastq:
             sp.check_call(cmd, shell=True)
 
 
+rule fastqQC_done:
+    input:
+        expand("{sample_id}_qc.done", sample_id = config["data"].keys())
+    output:
+        touch("fastqQC.done")
+
 rule pycoQc_bam:
     input:
         mapped = "{sample_id}.mapped"
     output:
-        bam_qc = touch("{sample_id}.bam.qc")
+        bam_qc = temp(touch("{sample_id}.bam.qc"))
     log:
         out ="LOG/bamqc_{sample_id}.log.out",
         err = "LOG/bamqc_{sample_id}.log.err"
@@ -92,7 +98,7 @@ rule pycoQc_bam:
                                       "sequencing_data/OxfordNanopore")
         else:
             group_path = get_seqdir(groupdir, "sequencing_data")
-            
+
         final_path = os.path.join(group_path, config["input"]["name"])
         # final_path = os.path.join(config["paths"]["groupDir"], group, "sequencing_data/OxfordNanopore",config["input"]["name"])
         path_to_bam = os.path.join(final_path,"Analysis_"+sample_project,"mapping_on_"+config["organism"],"Sample_"+wildcards.sample_id)
@@ -120,6 +126,12 @@ rule pycoQc_bam:
 
         sp.check_call(cmd, shell=True)
 
+
+rule bamQC_done:
+    input:
+        expand("{sample_id}.bam.qc", sample_id = config["data"].keys())
+    output:
+        touch("bamQC.done")
 # rule bam_compare: # TODO add NanoComp --bam on all bam files
 #     input:
 #

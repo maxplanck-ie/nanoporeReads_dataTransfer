@@ -37,7 +37,7 @@ rule data_transfer:
     input:
         fastqc = "{sample_id}_qc.done"
     output:
-        transferred = touch("{sample_id}.transferred")
+        transferred = temp(touch("{sample_id}.transferred"))
     run:
         this_sample = config["data"][wildcards.sample_id]
         group=this_sample["Sample_Project"].split("_")[-1].lower()
@@ -59,13 +59,29 @@ rule data_transfer:
             fastqc = config["info_dict"]["flowcell_path"]+"/FASTQC_Project_"+this_sample["Sample_Project"]
             shutil.copytree(fastqc,final_path+"/FASTQC_Project_"+this_sample["Sample_Project"])
         analysis = os.path.join(final_path,"Analysis_"+this_sample["Sample_Project"])
-        if not os.path.exists(analysis):
-            os.mkdir(analysis)
-        if not os.path.exists(os.path.join(analysis, "mapping_on_"+config["organism"])):
-            os.mkdir(os.path.join(analysis, "mapping_on_"+config["organism"]))
-        genome_index(config, os.path.join(analysis, "mapping_on_"+config["organism"]))
-        analysis_dir = os.path.join(analysis,"mapping_on_"+config["organism"])
-        try:
-            os.mkdir(os.path.join(analysis_dir,"Sample_"+wildcards.sample_id))
-        except:
-            warnings.warn("{} already exists!!".format(os.path.join(analysis_dir,"Sample_"+wildcards.sample_id)))
+        if config["organism"] != "other":
+            if not os.path.exists(analysis):
+                os.mkdir(analysis)
+            if not os.path.exists(os.path.join(analysis, "mapping_on_"+config["organism"])):
+                os.mkdir(os.path.join(analysis, "mapping_on_"+config["organism"]))
+            genome_index(config, os.path.join(analysis, "mapping_on_"+config["organism"]))
+            analysis_dir = os.path.join(analysis,"mapping_on_"+config["organism"])
+            try:
+                os.mkdir(os.path.join(analysis_dir,"Sample_"+wildcards.sample_id))
+            except:
+                warnings.warn("{} already exists!!".format(os.path.join(analysis_dir,"Sample_"+wildcards.sample_id)))
+
+
+rule transfer_done:
+    input:
+        expand("{sample_id}.transferred", sample_id = config["data"].keys())
+    output:
+        touch("transfer.done")
+
+
+rule deepseq_qc:
+    input:
+        lambda wildcards: "bamQC.done" if config["organism"] != "other" else "fastqQC.done"
+    output:
+        touch("qc needs to be copied to rapidus")
+    # run:

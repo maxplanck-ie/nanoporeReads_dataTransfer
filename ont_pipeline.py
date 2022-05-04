@@ -41,15 +41,13 @@ def find_new_flowcell(config):
     """
     look for new flowcells with `transfer.final` and `SampleSheet.csv`
     """
-    print(config)
     base_path = os.path.join(config["paths"]["baseDir"])
     dirs = glob.glob(os.path.join(base_path, "*/transfer.final"))
     for dir in dirs:
         flowcell = os.path.dirname(dir)
         if not os.path.basename(flowcell).startswith("2022"):
             continue # Skip the old flowcells from before parkour, sleep mode
-        # , "20220425_0854_X4_FAR21387_f319dde8", "20220425_1116_X4_FAR21387_c365162c"
-        if os.path.basename(flowcell) in ["20220425_0854_X5_FAR21120_e65d2434"]:
+        if os.path.basename(flowcell) in ["20220425_1136_X1_FAR21153_0d2cd2e7"]:
             continue
         if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
             if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
@@ -92,16 +90,19 @@ def query_parkour(config, flowcell):
         first_entry = list(info_dict[first_key].keys())[0]
         organism = info_dict[first_key][first_entry][-3]
         protocol = info_dict[first_key][first_entry][-2]
-        print(protocol)
+        print("protocol", protocol)
         if 'cDNA' in protocol:
             protocol = 'cdna'
         elif 'DNA' in protocol:
             protocol = 'dna'
         elif "RNA" in protocol:
-            protocol = 'RNA'
+            protocol = 'rna'
         else:
             protocol = 'dna' # TODO just to let the pipeline run for now!
             # exit("protocol not found")
+        print(config['genome'])
+        if organism not in config['genome'].keys():
+            organism = "other"
         config["organism"] = str(organism)
         config["protocol"] = protocol
         print(protocol)
@@ -174,8 +175,6 @@ def read_samplesheet(config):
 
     if any(sample_sheet['I7_Index_ID'].str.contains('no_bc')):
         bc_kit = "no_bc"
-    else:
-        bc_kit = "SQK-PCB109" # TODO just for testing
     print(sample_sheet)
     data=dict()
     for index, row in sample_sheet.iterrows():
@@ -244,7 +243,9 @@ def main():
                          # + " --dag | dot -Tpdf > dag.pdf"
 
         sp.check_output(snakemake_cmd, shell = True)
-        sp.check_output("touch "+os.path.join(output_directory, "analysis.done"), shell = True)
+        msg = "flowcell {} is analysed successfully".format(flowcell)
+        email.sendEmail(msg, "A successful run", config['email']['from'], config['email']['to'],
+                        config['email']['host'])
         sleep(config)
 
 if __name__== "__main__":
