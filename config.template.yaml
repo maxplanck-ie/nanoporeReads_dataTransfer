@@ -20,7 +20,7 @@ guppy_basecaller:
 # guppy benchmark: https://esr-nz.github.io/gpu_basecalling_testing/gpu_benchmarking.html
   base_calling_barcode_options: --trim_barcodes --num_barcode_threads 10
   base_calling_RNA_options: --reverse_sequence true --u_substitution true --trim_strategy rna
-  dna_model: /path/to/guppy/dna/model.cfg
+  dna_model: /path/to/guppy/dna/model.cfg #hac
   rna_model: /path/to/guppy/rna/model.cfg
 
 flowcell:
@@ -47,20 +47,25 @@ pycoQc:
   pycoQc: /path/to/pycoqc/bin/pycoQC --summary_file
 
 genome:
-  dm6: /data/repository/organisms/dm6_ensembl/genome_fasta/genome.fa
-  mouse: /data/repository/organisms/GRCm38_ensembl/genome_fasta/genome.fa #mm10
-  hg38: /data/repository/organisms/GRCh38_ensembl/genome_fasta/genome.fa
-  lambdaPhage: /data/repository/fastq_screen/LambdaPhage/genome.fa
-  human_rRNA: /data/manke/group/ryan/rRNA/human_rRNA.fa
-  mouse_rRNA: /data/manke/group/ryan/rRNA/mouse_rRNA.fa
+  drosophila: /path/to/genome.fa
+  mouse: /path/to/genome.fa #mm10
+  hg38: /path/to/genome.fa
+  lambdaPhage: /path/to/genome.fa
+  human_rRNA: /path/to/human_rRNA.fa
+  mouse_rRNA: /path/to/mouse_rRNA.fa
 
 transcripts:
-  dm6:  /data/repository/organisms/dm6_ensembl/ensembl/release-93/genes.bed
-  mouse: /data/repository/organisms/GRCm38_ensembl/ensembl/release-91/genes.bed #mm10
-  hg38: /data/repository/organisms/GRCh38_ensembl/ensembl/release-91/genes.bed
+  drosophila: /path/to/genes.bed
+  mouse: /path/to/genes.bed #mm10
+  hg38: /path/to/genes.bed
 
 contamination_report:
-human_genome: /data/repository/organisms/GRCh38_ensembl/genome_fasta/genome.fa
-human_rRNA: /data/manke/group/ryan/rRNA/human_rRNA.fa
-mouse_genome: /data/repository/organisms/GRCm38_ensembl/genome_fasta/genome.fa
-mouse_rRNA: /data/manke/group/ryan/rRNA/mouse_rRNA.fa
+human_genome: /path/to/genome.fa
+human_rRNA: /path/to/human_rRNA.fa
+mouse_genome: /path/to/genome.fa
+mouse_rRNA: /path/to/mouse_rRNA.fa
+
+email:
+  from: a@host
+  to: c@host
+  host: mail.host

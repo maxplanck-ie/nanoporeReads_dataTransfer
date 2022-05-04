@@ -22,7 +22,7 @@ rule file_rename:
     input:
         bc_split = "bc.split",
     output:
-        rename = "{sample_id}_renamed.done"
+        rename = temp(touch("{sample_id}_renamed.done"))
     log:
         out ="LOG/rename_{sample_id}.log.out",
         err = "LOG/rename_{sample_id}.log.err"
@@ -65,5 +65,10 @@ rule file_rename:
             warnings.warn("Directory called: Project_"+this_sample["Sample_Project"]+\
                         "/Sample_"+this_sample["Sample_ID"]+" already exists. It stays untouched!")
         #TODO Do we want to keep or remove all the fastq files with wrong or unknown barcodes?
-        cmd = "touch "+output.rename
-        sp.check_call(cmd, shell=True)
+
+
+rule rename_done:
+    input:
+        expand("{sample_id}_renamed.done", sample_id = config["data"].keys())
+    output:
+        touch("renamed.done")

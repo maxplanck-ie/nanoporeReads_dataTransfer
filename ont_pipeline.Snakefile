@@ -4,7 +4,7 @@ import yaml
 import pandas as pd
 import warnings
 import subprocess as sp
-
+import misc.sendEmail as email
 
 # f = open("config.yaml")
 # globals().update(yaml.load(f))
@@ -19,42 +19,39 @@ include: os.path.join("rules", "mapping.py")
 
 
 def run_basecalling():
-    print(config["custom_cfg"])
     return [expand("demux.done")]
 
 
 def run_bc_split():
     return [expand("bc.split")]
 
+
 def run_rename():
-    file_list = []
-    file_list.append([expand("{sample_id}_renamed.done", sample_id = config["data"].keys())])
-    return file_list
+    return ["renamed.done"]
 
 
 def run_pycoqc():
-    file_list = []
-    file_list.append([expand("{sample_id}_qc.done", sample_id = config["data"].keys())])
-    return file_list
+    return ["fastqQC.done"]
 
 
 def run_data_transfer():
-    file_list = []
-    file_list.append([expand("{sample_id}.transferred", sample_id = config["data"].keys())])
-    return file_list
+    return ["transfer.done"]
 
 
 def run_mapping():
-    file_list = []
-    file_list.append([expand("{sample_id}.mapped", sample_id = config["data"].keys())])
-    return file_list
+    return ["mapping.done"]
 
 
 def run_bamqc():
-    file_list = []
-    file_list.append([expand("{sample_id}.bam.qc", sample_id = config["data"].keys())])
-    return file_list
+    return ["bamQC.done"]
 
+
+def qc2deepseq():
+    return
+
+
+def transfer2rapidus():
+    return
 
 # def run_contamination_report():
 #     report_contamination(config, data, args.protocol)
@@ -68,11 +65,13 @@ rule all:
         run_pycoqc(),
         run_data_transfer(),
         run_mapping(),
-        run_bamqc(),
+        run_bamqc()
         # # run_bamCompare()
         # run_contamination_report()
 
 
-# onsuccess:
-#     shell("rm demux.done bc.split *.transferred *renamed.done *qc.done *.mapped *bam.qc")
-# onerror:
+onsuccess:
+    shell("touch analysis.done")
+onerror:
+    email.sendEmail("snakemake pipeline failed!", "report a crash", config['email']['from'], config['email']['to'],
+                    config['email']['host'])

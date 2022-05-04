@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 import subprocess as sp
 import os
+import glob
+
+def get_seqdir(groupdir, seqdir):
+    max_num = 0
+    for dir in glob.glob(os.path.join(groupdir, seqdir+"*")):
+        if dir.split(seqdir)[-1] != "":
+            num = dir.split(seqdir)[-1]
+            max_num = max(max_num, int(num))
+    if max_num != 0:
+        seqdir = seqdir + str(max_num)
+    if not os.path.exists(os.path.join(groupdir, seqdir, "OxfordNanopore")):
+        os.makedirs(os.path.join(groupdir, seqdir, "OxfordNanopore"))
+    return os.path.join(groupdir, seqdir, "OxfordNanopore")
 
 
 
@@ -107,42 +120,51 @@ rule mapping_data:
     input:
         transferred = "{sample_id}.transferred"
     output:
-        mapped = "{sample_id}.mapped"
+        mapped = temp(touch("{sample_id}.mapped"))
     log:
         out ="LOG/mapping_{sample_id}.log.out",
         err = "LOG/mapping_{sample_id}.log.err"
     run:
-        this_sample = config["data"][wildcards.sample_id]
-        group=this_sample["Sample_Project"].split("_")[-1].lower()
-        group_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore")
-        if not os.path.exists(group_path):
-            group_path = os.path.join(config["paths"]["external_groupDir"],group,"sequencing_data/OxfordNanopore")
-        final_path = os.path.join(group_path, config["input"]["name"])
-        # final_path = os.path.join(config["paths"]["groupDir"],group,"sequencing_data/OxfordNanopore",config["input"]["name"])
-        analysis = os.path.join(final_path,"Analysis_"+this_sample["Sample_Project"])
-        analysis = analysis+"/mapping_on_"+config["organism"]
-        mapping_path = os.path.join(analysis, "Sample_"+wildcards.sample_id)
-        bam_file = os.path.join(mapping_path,this_sample["Sample_Name"]+".bam")
-        if os.path.isfile(bam_file):
-            sp.check_call("touch "+output.mapped, shell=True)
-            return
-        cmd = config["mapping"]["mapping_cmd"]+ " "
-        if (config["protocol"] == 'rna') or (config["protocol"] == 'cdna'):
-            # ("RNA" in config["info_dict"]["kit"]) or
-            cmd += config["mapping"]["mapping_rna_options"]
-            cmd += " --junc-bed "+config["transcripts"][config["organism"]] + " "
-        else:
-            cmd += config["mapping"]["mapping_dna_options"]+" "
-        cmd += analysis + "/" + config["organism"] + "_genome.fa "
-        cmd += config["info_dict"]["flowcell_path"]+"/Project_"+this_sample["Sample_Project"]+"/Sample_"+this_sample["Sample_ID"]+"/"+this_sample["Sample_Name"]+".fastq.gz | "
-        cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
-        cmd += " -o "+ mapping_path+"/" +this_sample["Sample_Name"]+".bam ; "
-        cmd += config["mapping"]["samtools_cmd"]+ " index "
-        cmd += mapping_path+"/" +this_sample["Sample_Name"]+".bam;"
-        cmd += "touch "+output.mapped
-        cmd += " >> "+log.out+" 2> "+log.err
-        with open(log.out, "w") as called_cmd:
-            called_cmd.write(cmd)
-        called_cmd.close()
+        if config["organism"] != "other":
+            this_sample = config["data"][wildcards.sample_id]
+            group=this_sample["Sample_Project"].split("_")[-1].lower()
+            groupdir = os.path.join(config["paths"]["groupDir"],group)
+            if not os.path.exists(groupdir): # If external (no /data/pi/ path exists)
+                group_path = os.path.join(config["paths"]["external_groupDir"],group,
+                                          "sequencing_data/OxfordNanopore")
+            else:
+                group_path = get_seqdir(groupdir, "sequencing_data")
+            final_path = os.path.join(group_path, config["input"]["name"])
+            analysis = os.path.join(final_path,"Analysis_"+this_sample["Sample_Project"])
+            analysis = analysis+"/mapping_on_"+config["organism"]
+            mapping_path = os.path.join(analysis, "Sample_"+wildcards.sample_id)
+            bam_file = os.path.join(mapping_path,this_sample["Sample_Name"]+".bam")
+            if os.path.isfile(bam_file):
+                sp.check_call("touch "+output.mapped, shell=True)
+                return
+            cmd = config["mapping"]["mapping_cmd"]+ " "
+            if (config["protocol"] == 'rna') or (config["protocol"] == 'cdna'):
+                # ("RNA" in config["info_dict"]["kit"]) or
+                cmd += config["mapping"]["mapping_rna_options"]
+                cmd += " --junc-bed "+config["transcripts"][config["organism"]] + " "
+            else:
+                cmd += config["mapping"]["mapping_dna_options"]+" "
+            cmd += analysis + "/" + config["organism"] + "_genome.fa "
+            cmd += os.path.join(config["info_dict"]["flowcell_path"],"Project_"+this_sample["Sample_Project"],
+                                "Sample_"+this_sample["Sample_ID"],this_sample["Sample_Name"]+".fastq.gz")+"| "
+            cmd += config["mapping"]["samtools_cmd"]+ " sort "+ config["mapping"]["samtools_options"]
+            cmd += " -o "+ mapping_path+"/" +this_sample["Sample_Name"]+".bam ; "
+            cmd += config["mapping"]["samtools_cmd"]+ " index "
+            cmd += mapping_path+"/" +this_sample["Sample_Name"]+".bam"
+            cmd += " >> "+log.out+" 2> "+log.err
+            with open(log.out, "a") as called_cmd:
+                called_cmd.write(cmd)
+            called_cmd.close()
+            sp.check_call(cmd, shell=True)
 
-        sp.check_call(cmd, shell=True)
+
+rule mapping_done:
+    input:
+        expand("{sample_id}.bam.qc", sample_id = config["data"].keys())
+    output:
+        touch("mapping.done")
