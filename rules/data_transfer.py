@@ -20,6 +20,8 @@ def genome_index(config, path):
     cmd += path + "/" + reference + "_genome.fa "
     print(cmd)
     sp.check_call(cmd, shell=True)
+
+
 def get_seqdir(groupdir, seqdir):
     max_num = 0
     for dir in glob.glob(os.path.join(groupdir, seqdir+"*")):
@@ -31,6 +33,11 @@ def get_seqdir(groupdir, seqdir):
     if not os.path.exists(os.path.join(groupdir, seqdir, "OxfordNanopore")):
         os.makedirs(os.path.join(groupdir, seqdir, "OxfordNanopore"))
     return os.path.join(groupdir, seqdir, "OxfordNanopore")
+
+
+def make_fast5_tar():
+    return
+
 
 # Trnasfer Project_ and FASTQC_Project_ to the user's directory and generates the Analysis_ folder directly under the users path
 rule data_transfer:
@@ -75,9 +82,11 @@ rule data_transfer:
 rule transfer_done:
     input:
         expand("{sample_id}.transferred", sample_id = config["data"].keys())
-    output:
+    output: #TODO add fast5.tar to be moved too!
         touch("transfer.done")
-
+    # run: #TODO I was trying to add a rule to make fast5 and transfer it to the end user path, but this is tricky because what if we have barcodeed data belong to different projects? It needs to be clarifed . For now just keep manual
+    #     make_fast5_tar()
+    # e.g. tar -czvf /data/group/sequencing_dataX/OxfordNanopore/flowcell/fast5.tar.gz /rapidus/data/sequencing_data/flowcell/fast5_*  /rapidus/data/sequencing_data/flowcell/*txt
 
 rule deepseq_qc:
     input:
