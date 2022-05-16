@@ -20,12 +20,18 @@ def breakSleep(signo, _frame):
     gotHUP.set()
 
 
+signal.signal(signal.SIGHUP, breakSleep)
+
+
 def sleep(config):
     print("go to sleep")
     gotHUP.wait(timeout=float(config['options']['sleep_time'])*60*60) # in second
     gotHUP.clear()
+    print("wake up!")
 
-signal.signal(signal.SIGHUP, breakSleep)
+
+
+
 
 
 def get_parser(): # TODO can be removed!
@@ -43,12 +49,11 @@ def find_new_flowcell(config):
     """
     base_path = os.path.join(config["paths"]["baseDir"])
     dirs = glob.glob(os.path.join(base_path, "*/transfer.final"))
+    print("dirs:", dirs)
     for dir in dirs:
         flowcell = os.path.dirname(dir)
         if not os.path.basename(flowcell).startswith("2022"):
             continue # Skip the old flowcells from before parkour, sleep mode
-        if os.path.basename(flowcell) in ["20220425_1136_X1_FAR21153_0d2cd2e7"]:
-            continue
         if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
             if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
                 if os.path.isfile(os.path.join(config["paths"]["outputDir"], os.path.basename(flowcell), 'analysis.done')):
@@ -68,17 +73,18 @@ def find_new_flowcell(config):
                 return os.path.basename(flowcell)
         else:
             msg = "there is no samplesheet for {}".format(flowcell)
-            print(config['email']['from'], config['email']['to'])
-            email.sendEmail(msg, "no SampleSheet", config['email']['from'], config['email']['to'],
-                            config['email']['host'])
-            continue #TODO this can be changed with exit()
-            # sleep(config)
-    sleep(config)
+            if flowcell != "/dont_touch_this/solexa_runs/20220107_1322_X1_FAQ72385_c360542e":
+                email.sendEmail(msg, "no SampleSheet", config['email']['from'], config['email']['to'],
+                                config['email']['host'])
+                exit(0)
+
+    return ""
 
 def query_parkour(config, flowcell):
     """
 
     """
+    print(flowcell)
     fc = flowcell.split("_")[3]
     d = {'flowcell_id': fc}
     res = requests.get(config["parkour"]["url"],\
@@ -89,8 +95,8 @@ def query_parkour(config, flowcell):
         first_key = list(info_dict.keys())[0]
         first_entry = list(info_dict[first_key].keys())[0]
         organism = info_dict[first_key][first_entry][-3]
-        protocol = info_dict[first_key][first_entry][-2]
-        print("protocol", protocol)
+        protocol = info_dict[first_key][first_entry][1]
+        print("protocol", info_dict[first_key][first_entry][1])
         if 'cDNA' in protocol:
             protocol = 'cdna'
         elif 'DNA' in protocol:
@@ -105,7 +111,11 @@ def query_parkour(config, flowcell):
             organism = "other"
         config["organism"] = str(organism)
         config["protocol"] = protocol
-        print(protocol)
+        # if fc == "FAR21387": # To deal with the wrong parkour entry!
+        #     config["protocol"] = 'rna'
+        # if fc == "FAR21153":
+        #    config["organism"] = "drosophila"
+        # print(config["protocol"])
         return True
     else:
         msg = "flowcell does not exist in aprkour {}".format(flowcell)
@@ -197,56 +207,59 @@ def report_contamination(config, data, protocol):
 
 
 def main():
-    # parse arguments
-    args = get_parser().parse_args()
+    while True:
+        # parse arguments
+        # args = get_parser().parse_args()
 
-    # read config
-    config = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'config.yaml')))
-    root = config["paths"]["baseDir"]
+        # read config
+        config = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'config.yaml')))
+        root = config["paths"]["baseDir"]
+        print("config:", config)
+        flowcell = find_new_flowcell(config)
+        if flowcell != "":
+            print("start to query parkour")
+            qp = query_parkour(config, flowcell)
+            if qp: #TODO this can be removed in the future when all runs are in parkour
+                # read the flowcell info & copy it over from dont_touch_this to rapidus
+                info_dict = read_flowcell_info(config)
+                config["info_dict"]=info_dict
 
-    flowcell = find_new_flowcell(config)
-    print("start to query parkour")
-    qp = query_parkour(config, flowcell)
-    if qp: #TODO this can be removed in the future when all runs are in parkour
-        # read the flowcell info & copy it over from dont_touch_this to rapidus
-        info_dict = read_flowcell_info(config)
-        config["info_dict"]=info_dict
+                # read samplesheet
+                bc_kit,data = read_samplesheet(config)
+                config["data"] = data
+                config["bc_kit"] = bc_kit
+                print(config["data"])
+                print("smaplesheet is read sucessfully")
+                # write the updated config file under the output path
+                configFile = os.path.join(config["paths"]["outputDir"], config["input"]["name"], "pipeline_config.yaml")
+                with open(configFile, 'w') as f:
+                    yaml.dump(config, f, default_flow_style=False)
+                #run snakemake
+                output_directory = os.path.join(config["paths"]["outputDir"], config["input"]["name"])
+                snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
+                # snakemake log file
+                fnames = glob.glob(os.path.join(output_directory, 'ont_run-[0-9]*.log'))
+                if len(fnames) == 0:
+                    n = 1  # no matching files, then this is the first run
+                else:
+                    fnames.sort(key=os.path.getctime)
+                    n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
+                # append the new run number to the file name
+                logfile_name = "ont_run-{}.log".format(n)
+                snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
+                                 --configfile "+configFile+" \
+                                 --directory " + output_directory  \
+                                 + " --debug-dag " \
+                                 +" 2> "+os.path.join(output_directory, logfile_name)
 
-        # read samplesheet
-        bc_kit,data = read_samplesheet(config)
-        config["data"] = data
-        config["bc_kit"] = bc_kit
-        print(config["data"])
-        print("smaplesheet is read sucessfully")
-        # write the updated config file under the output path
-        configFile = os.path.join(config["paths"]["outputDir"], config["input"]["name"], "pipeline_config.yaml")
-        with open(configFile, 'w') as f:
-            yaml.dump(config, f, default_flow_style=False)
-        #run snakemake
-        output_directory = os.path.join(config["paths"]["outputDir"], config["input"]["name"])
-        snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
-        # snakemake log file
-        fnames = glob.glob(os.path.join(output_directory, 'ont_run-[0-9]*.log'))
-        if len(fnames) == 0:
-            n = 1  # no matching files, then this is the first run
-        else:
-            fnames.sort(key=os.path.getctime)
-            n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
-        # append the new run number to the file name
-        logfile_name = "ont_run-{}.log".format(n)
-        snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
-                         --configfile "+configFile+" \
-                         --directory " + output_directory  \
-                         + " --debug-dag " \
-                         +" 2> "+os.path.join(output_directory, logfile_name)
+                                 # + " --dag | dot -Tpdf > dag.pdf"
 
-                         # + " --dag | dot -Tpdf > dag.pdf"
-
-        sp.check_output(snakemake_cmd, shell = True)
-        msg = "flowcell {} is analysed successfully".format(flowcell)
-        email.sendEmail(msg, "A successful run", config['email']['from'], config['email']['to'],
-                        config['email']['host'])
+                sp.check_output(snakemake_cmd, shell = True)
+                msg = "flowcell {} is analysed successfully".format(flowcell)
+                email.sendEmail(msg, "A successful run", config['email']['from'], config['email']['to'],
+                                config['email']['host'])
         sleep(config)
+
 
 if __name__== "__main__":
     main()

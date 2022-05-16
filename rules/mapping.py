@@ -157,7 +157,7 @@ rule mapping_data:
             cmd += config["mapping"]["samtools_cmd"]+ " index "
             cmd += mapping_path+"/" +this_sample["Sample_Name"]+".bam"
             cmd += " >> "+log.out+" 2> "+log.err
-            with open(log.out, "a") as called_cmd:
+            with open(log.out, "w") as called_cmd:
                 called_cmd.write(cmd)
             called_cmd.close()
             sp.check_call(cmd, shell=True)
