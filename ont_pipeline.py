@@ -6,6 +6,7 @@ import argparse
 import configparser
 import shutil
 import pandas as pd
+import numpy as np
 import subprocess as sp
 import yaml
 import glob
@@ -104,18 +105,12 @@ def query_parkour(config, flowcell):
         elif "RNA" in protocol:
             protocol = 'rna'
         else:
-            protocol = 'dna' # TODO just to let the pipeline run for now!
-            # exit("protocol not found")
+            exit("protocol not found")
         print(config['genome'])
         if organism not in config['genome'].keys():
             organism = "other"
         config["organism"] = str(organism)
         config["protocol"] = protocol
-        # if fc == "FAR21387": # To deal with the wrong parkour entry!
-        #     config["protocol"] = 'rna'
-        # if fc == "FAR21153":
-        #    config["organism"] = "drosophila"
-        # print(config["protocol"])
         return True
     else:
         msg = "flowcell does not exist in aprkour {}".format(flowcell)
@@ -179,20 +174,25 @@ def read_samplesheet(config):
     sample_sheet = pd.read_csv(config["info_dict"]["flowcell_path"]+"/SampleSheet.csv",
                                sep = ",", skiprows=[0])
     # sample_sheet = sample_sheet.fillna("no_bc")
-    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index1','no_bc', regex = True) # TODO!! need to be applied on bc kit too!
+    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index1','no_bc', regex = True)
     # assert(len(sample_sheet["barcode_kits"].unique())==1)
     # bc_kit = sample_sheet["barcode_kits"].unique()[0]
 
     if any(sample_sheet['I7_Index_ID'].str.contains('no_bc')):
         bc_kit = "no_bc"
+    else:
+        bc_kit = np.unique(sample_sheet["Description"].values)[0]
+        start = bc_kit.find("(") + len("(")
+        end = bc_kit.find(")")
+        bc_kit = bc_kit[start:end]
+
     print(sample_sheet)
     data=dict()
     for index, row in sample_sheet.iterrows():
         assert(row["Sample_ID"] not in data.keys())
         data[row["Sample_ID"]] = dict({"Sample_Name": row["Sample_Name"],
                                        "Sample_Project": row["Sample_Project"],
-                                       # "barcode_kits": row["barcode_kits"], TODO
-                                       "barcode_kits": bc_kit, # TODO just for testing
+                                       "barcode_kits": bc_kit,
                                        "index_id": row["I7_Index_ID"],
                                        "Sample_ID": row["Sample_ID"]})
     print(bc_kit)
