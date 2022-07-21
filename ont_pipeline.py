@@ -44,21 +44,30 @@ def find_new_flowcell(config):
     base_path = os.path.join(config["paths"]["baseDir"])
     dirs = glob.glob(os.path.join(base_path, "*/transfer.final"))
     for dir in dirs:
-        print(dir)
         flowcell = os.path.dirname(dir)
-        print(os.path.basename(flowcell))
-        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
-            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
-                print("flowcell already exists")
-                continue
-            else:
-                print("I found a new flowcell!")
-                config["input"]=dict([("name",os.path.basename(flowcell))])
-                return os.path.basename(flowcell)
-        else:
-            print("there is no samplesheet")
-            sleep(config)
+        # first make sure the dir is not in the baseDir.
+        if not os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+            print("New flowcell found: {}".format(flowcell))
+            if not os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+                print('No sampleSheet for {}. exiting.'.format(flowcell))
+                sys.exit()
+            config["input"]=dict([("name",os.path.basename(flowcell))])
+            return(os.path.basename(flowcell))
     sleep(config)
+
+
+#        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+#            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+#                print("flowcell already exists")
+#                continue
+#            else:
+#                print("I found a new flowcell!")
+#                config["input"]=dict([("name",os.path.basename(flowcell))])
+#                return os.path.basename(flowcell)
+#        else:
+#            print("there is no samplesheet")
+#            sleep(config)
+#    sleep(config)
 
 def query_parkour(config, flowcell):
     """
