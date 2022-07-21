@@ -110,7 +110,7 @@ def query_parkour(config, flowcell):
         return True
     else:
         msg = "flowcell does not exist in aprkour {}".format(flowcell)
-        email.sendEmail(msg, "no parkour record", config['email']['from'], config['email']['to'],
+        email.sendEmail(msg, "[longReads] no parkour record", config['email']['from'], config['email']['to'],
                         config['email']['host'])
         return False
 
@@ -252,7 +252,7 @@ def main():
 
                 sp.check_output(snakemake_cmd, shell = True)
                 msg = "flowcell {} is analysed successfully".format(flowcell)
-                email.sendEmail(msg, "A successful run", config['email']['from'], config['email']['to'],
+                email.sendEmail(msg, "[longReads] A successful run", config['email']['from'], config['email']['to'],
                                 config['email']['host'])
         sleep(config)
 
