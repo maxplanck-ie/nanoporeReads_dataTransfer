@@ -56,7 +56,7 @@ def find_new_flowcell(config):
         # first make sure the dir is not in the baseDir.
         if not os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
             msg = "New flowcell found: {}".format(flowcell)
-            email.sendEmail(msg, "new flowcell", config['email']['from'], config['email']['to'], config['email']['host'])
+            email.sendEmail(msg, "[longReads] flowcell", config['email']['from'], config['email']['to'], config['email']['host'])
             if not os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
                 print('No sampleSheet for {}. exiting.'.format(flowcell))
                 sys.exit()
@@ -225,7 +225,7 @@ def main():
                 config["data"] = data
                 config["bc_kit"] = bc_kit
                 print(config["data"])
-                print("smaplesheet is read sucessfully")
+                print("samplesheet is read sucessfully")
                 # write the updated config file under the output path
                 configFile = os.path.join(config["paths"]["outputDir"], config["input"]["name"], "pipeline_config.yaml")
                 with open(configFile, 'w') as f:
