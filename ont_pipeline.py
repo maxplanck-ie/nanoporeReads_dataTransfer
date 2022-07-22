@@ -53,33 +53,29 @@ def find_new_flowcell(config):
     print("dirs:", dirs)
     for dir in dirs:
         flowcell = os.path.dirname(dir)
-        if not os.path.basename(flowcell).startswith("2022"):
-            continue # Skip the old flowcells from before parkour, sleep mode
-        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
-            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
-                if os.path.isfile(os.path.join(config["paths"]["outputDir"], os.path.basename(flowcell), 'analysis.done')):
-                    print("flowcell {} already exists and analysed".format(os.path.basename(flowcell)))
-                    continue
-                else:
-                    msg = "I found an unfinished flowcell: {}".format(os.path.basename(flowcell))
-                    email.sendEmail(msg, "unfinished flowcell", config['email']['from'], config['email']['to'],
-                                    config['email']['host'])
-                    config["input"]=dict([("name",os.path.basename(flowcell))])
-                    return os.path.basename(flowcell)
-            else:
-                msg = "I found a new flowcell: {}".format(os.path.basename(flowcell))
-                email.sendEmail(msg, "new flowcell", config['email']['from'], config['email']['to'],
-                                config['email']['host'])
-                config["input"]=dict([("name",os.path.basename(flowcell))])
-                return os.path.basename(flowcell)
-        else:
-            msg = "there is no samplesheet for {}".format(flowcell)
-            if flowcell != "/dont_touch_this/solexa_runs/20220107_1322_X1_FAQ72385_c360542e":
-                email.sendEmail(msg, "no SampleSheet", config['email']['from'], config['email']['to'],
-                                config['email']['host'])
-                exit(0)
+        # first make sure the dir is not in the baseDir.
+        if not os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+            msg = "New flowcell found: {}".format(flowcell)
+            email.sendEmail(msg, "[longReads] flowcell", config['email']['from'], config['email']['to'], config['email']['host'])
+            if not os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+                print('No sampleSheet for {}. exiting.'.format(flowcell))
+                sys.exit()
+            config["input"]=dict([("name",os.path.basename(flowcell))])
+            return(os.path.basename(flowcell))
+    sleep(config)
 
-    return ""
+#        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+#            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+#                print("flowcell already exists")
+#                continue
+#            else:
+#                print("I found a new flowcell!")
+#                config["input"]=dict([("name",os.path.basename(flowcell))])
+#                return os.path.basename(flowcell)
+#        else:
+#            print("there is no samplesheet")
+#            sleep(config)
+#    sleep(config)
 
 def query_parkour(config, flowcell):
     """
@@ -114,7 +110,7 @@ def query_parkour(config, flowcell):
         return True
     else:
         msg = "flowcell does not exist in aprkour {}".format(flowcell)
-        email.sendEmail(msg, "no parkour record", config['email']['from'], config['email']['to'],
+        email.sendEmail(msg, "[longReads] no parkour record", config['email']['from'], config['email']['to'],
                         config['email']['host'])
         return False
 
@@ -229,7 +225,7 @@ def main():
                 config["data"] = data
                 config["bc_kit"] = bc_kit
                 print(config["data"])
-                print("smaplesheet is read sucessfully")
+                print("samplesheet is read sucessfully")
                 # write the updated config file under the output path
                 configFile = os.path.join(config["paths"]["outputDir"], config["input"]["name"], "pipeline_config.yaml")
                 with open(configFile, 'w') as f:
@@ -256,7 +252,7 @@ def main():
 
                 sp.check_output(snakemake_cmd, shell = True)
                 msg = "flowcell {} is analysed successfully".format(flowcell)
-                email.sendEmail(msg, "A successful run", config['email']['from'], config['email']['to'],
+                email.sendEmail(msg, "[longReads] A successful run", config['email']['from'], config['email']['to'],
                                 config['email']['host'])
         sleep(config)
 
