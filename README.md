@@ -3,8 +3,9 @@ A pipeline to transfer the Nanopore reads to the end users
 
 # Usage
 ```bash
-mamba activate ont;
-python pipeline.py
+mamba env create -f env.yml
+mamba activate ontPipe;
+python ont_pipeline.py
 ```
 # Example input path:
 ```bash

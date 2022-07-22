@@ -6,13 +6,14 @@ import argparse
 import configparser
 import shutil
 import pandas as pd
+import numpy as np
 import subprocess as sp
 import yaml
 import glob
 from threading import Event
 import signal
 import requests
-
+import misc.sendEmail as email
 
 gotHUP = Event()
 
@@ -20,12 +21,18 @@ def breakSleep(signo, _frame):
     gotHUP.set()
 
 
+signal.signal(signal.SIGHUP, breakSleep)
+
+
 def sleep(config):
     print("go to sleep")
     gotHUP.wait(timeout=float(config['options']['sleep_time'])*60*60) # in second
     gotHUP.clear()
+    print("wake up!")
 
-signal.signal(signal.SIGHUP, breakSleep)
+
+
+
 
 
 def get_parser(): # TODO can be removed!
@@ -43,27 +50,38 @@ def find_new_flowcell(config):
     """
     base_path = os.path.join(config["paths"]["baseDir"])
     dirs = glob.glob(os.path.join(base_path, "*/transfer.final"))
+    print("dirs:", dirs)
     for dir in dirs:
-        print(dir)
         flowcell = os.path.dirname(dir)
-        print(os.path.basename(flowcell))
-        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
-            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
-                print("flowcell already exists")
-                continue
-            else:
-                print("I found a new flowcell!")
-                config["input"]=dict([("name",os.path.basename(flowcell))])
-                return os.path.basename(flowcell)
-        else:
-            print("there is no samplesheet")
-            sleep(config)
+        # first make sure the dir is not in the baseDir.
+        if not os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+            msg = "New flowcell found: {}".format(flowcell)
+            email.sendEmail(msg, "[longReads] flowcell", config['email']['from'], config['email']['to'], config['email']['host'])
+            if not os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+                print('No sampleSheet for {}. exiting.'.format(flowcell))
+                sys.exit()
+            config["input"]=dict([("name",os.path.basename(flowcell))])
+            return(os.path.basename(flowcell))
     sleep(config)
+
+#        if os.path.isfile(os.path.join(flowcell, 'SampleSheet.csv')):
+#            if os.path.basename(flowcell) in os.listdir(config["paths"]["outputDir"]):
+#                print("flowcell already exists")
+#                continue
+#            else:
+#                print("I found a new flowcell!")
+#                config["input"]=dict([("name",os.path.basename(flowcell))])
+#                return os.path.basename(flowcell)
+#        else:
+#            print("there is no samplesheet")
+#            sleep(config)
+#    sleep(config)
 
 def query_parkour(config, flowcell):
     """
 
     """
+    print(flowcell)
     fc = flowcell.split("_")[3]
     d = {'flowcell_id': fc}
     res = requests.get(config["parkour"]["url"],\
@@ -74,21 +92,27 @@ def query_parkour(config, flowcell):
         first_key = list(info_dict.keys())[0]
         first_entry = list(info_dict[first_key].keys())[0]
         organism = info_dict[first_key][first_entry][-3]
-        protocol = info_dict[first_key][first_entry][-2]
+        protocol = info_dict[first_key][first_entry][1]
+        print("protocol", info_dict[first_key][first_entry][1])
         if 'cDNA' in protocol:
             protocol = 'cdna'
         elif 'DNA' in protocol:
             protocol = 'dna'
         elif "RNA" in protocol:
-            protocol = 'RNA'
+            protocol = 'rna'
         else:
-            protocol = 'dna' # TODO just to let the pipeline run for now!
-            # exit("protocol not found")
+            exit("protocol not found")
+        print(config['genome'])
+        if organism not in config['genome'].keys():
+            organism = "other"
         config["organism"] = str(organism)
         config["protocol"] = protocol
-        print(protocol)
+        return True
     else:
-        print("flowcell does not exist")
+        msg = "flowcell does not exist in aprkour {}".format(flowcell)
+        email.sendEmail(msg, "[longReads] no parkour record", config['email']['from'], config['email']['to'],
+                        config['email']['host'])
+        return False
 
 
 
@@ -146,22 +170,25 @@ def read_samplesheet(config):
     sample_sheet = pd.read_csv(config["info_dict"]["flowcell_path"]+"/SampleSheet.csv",
                                sep = ",", skiprows=[0])
     # sample_sheet = sample_sheet.fillna("no_bc")
-    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index1','no_bc', regex = True) # TODO!! need to be applied on bc kit too!
+    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index1','no_bc', regex = True)
     # assert(len(sample_sheet["barcode_kits"].unique())==1)
     # bc_kit = sample_sheet["barcode_kits"].unique()[0]
 
     if any(sample_sheet['I7_Index_ID'].str.contains('no_bc')):
         bc_kit = "no_bc"
     else:
-        bc_kit = "SQK-PCB109" # TODO just for testing
+        bc_kit = np.unique(sample_sheet["Description"].values)[0]
+        start = bc_kit.find("(") + len("(")
+        end = bc_kit.find(")")
+        bc_kit = bc_kit[start:end]
+
     print(sample_sheet)
     data=dict()
     for index, row in sample_sheet.iterrows():
         assert(row["Sample_ID"] not in data.keys())
         data[row["Sample_ID"]] = dict({"Sample_Name": row["Sample_Name"],
                                        "Sample_Project": row["Sample_Project"],
-                                       # "barcode_kits": row["barcode_kits"], TODO
-                                       "barcode_kits": bc_kit, # TODO just for testing
+                                       "barcode_kits": bc_kit,
                                        "index_id": row["I7_Index_ID"],
                                        "Sample_ID": row["Sample_ID"]})
     print(bc_kit)
@@ -176,52 +203,59 @@ def report_contamination(config, data, protocol):
 
 
 def main():
-    # parse arguments
-    args = get_parser().parse_args()
+    while True:
+        # parse arguments
+        # args = get_parser().parse_args()
 
-    # read config
-    config = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'config.yaml')))
-    root = config["paths"]["baseDir"]
+        # read config
+        config = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'config.yaml')))
+        root = config["paths"]["baseDir"]
+        print("config:", config)
+        flowcell = find_new_flowcell(config)
+        if flowcell != "":
+            print("start to query parkour")
+            qp = query_parkour(config, flowcell)
+            if qp: #TODO this can be removed in the future when all runs are in parkour
+                # read the flowcell info & copy it over from dont_touch_this to rapidus
+                info_dict = read_flowcell_info(config)
+                config["info_dict"]=info_dict
 
-    flowcell = find_new_flowcell(config)
-    query_parkour(config, flowcell)
+                # read samplesheet
+                bc_kit,data = read_samplesheet(config)
+                config["data"] = data
+                config["bc_kit"] = bc_kit
+                print(config["data"])
+                print("samplesheet is read sucessfully")
+                # write the updated config file under the output path
+                configFile = os.path.join(config["paths"]["outputDir"], config["input"]["name"], "pipeline_config.yaml")
+                with open(configFile, 'w') as f:
+                    yaml.dump(config, f, default_flow_style=False)
+                #run snakemake
+                output_directory = os.path.join(config["paths"]["outputDir"], config["input"]["name"])
+                snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
+                # snakemake log file
+                fnames = glob.glob(os.path.join(output_directory, 'ont_run-[0-9]*.log'))
+                if len(fnames) == 0:
+                    n = 1  # no matching files, then this is the first run
+                else:
+                    fnames.sort(key=os.path.getctime)
+                    n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
+                # append the new run number to the file name
+                logfile_name = "ont_run-{}.log".format(n)
+                snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
+                                 --configfile "+configFile+" \
+                                 --directory " + output_directory  \
+                                 + " --debug-dag " \
+                                 +" 2> "+os.path.join(output_directory, logfile_name)
 
-    # read the flowcell info & copy it over from dont_touch_this to rapidus
-    info_dict = read_flowcell_info(config)
-    config["info_dict"]=info_dict
+                                 # + " --dag | dot -Tpdf > dag.pdf"
 
-    # read samplesheet
-    bc_kit,data = read_samplesheet(config)
-    config["data"] = data
-    config["bc_kit"] = bc_kit
-    print(config["data"])
+                sp.check_output(snakemake_cmd, shell = True)
+                msg = "flowcell {} is analysed successfully".format(flowcell)
+                email.sendEmail(msg, "[longReads] A successful run", config['email']['from'], config['email']['to'],
+                                config['email']['host'])
+        sleep(config)
 
-    # write the updated config file under the output path
-    configFile = os.path.join(config["paths"]["outputDir"], config["input"]["name"], "pipeline_config.yaml")
-    with open(configFile, 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
-    #run snakemake
-    output_directory = os.path.join(config["paths"]["outputDir"], config["input"]["name"])
-    snakefile_directory = os.path.join(os.path.realpath(os.path.dirname(__file__)), "ont_pipeline.Snakefile")
-    # snakemake log file
-    fnames = glob.glob(os.path.join(output_directory, 'ont_run-[0-9]*.log'))
-    if len(fnames) == 0:
-        n = 1  # no matching files, then this is the first run
-    else:
-        fnames.sort(key=os.path.getctime)
-        n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
-    # append the new run number to the file name
-    logfile_name = "ont_run-{}.log".format(n)
-    snakemake_cmd = " snakemake  -s "+snakefile_directory+" --jobs 5 -p --verbose \
-                     --configfile "+configFile+" \
-                     --directory " + output_directory  \
-                     + " --debug-dag " \
-                     +" 2> "+os.path.join(output_directory, logfile_name)
-
-                     # + " --dag | dot -Tpdf > dag.pdf"
-
-    sp.check_output(snakemake_cmd, shell = True)
-    sleep(config)
 
 if __name__== "__main__":
     main()
