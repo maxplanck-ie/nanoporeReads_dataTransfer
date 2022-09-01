@@ -1,59 +1,16 @@
 #snakefile
-import os
-import yaml
-import pandas as pd
-import warnings
-import subprocess as sp
-from npr.communication import send_email
+from npr.snakehelper import retRule
 
-include: os.path.join(config['paths']['rulesPath'], 'basecalling.smk')
-include: os.path.join(config['paths']['rulesPath'], "qc.py")
-include: os.path.join(config['paths']['rulesPath'], "rename.smk")
-include: os.path.join(config['paths']['rulesPath'], "data_transfer.py")
-include: os.path.join(config['paths']['rulesPath'], "mapping.py")
-
-
-def run_basecalling():
-    return [expand("demux.done")]
-
-
-def run_bc_split():
-    return [expand("bc.split")]
-
-
-def run_rename():
-    return ["renamed.done"]
-
-
-def run_pycoqc():
-    return ["fastqQC.done"]
-
-
-def run_data_transfer():
-    return ["transfer.done"]
-
-
-def run_mapping():
-    return ["mapping.done"]
-
-
-def run_bamqc():
-    return ["bamQC.done"]
-
-
-def qc2deepseq():
-    return
-
-
-def transfer2rapidus():
-    return
+include: retRule("1_basecalling.smk", config)
+include: retRule("2_rename.smk", config)
+include: retRule("3_qc.smk", config)
+include: retRule("4_data_transfer.smk", config)
+include: retRule("5_mapping.smk", config)
 
 rule all:
     input:
-        run_basecalling(),
-        run_bc_split(),
-        run_rename(),
-        run_pycoqc(),
-        run_data_transfer(),
-        run_mapping(),
-        run_bamqc()
+        'flags/1_basecalling.done',
+        'flags/2_renamed.done',
+        'flags/3_qc.done',
+        'flags/4_transfer.done',
+        'flags/5_mapping.done'

@@ -14,7 +14,6 @@ import signal
 from npr.ont_pipeline import find_new_flowcell
 from npr.ont_pipeline import read_flowcell_info
 from npr.ont_pipeline import read_samplesheet
-from npr.ont_pipeline import config_to_basecallcmd
 from npr.communication import query_parkour, send_email
 import subprocess as sp
 from importlib.metadata import version
@@ -76,9 +75,6 @@ def main(config):
                 os.path.realpath(os.path.dirname(__file__)),
                 'rules'
             )
-            # Infer the basecallcmd already.
-            
-            config['basecallcmd'] = config_to_basecallcmd(config)
             # write the updated config file under the output path
             configFile = os.path.join(
                 config["paths"]["outputDir"],
@@ -119,13 +115,14 @@ def main(config):
                 configfiles = [configFile],
                 workdir = output_directory
             )
+            sys.exit()
             if not snak_stat:
                 msg += "snake crashed."
                 sys.exit()
             Path(os.path.join(output_directory, 'analysis.done')).touch()
             print(config)
             msg = 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
-            msg += 'guppy model: {}\n'.format(config['guppy_model_used'].split('/')[-1])
+            msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
             msg += 'minimap2 version: {}\n\n'.format(config['mapping']['minimap2_version'])
             msg += "flowcell {} is analysed successfully".format(flowcell)
             send_email(msg, version('npr'), os.path.basename(flowcell), config)
