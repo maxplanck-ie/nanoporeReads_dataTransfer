@@ -55,6 +55,43 @@ rule rename:
             else:
                 logfile.write("barcoding detected.\n")
                 splitcmd = config_to_splitseqsummary(config)
-                sp.check_call(splitcmd)
-                for sample_id in config['data']:
-                    print("rename some barcodes & crap")
+                logfile.write("splitcmd: {}\n".format(splitcmd))
+                sp.check_call(splitcmd, shell=True)
+                for sample_id in config['data']['samples']:
+                    logfile.write("Renaming sample {}\n".format(sample_id))
+                    samDic = config['data'][sample_id]
+                    project_dir = "Project_" + samDic['Sample_Project']
+                    sampleid_dir = os.path.join(
+                        project_dir,
+                        'Sample_' + sample_id
+                    )
+                    fq_out = os.path.join(
+                    sampleid_dir,
+                    samDic['Sample_Name'] + '.fastq.gz'
+                    )
+                    logfile.write("Creating directories - {}\n".format(sample_id))
+                    if not os.path.exists(project_dir):
+                        os.mkdir(project_dir)
+                    os.mkdir(sampleid_dir)
+                    # Cat only the specific sample ofcourse..
+                    cmd = [
+                    'cat'
+                    ]
+                    for fqFile in glob.glob('fastq/pass/{}/*fastq.gz'.format(samDic['index_id'])):
+                        cmd.append(fqFile)
+                    for fqFile in glob.glob('fastq/fail/{}/*fastq.gz'.format(samDic['index_id'])):
+                        cmd.append(fqFile)
+                    logfile.write("Running fastq cat for barcode {}.\n".format(samDic['index_id']))
+                    with open(fq_out, 'w') as f:
+                        sp.call(cmd, stdout=f)
+                    shutil.copy(
+                        'sequencing_summary_{}.txt'.format(samDic['index_id']),
+                        os.path.join(
+                            sampleid_dir,
+                            'sequencing_summary_{}.txt'.format(samDic['index_id'])
+                        )
+                    )
+                shutil.move(
+                    'sequencing_summary_unclassified.txt',
+                    'reports/sequencing_summary_unclassified.txt'
+                )

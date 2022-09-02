@@ -5,6 +5,7 @@ import os
 import warnings
 import glob
 from npr.snakehelper import config_to_pycoqc
+from npr.snakehelper import grab_seqsummary
 
 
 rule pycoQc_fastq:
@@ -17,8 +18,7 @@ rule pycoQc_fastq:
     run:
         # Assumption is only 1 project per flowcell..
         with open(log.log, 'w') as logfile:
-            if config['bc_kit'] == 'no_bc':
-                sample_id = config['data']['samples'][0]
+            for sample_id in config['data']['samples']:
                 logfile.write("pycoqc on sample {}\n".format(sample_id))
                 sample_dic = config['data'][sample_id]
                 sample_project = sample_dic['Sample_Project']
@@ -29,12 +29,13 @@ rule pycoQc_fastq:
                     fqc_dir,
                     'Sample_' + sample_id
                 )
+                project_sampledir = fqc_sampledir.replace('FASTQC_', '')
                 if not os.path.exists(fqc_dir):
                     os.mkdir(fqc_dir)
-                if not os.path.exists(fqc_sampledir):
-                    os.mkdir(fqc_sampledir)
+                os.mkdir(fqc_sampledir)
                 cmd = config_to_pycoqc(
                     config,
+                    grab_seqsummary(project_sampledir),
                     fqc_sampledir,
                     sample_id,
                     config['bc_kit']
@@ -43,5 +44,3 @@ rule pycoQc_fastq:
                 logfile.write("pycoqc command:\n")
                 logfile.write("{}\n".format(cmd))
                 sp.check_call(cmd, shell=True)
-            else:
-                print("Do something with barcodes 'n crap.")

@@ -80,6 +80,29 @@ def overwrite_dir(dir, destbase):
     )
     return(ret)
 
+def grab_seqsummary(dir):
+    globber = glob.glob(
+        os.path.join(
+            dir,
+            'sequencing_summary*'
+        )
+    )
+    if len(globber) != 1:
+        sys.exit("more then 1 sequencing summary.")
+    else:
+        return(globber[0])
+
+def getfoot(dir):
+    footprint = 0
+    for path, dirs, files in os.walk(dir):
+        for f in files:
+            footprint += os.path.getsize(
+                os.path.join(
+                    path,f
+                )
+            )
+    return(footprint)
+
 # return commands.
 def config_to_basecallcmd(config):
     # base cmd.
@@ -105,25 +128,28 @@ def config_to_splitseqsummary(config):
     cmd += "-o ./"
     return(cmd)
 
-def config_to_pycoqc(config, fqc_sampledir, sampleid, bc_kit):
+def config_to_pycoqc(config, seqsum, fqc_sampledir, sampleid, bc_kit):
     cmd = config["pycoQc"]["pycoQc"]
-    if bc_kit == 'no_bc':
-        cmd += " fastq/sequencing_summary.txt "
-        cmd += "-o " + os.path.join(
-            fqc_sampledir,
-            'pycoqc_' + sampleid + '.html'
-        )
-        return(cmd)
+    cmd += ' ' + seqsum + ' '
+    cmd += "-o " + os.path.join(
+        fqc_sampledir,
+        'pycoqc_' + sampleid + '.html'
+    )
+    return(cmd)
 
 def config_to_mapcmd(config):
     protocol = config['info_dict']['protocol']
-    if protocol not in [
+    org = config['info_dict']['organism']
+
+    if protocol in [
         'dna',
         'cdna',
         'rna'
-    ]:
-        return()
-    else:
+    ] and org in [
+        'mouse',
+        'drosophila',
+        'human'
+    ] :
         pref = [config['mapping']['mapping_cmd']]
         post = [config['mapping']['samtools_cmd']]
         if protocol == 'dna':
@@ -136,8 +162,30 @@ def config_to_mapcmd(config):
                 '-o'
             )
             return(pref,post)
-
-
-
-
+        elif protocol == 'rna':
+            print('protocol = rna')
+            pref = pref + config['mapping']['mapping_rna_options'].split(' ')
+            pref = pref + ['--junc-bed', config['transcripts'][org]]
+            pref.append(config['genome'][org])
+            post.append(
+                config['mapping']['samtools_options']
+            )
+            post.append(
+                '-o'
+            )
+            return(pref,post)
+        elif protocol == 'cdna':
+            print('protocol = cdna')
+            pref = pref + config['mapping']['mapping_rna_options'].split(' ')
+            pref = pref + ['--junc-bed', config['transcripts'][org]]
+            pref.append(config['genome'][org])
+            post.append(
+                config['mapping']['samtools_options']
+            )
+            post.append(
+                '-o'
+            )
+            return(pref,post)
+    else:
+        return(None,None)
 

@@ -115,13 +115,19 @@ def main(config):
                 configfiles = [configFile],
                 workdir = output_directory
             )
-            sys.exit()
             if not snak_stat:
                 msg += "snake crashed."
                 sys.exit()
             Path(os.path.join(output_directory, 'analysis.done')).touch()
             print(config)
-            msg = 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
+            msg = 'Project: {}\n'.format(config['data']['projects'][0])
+            msg += 'pod5 compression: {}\n'.format(config['info_dict']['pod5 compression'])
+            msg += 'organism: {}\n'.format(config['info_dict']['organism'])
+            msg += 'flowcell: {}\n'.format(config['info_dict']['flowcell'])
+            msg += 'kit: {}\n'.format(config['info_dict']['kit'])
+            msg += 'barcoding: {}\n'.format(config['info_dict']['barcoding'])
+            msg += 'protocol: {}\n'.format(config['info_dict']['protocol'])
+            msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
             msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
             msg += 'minimap2 version: {}\n\n'.format(config['mapping']['minimap2_version'])
             msg += "flowcell {} is analysed successfully".format(flowcell)

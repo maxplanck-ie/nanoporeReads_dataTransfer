@@ -5,6 +5,7 @@ import glob
 import shutil
 from npr.snakehelper import get_seqdir
 from npr.snakehelper import config_to_mapcmd
+from npr.snakehelper import grab_seqsummary
 
 
 rule dna_mapping:
@@ -49,47 +50,72 @@ rule dna_mapping:
                 if pref:
                     analysis_dir = os.path.join(
                         final_path,
-                        'Analysis_' + p + '_' + '-'.join(
-                            [
-                                genome,
-                                config['info_dict']['protocol']
-                            ]
-                        )
+                        'Analysis_' + p
                     )
                     if os.path.exists(analysis_dir):
                         shutil.rmtree(analysis_dir)
                     logfile.write("Making {}\n".format(analysis_dir))
                     os.mkdir(analysis_dir)
-                    os.mkdir(
-                        os.path.join(
-                            analysis_dir,
-                            'bamfiles'
+                    genome_analysis_dir = os.path.join(
+                        analysis_dir,
+                        config['info_dict']['protocol'] + '_' + genome
                         )
-                    )
+                    os.mkdir(genome_analysis_dir)
                     for sample in config['data']['samples']:
-                        prefsample = pref
-                        postsample = post
+                        pref, post = config_to_mapcmd(config)
+                        logfile.write("Sample {}\n".format(sample))
+                        logfile.write("Sample in config: {}\n".format(
+                            config['data'][sample]['Sample_Name']
+                        ))
                         fqFile = os.path.join(
                             final_path,
                             'Project_' + p,
                             'Sample_' + sample,
                             config['data'][sample]['Sample_Name'] + '.fastq.gz'
                         )
-                        prefsample.append(fqFile)
-                        prefsample.append('|')
-                        postsample.append(
-                            os.path.join(
-                                analysis_dir,
-                                'bamfiles',
+                        logfile.write("fqFile path = {}".format(fqFile))
+                        pref.append(fqFile)
+                        pref.append('|')
+                        bamfile = os.path.join(
+                                genome_analysis_dir,
                                 config['data'][sample]['Sample_Name'] + '.bam'
                             )
+                        post.append(
+                            bamfile
                         )
-                        mapCmd = prefsample+postsample
+                        #postsample.append('-')
+                        mapCmd = pref+post
                         logfile.write(
                             "Mapping command invoked:\n"
                         )
                         logfile.write(
                             ' '.join(mapCmd) + "\n"
                         )
-                        print(' '.join(mapCmd))
-                        sp.check_call(mapCmd)
+                        # Run alignment.
+                        sp.check_call(' '.join(mapCmd), shell=True)
+                        # index bam file.
+                        ixCmd = [
+                            'samtools',
+                            'index',
+                            '-@',
+                            '25',
+                            bamfile
+                        ]
+                        sp.check_call(' '.join(ixCmd), shell=True)
+                        # pycoQc
+                        qcCmd = [
+                            'pycoQC',
+                            '--summary_file',
+                            grab_seqsummary(
+                                os.path.join(
+                                    final_path,
+                                    project_dir,
+                                    'Sample_' + sample
+                                )
+                            ),
+                            '-a',
+                            bamfile,
+                            '-o',
+                            bamfile.replace('.bam', '.html')
+                        ]
+                        sp.check_call(' '.join(qcCmd), shell=True)

@@ -5,6 +5,7 @@ from rich import print
 import requests
 import sys
 import os
+from importlib.metadata import version
 
 
 def send_email(body, version, flowcell, config):
@@ -64,11 +65,10 @@ def query_parkour(config, flowcell, msg):
         return (info_dict, msg)
     else:
         msg += "Parkour query failed. Crash'n'Burn.\n"
-        email.sendEmail(
+        send_email(
             msg,
-            "[longReads] no parkour record",
-            config['email']['from'],
-            config['email']['to'],
-            config['email']['host']
+            version('npr'),
+            flowcell,
+            config
         )
         sys.exit("parkour failure.")

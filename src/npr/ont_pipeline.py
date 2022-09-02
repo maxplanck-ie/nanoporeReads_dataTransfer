@@ -10,6 +10,7 @@ import json
 import subprocess as sp
 from npr.communication import send_email
 from npr.snakehelper import glob2reports
+from npr.snakehelper import getfoot
 
 def find_new_flowcell(config):
     """
@@ -137,30 +138,29 @@ def read_flowcell_info(config, info_dict):
             '--recursive',
             '--force-overwrite',
             '--active-readers',
-            '20'
+            '10'
         ]
         sp.check_output(podracercmd)
     else:
         print("[bold green]pod5 exists, not converting[/bold green]")
     info_dict['poddir'] = poddir
     # Check sizes for ratios.
-    original_foot = 0
-    for f5d in glob.glob(
+    original_foot = getfoot(
         os.path.join(
             base_path,
-            'fast5*'
-        )
-    ):
-        for f in os.listdir(f5d):
-            original_foot += os.path.getsize(
-                os.path.join(f5d, f)
-            )
-    new_foot = os.path.getsize(
-        os.path.join(
-            poddir,
-            'output.pod5'
+            'fast5_pass'
         )
     )
+    original_foot += getfoot(
+        os.path.join(
+            base_path,
+            'fast5_fail'
+        )
+    )
+
+    new_foot = getfoot(poddir)
+    print(original_foot)
+    print(new_foot)
     info_dict['pod5 compression'] = round(new_foot/original_foot, 2)
     return(info_dict)
 
@@ -199,7 +199,9 @@ def read_samplesheet(config):
         data[row["Sample_ID"]] = dict({"Sample_Name": row["Sample_Name"],
                                        "Sample_Project": row["Sample_Project"],
                                        "barcode_kits": bc_kit,
-                                       "index_id": row["I7_Index_ID"],
+                                       "index_id": row["I7_Index_ID"].replace(
+                                        'BP', 'barcode'
+                                       ),
                                        "Sample_ID": row["Sample_ID"]})
     print("[green] Barcode kit determined as: {}".format(bc_kit))
     return bc_kit, data
