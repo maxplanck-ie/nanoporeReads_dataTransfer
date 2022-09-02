@@ -1,0 +1,82 @@
+CHANGES
+=======
+
+* apivsp
+* ignore build
+* ignore egginfo
+*  - change into pbr install + conda env  - set entrypoints as executables + define testcase  - organise smk under rules + libs under npr  - smk not properly called at for now
+* update ignore with the eyes on pip buildable
+* add full cmd guppy
+* add longreads header to subj
+* typo print
+* add env in readme
+* purge tab indent
+* rich in env
+* force check folders first, only afterwards sampleSheets
+* add requests/snakemake to env
+* pysam dep fix env
+* mamba env file w/ reqs wo/ guppy
+* added bc\_kit for flowcells with barcode
+* Update README.md
+* Update README.md
+* added the env yaml file
+* updated log files content
+* added misc
+* added more emails, small bug fix, added new flags for the end of each step
+* updated the config template, started adding sendEmail
+* bug fix
+
+v1.0.0
+------
+
+* updated readme
+* add requirements and config template
+* rm config
+* barocde changes
+* added sleep and parkour query
+* removed old files
+* Update README.md
+* fixed mapping and qc for external users
+* dded rules to do the basecalling and renaming the files
+* fixed the dependency
+* all the rules were added, there is somethign worn with the dag though. It always build all the rules from scratch 
+* updated qc for bam files and paths in the config file
+* there is bug in running the dag. it always staet from the beginning , needs to be fixed
+* all fast5 are now used
+* mapping
+* config was updated
+* changing the pipeline to snakemake has been done up to mapping
+* config
+* new files are added. Basecallign , renaming , qc and data transfer is done. mapping is left
+* basecallign , renaming , qc and data transfer is done. mapping is left
+* fixed mapping for dna protocol
+* added config to gitignore
+* cosmetic changes
+* fixed config
+* added gitignore
+* added bam qc
+* cosmetic change
+* fixed a small bug in reading compatible kits names
+* adeed pycoQC for the qc
+* updated mapping and config file
+* added contamiantion report on bam level
+* more fix in rna mapping output and started adding the conatmination report
+* Fixed rna mapping
+* update the pipeline until after qc for samples with barcodes
+* updated the code until after fastqc step for reads with barcode
+* uncommented a sys.exit
+* Update README.md
+* renamed pipeline.py to nanopore\_pipeline.py
+* updated the pipeline on a case with barecodes
+* minor typo
+* added module load anaconda3 to the usage in readme
+* uncommented an else to throw an error if the path already exists
+* updated paths
+* nd more readme updates!
+* update readme
+* more readme updates
+* updated readme  Please enter the commit message for your changes. Lines starting
+* updated minimap2 to 2.17
+* anged the mapping options for dna and rna
+* Initial commit
+* first commit for the nanpore\_data\_transfer pipeline
