@@ -6,13 +6,22 @@ import warnings
 from pathlib import Path
 from npr.snakehelper import config_to_splitseqsummary
 import shutil
+import pandas as pd
+
+# create a pandas dataframe of samples to get the sample : project relationship
+metadata = dict(config["data"])
+del metadata["projects"]
+del metadata["samples"]
+metadata = pd.DataFrame(metadata).T
 
 
 rule rename:
     input:
         "flags/1_basecalling.done"
     output:
-        touch("flags/2_renamed.done")
+        flag=touch("flags/2_renamed.done"),
+        fastqs=expand_project_path("Project_{project}/{sample_id}/{sample_name}.fastq.gz"),  
+        summaries=expand_project_path("Project_{project}/{sample_id}/sequencing_summary_{sample_name}.txt"),
     log:
         log = 'log/2_rename.log'
     run:
@@ -50,7 +59,11 @@ rule rename:
                 logfile.write("Copy sequencing_summary to sample folder.\n")
                 shutil.copy(
                     'fastq/sequencing_summary.txt',
-                    os.path.join(sampleid_dir, 'sequencing_summary.txt')
+                    os.path.join(
+                        sampleid_dir, 
+                        ('sequencing_summary_{}.txt'
+                         .format(samDic['Sample_Name']))
+                    )
                 )
             else:
                 logfile.write("barcoding detected.\n")
@@ -88,10 +101,12 @@ rule rename:
                         'sequencing_summary_{}.txt'.format(samDic['index_id']),
                         os.path.join(
                             sampleid_dir,
-                            'sequencing_summary_{}.txt'.format(samDic['index_id'])
+                            'sequencing_summary_{}.txt'.format(samDic['Sample_Name'])
                         )
                     )
                 shutil.move(
                     'sequencing_summary_unclassified.txt',
                     'reports/sequencing_summary_unclassified.txt'
+                
                 )
+
