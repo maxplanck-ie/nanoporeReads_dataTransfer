@@ -1,12 +1,9 @@
 CHANGES
 =======
 
-* apivsp
-* ignore build
-* ignore egginfo
-*  - change into pbr install + conda env  - set entrypoints as executables + define testcase  - organise smk under rules + libs under npr  - smk not properly called at for now
-* update ignore with the eyes on pip buildable
-* add full cmd guppy
+* some refactoring and add fastqc
+* some refactoring and add fastqc
+* Wd (#35)
 * add longreads header to subj
 * typo print
 * add env in readme

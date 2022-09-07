@@ -109,10 +109,12 @@ def main(config):
             conda_prefix = config["snakemake"]["conda_prefix"]
             conda_prefix = conda_prefix if conda_prefix else None
 
+            print("Starting snakemake on file {} with configfile {} using workdir {}..."
+                  .format(snakefile_file, configFile, output_directory), file=sys.stderr)
             snak_stat = snakemake.snakemake(
                 snakefile = snakefile_file,
-                debug = True,
-                cores = config["snakemake"]["cores"],
+                #debug = True,
+                cores = 24, #config["snakemake"]["cores"],
                 max_jobs_per_second = 1,
                 printshellcmds = True,
                 verbose = True,

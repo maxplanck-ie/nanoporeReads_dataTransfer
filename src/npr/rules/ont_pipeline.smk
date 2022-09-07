@@ -1,5 +1,6 @@
 #snakefile
 from npr.snakehelper import retRule
+import pandas as pd
 
 # create a pandas dataframe of samples to get the sample : project relationship
 metadata = dict(config["data"])

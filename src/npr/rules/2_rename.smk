@@ -20,8 +20,8 @@ rule rename:
         "flags/1_basecalling.done"
     output:
         flag=touch("flags/2_renamed.done"),
-        fastqs=expand_project_path("Project_{project}/{sample_id}/{sample_name}.fastq.gz"),  
-        summaries=expand_project_path("Project_{project}/{sample_id}/sequencing_summary_{sample_name}.txt"),
+        fastqs=expand_project_path("Project_{project}/Sample_{sample_id}/{sample_name}.fastq.gz"),  
+        summaries=expand_project_path("Project_{project}/Sample_{sample_id}/sequencing_summary_{sample_name}.txt"),
     log:
         log = 'log/2_rename.log'
     run:
@@ -43,9 +43,6 @@ rule rename:
                     sampleid_dir,
                     samDic['Sample_Name'] + '.fastq.gz'
                 )
-                logfile.write("Creating directories\n")
-                os.mkdir(project_dir)
-                os.mkdir(sampleid_dir)
                 cmd = [
                     'cat'
                 ]
@@ -79,17 +76,11 @@ rule rename:
                         'Sample_' + sample_id
                     )
                     fq_out = os.path.join(
-                    sampleid_dir,
-                    samDic['Sample_Name'] + '.fastq.gz'
+                        sampleid_dir,
+                        samDic['Sample_Name'] + '.fastq.gz'
                     )
-                    logfile.write("Creating directories - {}\n".format(sample_id))
-                    if not os.path.exists(project_dir):
-                        os.mkdir(project_dir)
-                    os.mkdir(sampleid_dir)
                     # Cat only the specific sample ofcourse..
-                    cmd = [
-                    'cat'
-                    ]
+                    cmd = ['cat']
                     for fqFile in glob.glob('fastq/pass/{}/*fastq.gz'.format(samDic['index_id'])):
                         cmd.append(fqFile)
                     for fqFile in glob.glob('fastq/fail/{}/*fastq.gz'.format(samDic['index_id'])):
