@@ -105,15 +105,23 @@ def main(config):
                 fnames.sort(key=os.path.getctime)
                 n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
             
+            # use conda prefix if specified
+            conda_prefix = config["snakemake"]["conda_prefix"]
+            conda_prefix = conda_prefix if conda_prefix else None
+
+            print("Starting snakemake on file {} with configfile {} using workdir {}..."
+                  .format(snakefile_file, configFile, output_directory), file=sys.stderr)
             snak_stat = snakemake.snakemake(
                 snakefile = snakefile_file,
-                debug = True,
-                #cores = 25,
+                #debug = True,
+                cores = config["snakemake"]["cores"],
                 max_jobs_per_second = 1,
                 printshellcmds = True,
                 verbose = True,
                 configfiles = [configFile],
-                workdir = output_directory
+                workdir = output_directory,
+                use_conda = True,
+                conda_prefix = conda_prefix,
             )
             if not snak_stat:
                 msg += "snake crashed."
@@ -136,3 +144,4 @@ def main(config):
             print("No flowcells found. I go back to sleep.")
             sleep()
             continue
+
