@@ -4,6 +4,7 @@ import sys
 from rich import print
 import glob
 
+
 def retRule(rulestr, config):
     return(
         os.path.join(
@@ -128,6 +129,7 @@ def config_to_splitseqsummary(config):
     cmd += "-o ./"
     return(cmd)
 
+# deprecated
 def config_to_pycoqc(config, seqsum, fqc_sampledir, sampleid, bc_kit):
     cmd = config["pycoQc"]["pycoQc"]
     cmd += ' ' + seqsum + ' '

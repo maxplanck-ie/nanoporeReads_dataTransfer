@@ -10,3 +10,4 @@ rule basecall:
     shell:'''
     {params.basecallcmd} > {log.out} 2> {log.err}
     '''
+
