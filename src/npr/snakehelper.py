@@ -155,6 +155,7 @@ def config_to_mapcmd(config):
         if protocol == 'dna':
             pref = pref + config['mapping']['mapping_dna_options'].split(' ')
             pref.append(config['genome'][config['info_dict']['organism']])
+            post.append('sort')
             post.append(
                 config['mapping']['samtools_options']
             )
@@ -167,6 +168,7 @@ def config_to_mapcmd(config):
             pref = pref + config['mapping']['mapping_rna_options'].split(' ')
             pref = pref + ['--junc-bed', config['transcripts'][org]]
             pref.append(config['genome'][org])
+            post.append('sort')
             post.append(
                 config['mapping']['samtools_options']
             )
@@ -179,6 +181,7 @@ def config_to_mapcmd(config):
             pref = pref + config['mapping']['mapping_rna_options'].split(' ')
             pref = pref + ['--junc-bed', config['transcripts'][org]]
             pref.append(config['genome'][org])
+            post.append('sort')
             post.append(
                 config['mapping']['samtools_options']
             )

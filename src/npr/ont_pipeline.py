@@ -113,6 +113,17 @@ def read_flowcell_info(config, info_dict):
     info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
     info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
     info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
+    # double check args. This needs a cleaner solution.
+    for rg in jsondata['protocol_run_info']['args']:
+        if rg == '--barcoding' and not info_dict['barcoding']:
+            print("Json bool for barcoding wrong ! Override !")
+            info_dict['barcoding'] = True
+        if rg.startswith('barcoding_kits'):
+            start = rg.find('[') + 1
+            stop = rg.find(']')
+            info_dict['barcode_kit'] = rg[start:stop].replace('\"', '')
+    if not info_dict['barcode_kit']:
+        info_dict['barcode_kit'] = 'no_bc'
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
     modeldic = yaml.safe_load(
@@ -177,16 +188,23 @@ def read_samplesheet(config):
         sep = ",",
         skiprows=[0]
     )
-    bc_kit = 'bc' if config['info_dict']['barcoding'] else 'no_bc'
+    # bc_kit = 'bc' if config['info_dict']['barcoding'] else 'no_bc'
     # parkour doesn't like 'no indices', there's thus an index list with 'No_index1, No_index2, ...'
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index*','no_bc', regex = True)
-    if any(sample_sheet['I7_Index_ID'].str.contains('no_bc')):
-       bc_kit = "no_bc"
-    if bc_kit == 'bc':
-       bc_kit = np.unique(sample_sheet["Description"].values)[0]
-       start = bc_kit.find("(") + len("(")
-       end = bc_kit.find(")")
-       bc_kit = bc_kit[start:end]
+    # if any(sample_sheet['I7_Index_ID'].str.contains('no_bc')):
+    #    bc_kit = "no_bc"
+    # else:
+    #     print('any statement elsed out.')
+    #     if bc_kit == 'no_bc':
+    #         for bc in list(sample_sheet['I7_Index_ID']):
+    #             if 'no_bc' not in bc:
+    #                 print("bc found. Override")
+    #                 bc_kit = 'bc'
+    # if bc_kit == 'bc':
+    #    bc_kit = np.unique(sample_sheet["Description"].values)[0]
+    #    start = bc_kit.find("(") + len("(")
+    #    end = bc_kit.find(")")
+    #    bc_kit = bc_kit[start:end]
     data=dict()
     data['projects'] = []
     data['samples'] = []
@@ -198,10 +216,14 @@ def read_samplesheet(config):
             data['samples'].append(row['Sample_ID'])
         data[row["Sample_ID"]] = dict({"Sample_Name": row["Sample_Name"],
                                        "Sample_Project": row["Sample_Project"],
-                                       "barcode_kits": bc_kit,
+                                       "barcode_kits": config["info_dict"]['barcode_kit'],
                                        "index_id": row["I7_Index_ID"].replace(
                                         'BP', 'barcode'
+                                       ).replace(
+                                        'NB', 'barcode'
                                        ),
                                        "Sample_ID": row["Sample_ID"]})
-    print("[green] Barcode kit determined as: {}".format(bc_kit))
-    return bc_kit, data
+    print("[green] Barcode kit determined as: {}".format(
+        config["info_dict"]['barcode_kit']
+    ))
+    return config["info_dict"]['barcode_kit'], data
