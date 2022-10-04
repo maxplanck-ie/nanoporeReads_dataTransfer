@@ -1,6 +1,7 @@
+AUTHORS*
 *config.yaml
 *.eggs*
 *__pycache__*
 *egg-info*
 *build*
-AUTHORS
+

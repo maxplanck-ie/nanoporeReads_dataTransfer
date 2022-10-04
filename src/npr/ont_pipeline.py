@@ -205,6 +205,7 @@ def read_samplesheet(config):
     #    start = bc_kit.find("(") + len("(")
     #    end = bc_kit.find(")")
     #    bc_kit = bc_kit[start:end]
+
     data=dict()
     data['projects'] = []
     data['samples'] = []

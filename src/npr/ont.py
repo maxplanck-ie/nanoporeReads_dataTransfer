@@ -70,6 +70,7 @@ def main(config):
                 config,
                 allreceivers=False
             )
+
             # read samplesheet
             bc_kit,data = read_samplesheet(config)
             config["data"] = data
