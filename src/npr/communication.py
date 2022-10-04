@@ -8,20 +8,25 @@ import os
 from importlib.metadata import version
 
 
-def send_email(body, version, flowcell, config):
+def send_email(body, version, flowcell, config, allreceivers=True):
     mailer = MIMEMultipart('alternative')
     mailer['Subject'] = "[npr] [{}] {}".format(
         version,
         flowcell
     )
     mailer['From'] = config['email']['from']
-    mailer['To'] = config['email']['to']
+    if allreceivers:
+        mailer['To'] = config['email']['to']
+        tomailers = config['email']['to'].split(',')
+    else:
+        mailer['To'] = config['email']['trigger']
+        tomailers = config['email']['trigger'].split(',')
     email = MIMEText(body)
     mailer.attach(email)
     s = smtplib.SMTP(config['email']['host'])
     s.sendmail(
         config['email']['from'],
-        config['email']['to'].split(','),
+        tomailers,
         mailer.as_string()
     )
 

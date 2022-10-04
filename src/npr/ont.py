@@ -63,7 +63,13 @@ def main(config):
         if flowcell:
             info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict)
-
+            send_email(
+                "Flowcell {} found. Starting pipeline.".format(flowcell),
+                version('npr'),
+                os.path.basename(flowcell),
+                config,
+                allreceivers=False
+            )
             # read samplesheet
             bc_kit,data = read_samplesheet(config)
             config["data"] = data
