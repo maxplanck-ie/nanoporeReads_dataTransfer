@@ -6,6 +6,7 @@ import warnings
 from pathlib import Path
 from npr.snakehelper import config_to_splitseqsummary
 import shutil
+import glob
 
 
 rule rename:
@@ -30,29 +31,56 @@ rule rename:
                     project_dir,
                     'Sample_' + sample_id
                 )
-                fq_out = os.path.join(
+                pass_out = os.path.join(
                     sampleid_dir,
+                    'pass',
+                    samDic['Sample_Name'] + '.fastq.gz'
+                )
+                fail_out = os.path.join(
+                    sampleid_dir,
+                    'fail',
                     samDic['Sample_Name'] + '.fastq.gz'
                 )
                 logfile.write("Creating directories\n")
                 os.mkdir(project_dir)
                 os.mkdir(sampleid_dir)
-                cmd = [
-                    'cat'
-                ]
-                for fqFile in glob.glob('fastq/pass/*fastq.gz'):
-                    cmd.append(fqFile)
-                for fqFile in glob.glob('fastq/fail/*fastq.gz'):
-                    cmd.append(fqFile)
-                logfile.write("Running fastq cat.\n")
-                with open(fq_out, 'w') as f:
+                os.mkdir(
+                    os.path.join(
+                        sampleid_dir, 'pass'
+                    )
+                )
+                os.mkdir(
+                    os.path.join(
+                        sampleid_dir, 'fail'
+                    )
+                )
+                logfile.write("Passing fastq files.\n")
+                passlist = glob.glob(
+                    os.path.join('fastq','pass','*fastq.gz')
+                )
+                print('precat')
+                cmd = ['cat'] + passlist
+                with open(pass_out, 'w') as f:
                     sp.call(cmd, stdout=f)
+                print('postcat')
+                for f in passlist:
+                    os.remove(f)
+                print('postrem')
+                #fail
+                logfile.write("failing fastq files.\n")
+                faillist = glob.glob('fastq/fail/*fastq.gz')
+                cmd = ['cat'] + faillist
+                with open(fail_out, 'w') as f:
+                    sp.call(cmd, stdout=f)
+                for f in faillist:
+                    os.remove(f)
                 logfile.write("Copy sequencing_summary to sample folder.\n")
                 shutil.copy(
                     'fastq/sequencing_summary.txt',
                     os.path.join(sampleid_dir, 'sequencing_summary.txt')
                 )
             else:
+                # To Do - make pass/fail splits here as well.
                 logfile.write("barcoding detected.\n")
                 splitcmd = config_to_splitseqsummary(config)
                 logfile.write("splitcmd: {}\n".format(splitcmd))

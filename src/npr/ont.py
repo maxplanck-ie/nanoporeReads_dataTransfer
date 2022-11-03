@@ -15,6 +15,7 @@ from npr.ont_pipeline import find_new_flowcell
 from npr.ont_pipeline import read_flowcell_info
 from npr.ont_pipeline import read_samplesheet
 from npr.communication import query_parkour, send_email
+from npr.snakehelper import getfast5foot
 import subprocess as sp
 from importlib.metadata import version
 from pathlib import Path
@@ -128,7 +129,12 @@ def main(config):
             Path(os.path.join(output_directory, 'analysis.done')).touch()
             print(config)
             msg = 'Project: {}\n'.format(config['data']['projects'][0])
-            msg += 'pod5 compression: {}\n'.format(config['info_dict']['pod5 compression'])
+            msg += 'pod5 compression: {}\n'.format(
+                getfast5foot(
+                    config['info_dict']['base_path'],
+                    config['info_dict']['flowcell_path']
+                )
+            )
             msg += 'organism: {}\n'.format(config['info_dict']['organism'])
             msg += 'flowcell: {}\n'.format(config['info_dict']['flowcell'])
             msg += 'kit: {}\n'.format(config['info_dict']['kit'])
