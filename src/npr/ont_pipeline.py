@@ -122,7 +122,7 @@ def read_flowcell_info(config, info_dict):
             start = rg.find('[') + 1
             stop = rg.find(']')
             info_dict['barcode_kit'] = rg[start:stop].replace('\"', '')
-    if not info_dict['barcode_kit']:
+    if 'barcode_kit' not in info_dict:
         info_dict['barcode_kit'] = 'no_bc'
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))

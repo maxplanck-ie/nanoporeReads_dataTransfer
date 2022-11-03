@@ -1,12 +1,14 @@
 CHANGES
 =======
 
-* apivsp
-* ignore build
-* ignore egginfo
-*  - change into pbr install + conda env  - set entrypoints as executables + define testcase  - organise smk under rules + libs under npr  - smk not properly called at for now
-* update ignore with the eyes on pip buildable
-* add full cmd guppy
+* strip authors
+* trigger email
+* grab barcoding / barcoding kit information from guppy line
+* strip authors
+* Wd (#35)
+* A to Z for barcoded samples as well
+* A to Z for non-barcoded, DNA mouse sample
+*  - executable / configs  - genmodel  - pod5 implementation  - smk API
 * add longreads header to subj
 * typo print
 * add env in readme

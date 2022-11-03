@@ -182,6 +182,7 @@ def config_to_mapcmd(config):
             pref = pref + config['mapping']['mapping_rna_options'].split(' ')
             pref = pref + ['--junc-bed', config['transcripts'][org]]
             pref.append(config['genome'][org])
+            post.append('sort')
             post.append(
                 config['mapping']['samtools_options']
             )

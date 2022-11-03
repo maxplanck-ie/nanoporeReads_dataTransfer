@@ -21,6 +21,7 @@ def send_email(body, version, flowcell, config, allreceivers=True):
     else:
         mailer['To'] = config['email']['trigger']
         tomailers = config['email']['trigger'].split(',')
+    print("Email trigger, sending to {}".format(tomailers))
     email = MIMEText(body)
     mailer.attach(email)
     s = smtplib.SMTP(config['email']['host'])
@@ -34,7 +35,10 @@ def query_parkour(config, flowcell, msg):
     """
     query parkour.
     """
-    fc = flowcell.split("_")[3]
+    if flowcell == '20221014_1045_X5_FAV39027_f348bc5c':
+        fc = 'FAV39027_reuse'
+    else:
+        fc = flowcell.split("_")[3]
     d = {'flowcell_id': fc}
     res = requests.get(
         config["parkour"]["url"],

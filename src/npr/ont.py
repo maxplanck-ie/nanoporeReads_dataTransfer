@@ -63,6 +63,7 @@ def main(config):
         if flowcell:
             info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict)
+            print("Sending mail trigger.")
             send_email(
                 "Flowcell {} found. Starting pipeline.".format(flowcell),
                 version('npr'),
@@ -70,7 +71,6 @@ def main(config):
                 config,
                 allreceivers=False
             )
-
             # read samplesheet
             bc_kit,data = read_samplesheet(config)
             config["data"] = data
@@ -133,6 +133,7 @@ def main(config):
             msg += 'flowcell: {}\n'.format(config['info_dict']['flowcell'])
             msg += 'kit: {}\n'.format(config['info_dict']['kit'])
             msg += 'barcoding: {}\n'.format(config['info_dict']['barcoding'])
+            msg += 'barcoding kit: {}\n'.format(config['info_dict']['barcode_kit'])
             msg += 'protocol: {}\n'.format(config['info_dict']['protocol'])
             msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
             msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
