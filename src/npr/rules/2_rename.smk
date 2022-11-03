@@ -7,13 +7,21 @@ from pathlib import Path
 from npr.snakehelper import config_to_splitseqsummary
 import shutil
 import glob
+import pandas as pd
 
+# create a pandas dataframe of samples to get the sample : project relationship
+metadata = dict(config["data"])
+del metadata["projects"]
+del metadata["samples"]
+metadata = pd.DataFrame(metadata).T
 
 rule rename:
     input:
         "flags/1_basecalling.done"
     output:
-        touch("flags/2_renamed.done")
+        flag=touch("flags/2_renamed.done"),
+        fastqs=expand_project_path("Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz"),  
+        summaries=expand_project_path("Project_{project}/Sample_{sample_id}/sequencing_summary.txt"),
     log:
         log = 'log/2_rename.log'
     run:
@@ -58,14 +66,11 @@ rule rename:
                 passlist = glob.glob(
                     os.path.join('fastq','pass','*fastq.gz')
                 )
-                print('precat')
                 cmd = ['cat'] + passlist
                 with open(pass_out, 'w') as f:
                     sp.call(cmd, stdout=f)
-                print('postcat')
                 for f in passlist:
                     os.remove(f)
-                print('postrem')
                 #fail
                 logfile.write("failing fastq files.\n")
                 faillist = glob.glob('fastq/fail/*fastq.gz')
@@ -77,7 +82,9 @@ rule rename:
                 logfile.write("Copy sequencing_summary to sample folder.\n")
                 shutil.copy(
                     'fastq/sequencing_summary.txt',
-                    os.path.join(sampleid_dir, 'sequencing_summary.txt')
+                    os.path.join(
+                        sampleid_dir, 
+                        'sequencing_summary.txt'
                 )
             else:
                 # To Do - make pass/fail splits here as well.
@@ -94,17 +101,11 @@ rule rename:
                         'Sample_' + sample_id
                     )
                     fq_out = os.path.join(
-                    sampleid_dir,
-                    samDic['Sample_Name'] + '.fastq.gz'
+                        sampleid_dir,
+                        samDic['Sample_Name'] + '.fastq.gz'
                     )
-                    logfile.write("Creating directories - {}\n".format(sample_id))
-                    if not os.path.exists(project_dir):
-                        os.mkdir(project_dir)
-                    os.mkdir(sampleid_dir)
                     # Cat only the specific sample ofcourse..
-                    cmd = [
-                    'cat'
-                    ]
+                    cmd = ['cat']
                     for fqFile in glob.glob('fastq/pass/{}/*fastq.gz'.format(samDic['index_id'])):
                         cmd.append(fqFile)
                     for fqFile in glob.glob('fastq/fail/{}/*fastq.gz'.format(samDic['index_id'])):
@@ -116,10 +117,11 @@ rule rename:
                         'sequencing_summary_{}.txt'.format(samDic['index_id']),
                         os.path.join(
                             sampleid_dir,
-                            'sequencing_summary_{}.txt'.format(samDic['index_id'])
+                            'sequencing_summary_{}.txt'.format(samDic['Sample_Name'])
                         )
                     )
                 shutil.move(
                     'sequencing_summary_unclassified.txt',
                     'reports/sequencing_summary_unclassified.txt'
                 )
+                
