@@ -8,6 +8,7 @@ from npr.snakehelper import config_to_splitseqsummary
 import shutil
 import glob
 import pandas as pd
+import traceback
 
 # create a pandas dataframe of samples to get the sample : project relationship
 metadata = dict(config["data"])
@@ -50,18 +51,21 @@ rule rename:
                     samDic['Sample_Name'] + '.fastq.gz'
                 )
                 logfile.write("Creating directories\n")
-                os.mkdir(project_dir)
-                os.mkdir(sampleid_dir)
-                os.mkdir(
-                    os.path.join(
-                        sampleid_dir, 'pass'
-                    )
+                if not os.path.exists(project_dir):
+                    os.mkdir(project_dir)
+                if not os.path.exists(sampleid_dir):
+                    os.mkdir(sampleid_dir)
+                logfile.write("Creating pass.")
+                passdir = os.path.join(
+                    sampleid_dir, 'pass'
                 )
-                os.mkdir(
-                    os.path.join(
-                        sampleid_dir, 'fail'
-                    )
+                faildir = os.path.join(
+                    sampleid_dir, 'fail'
                 )
+                if not os.path.exists(passdir):
+                    os.mkdir(passdir)
+                if not os.path.exists(faildir):
+                    os.mkdir(faildir)
                 logfile.write("Passing fastq files.\n")
                 passlist = glob.glob(
                     os.path.join('fastq','pass','*fastq.gz')
@@ -69,23 +73,23 @@ rule rename:
                 cmd = ['cat'] + passlist
                 with open(pass_out, 'w') as f:
                     sp.call(cmd, stdout=f)
-                for f in passlist:
-                    os.remove(f)
+                #for f in passlist:
+                #    os.remove(f)
                 #fail
                 logfile.write("failing fastq files.\n")
                 faillist = glob.glob('fastq/fail/*fastq.gz')
                 cmd = ['cat'] + faillist
                 with open(fail_out, 'w') as f:
                     sp.call(cmd, stdout=f)
-                for f in faillist:
-                    os.remove(f)
+                #for f in faillist:
+                #    os.remove(f)
                 logfile.write("Copy sequencing_summary to sample folder.\n")
                 shutil.copy(
                     'fastq/sequencing_summary.txt',
                     os.path.join(
                         sampleid_dir, 
                         'sequencing_summary.txt'
-                )
+                ))
             else:
                 # To Do - make pass/fail splits here as well.
                 logfile.write("barcoding detected.\n")

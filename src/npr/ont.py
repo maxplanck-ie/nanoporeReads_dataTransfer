@@ -130,6 +130,7 @@ def main(config):
                 workdir = output_directory,
                 use_conda = True,
                 conda_prefix = conda_prefix,
+                rerun_triggers= ['mtime']
             )
             if not snak_stat:
                 msg += "snake crashed."

@@ -37,6 +37,8 @@ def query_parkour(config, flowcell, msg):
     """
     if flowcell == '20221014_1045_X5_FAV39027_f348bc5c':
         fc = 'FAV39027_reuse'
+    if flowcell == '20221107_1020_X3_FAV08360_71e3fa80':
+        fc = 'FAV08360-1'
     else:
         fc = flowcell.split("_")[3]
     d = {'flowcell_id': fc}

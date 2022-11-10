@@ -10,7 +10,7 @@ from npr.snakehelper import grab_seqsummary
 
 rule pycoQc_fastq:
     input:
-        fastq="Project_{project}/Sample_{sample_id}/{sample_name}.fastq.gz",
+        fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz",
         sequencing_summary="Project_{project}/Sample_{sample_id}/sequencing_summary.txt",
     output:
         "FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"
@@ -23,7 +23,7 @@ rule pycoQc_fastq:
 
 rule fastqc: 
     input: 
-        "Project_{project}/Sample_{sample_id}/{sample_name}.fastq.gz"
+        "Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz"
     output: 
         html="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html",
         zip="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.zip", # suffix _fastqc.zip is necessary for multiqc
