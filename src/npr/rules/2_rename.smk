@@ -91,7 +91,6 @@ rule rename:
                         'sequencing_summary.txt'
                 ))
             else:
-                # To Do - make pass/fail splits here as well.
                 logfile.write("barcoding detected.\n")
                 splitcmd = config_to_splitseqsummary(config)
                 logfile.write("splitcmd: {}\n".format(splitcmd))
@@ -104,28 +103,54 @@ rule rename:
                         project_dir,
                         'Sample_' + sample_id
                     )
-                    fq_out = os.path.join(
+                    pass_out = os.path.join(
                         sampleid_dir,
+                        'pass',
                         samDic['Sample_Name'] + '.fastq.gz'
                     )
-                    # Cat only the specific sample ofcourse..
-                    cmd = ['cat']
-                    for fqFile in glob.glob('fastq/pass/{}/*fastq.gz'.format(samDic['index_id'])):
-                        cmd.append(fqFile)
-                    for fqFile in glob.glob('fastq/fail/{}/*fastq.gz'.format(samDic['index_id'])):
-                        cmd.append(fqFile)
-                    logfile.write("Running fastq cat for barcode {}.\n".format(samDic['index_id']))
-                    with open(fq_out, 'w') as f:
+                    fail_out = os.path.join(
+                        sampleid_dir,
+                        'fail',
+                        samDic['Sample_Name'] + '.fastq.gz'
+                    )
+                    logfile.write("Creating directories for {}\n".format(sample_id))
+                    if not os.path.exists(project_dir):
+                        os.mkdir(project_dir)
+                    if not os.path.exists(sampleid_dir):
+                        os.mkdir(sampleid_dir)
+                    logfile.write("Creating pass.")
+                    passdir = os.path.join(
+                        sampleid_dir, 'pass'
+                    )
+                    faildir = os.path.join(
+                        sampleid_dir, 'fail'
+                    )
+                    if not os.path.exists(passdir):
+                        os.mkdir(passdir)
+                    if not os.path.exists(faildir):
+                        os.mkdir(faildir)
+                    logfile.write("Passing fastq files.\n")
+                    passlist = glob.glob(
+                        os.path.join('fastq','pass','{}'.format(samDic['index_id']), '*fastq.gz')
+                    )
+                    cmd = ['cat'] + passlist
+                    with open(pass_out, 'w') as f:
                         sp.call(cmd, stdout=f)
+                    #for f in passlist:
+                    #    os.remove(f)
+                    #fail
+                    logfile.write("failing fastq files.\n")
+                    faillist = glob.glob(
+                        os.path.join('fastq','fail','{}'.format(samDic['index_id']), '*fastq.gz')
+                    )
+                    cmd = ['cat'] + faillist
+                    with open(fail_out, 'w') as f:
+                        sp.call(cmd, stdout=f)
+
                     shutil.copy(
                         'sequencing_summary_{}.txt'.format(samDic['index_id']),
                         os.path.join(
                             sampleid_dir,
-                            'sequencing_summary_{}.txt'.format(samDic['Sample_Name'])
+                            'sequencing_summary.txt'
                         )
                     )
-                shutil.move(
-                    'sequencing_summary_unclassified.txt',
-                    'reports/sequencing_summary_unclassified.txt'
-                )
-                
