@@ -15,12 +15,9 @@ def send_email(body, version, flowcell, config, allreceivers=True):
         flowcell
     )
     mailer['From'] = config['email']['from']
-    if allreceivers:
-        mailer['To'] = config['email']['to']
-        tomailers = config['email']['to'].split(',')
-    else:
-        mailer['To'] = config['email']['trigger']
-        tomailers = config['email']['trigger'].split(',')
+    to_email = 'to' if allreceivers else 'trigger'
+    mailer['To'] = config['email'][to_email]
+    tomailers = config['email']['to'].split(',')
     print("Email trigger, sending to {}".format(tomailers))
     email = MIMEText(body)
     mailer.attach(email)

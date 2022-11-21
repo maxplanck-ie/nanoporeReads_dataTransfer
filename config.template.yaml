@@ -2,7 +2,7 @@ options:
   sleep_time: 1 #in hour
 
 snakemake: 
-  conda_prefix: /path/to/conda/prefix # optional
+  conda_prefix: /path/to/conda/prefix
   cores: 24
 
 paths:
