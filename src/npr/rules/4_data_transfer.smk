@@ -56,3 +56,4 @@ rule data_transfer:
             logfile.write("pod5 = {}\n".format(cp_pod5))
             cp_fqc = overwrite_dir(fqc_dir, final_path)
             logfile.write("pod5 = {}\n".format(cp_fqc))
+

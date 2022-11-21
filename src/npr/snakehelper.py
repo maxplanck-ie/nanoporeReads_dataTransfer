@@ -3,6 +3,69 @@ import shutil
 import sys
 from rich import print
 import glob
+import subprocess as sp
+from pathlib import Path
+
+def fast5_to_pod5(basepath, baseout, logf):
+    '''
+    searches for 'fast5*' directories in basepath
+    runs pod5 conversion 
+    outputs pod5 combined into baseout/pod5*.
+    '''
+    odir = os.path.join(
+        baseout,
+        'pod5'
+    )
+    podracercmd = [
+        'pod5-convert-from-fast5',
+        basepath, # fast5
+        odir, # pod5out
+        '--recursive',
+        '--force-overwrite',
+        '--active-readers',
+        '10'
+    ]
+    if not os.path.exists('log'):
+        os.mkdir('log')
+    with open(logf, 'w') as f:
+        f.write('#pod5-conversion cmd:\n')
+        f.write(' '.join(podracercmd) + '\n')
+    sp.check_output(podracercmd)
+
+def basecalling(config, logf):
+    pod5dir = os.path.join(
+        config['info_dict']['flowcell_path'],
+        'pod5'
+    )
+    cmd = [config['guppy_basecaller']['base_calling_cmd']] +\
+        [
+        '-i',
+        pod5dir,
+        '-s',
+        pod5dir.replace('pod5', 'fastq'),
+        '-c',
+        config['info_dict']['model']
+        ] +\
+        config["guppy_basecaller"]["base_calling_options"].split(' ')
+    barcode = False if config['bc_kit'] == 'no_bc' else True
+    if barcode is True:
+        cmd = cmd +\
+            [
+            '--barcode_kits',
+            config['bc_kit']
+            ] +\
+            config["guppy_basecaller"]["base_calling_barcode_options"].split(' ')
+    else:
+        cmd = cmd +\
+            [
+            '--trim_strategy',
+            'dna'
+            ]
+    with open(logf, 'a') as f:
+        f.write("#guppy-basecaller cmd:\n")
+        f.write(' '.join(cmd) + '\n')
+    sp.check_output(cmd)
+
 
 def retRule(rulestr, config):
     return(
@@ -92,35 +155,35 @@ def grab_seqsummary(dir):
     else:
         return(globber[0])
 
-def getfoot(dir):
-    footprint = 0
-    for path, dirs, files in os.walk(dir):
-        for f in files:
-            footprint += os.path.getsize(
-                os.path.join(
-                    path,f
+def getfast5foot(f5dir, pod5dir):
+    f5foot = 0
+    pod5foot = 0
+    for d in glob.glob(
+        os.path.join(f5dir, 'fast5*')
+    ):
+        for path, dirs, files in os.walk(d):
+            for f in files:
+                f5foot += os.path.getsize(
+                    os.path.join(
+                        path,f
+                    )
                 )
-            )
-    return(footprint)
-
-# return commands.
-def config_to_basecallcmd(config):
-    # base cmd.
-    cmd = config['guppy_basecaller']['base_calling_cmd']
-    # in - and output folder.
-    cmd += " -i {}".format(
-        config["info_dict"]["poddir"]
+    for d in glob.glob(
+        os.path.join(pod5dir, 'pod5*')
+    ):
+        for path, dirs, files in os.walk(d):
+            for f in files:
+                pod5foot += os.path.getsize(
+                    os.path.join(
+                        path,f
+                    )
+                )
+    return(
+        round(
+            pod5foot/f5foot,
+            2
+        )
     )
-    cmd += " -s fastq"
-    barcode = False if config['bc_kit'] == 'no_bc' else True
-    cmd += " -c {} ".format(config['info_dict']['model'])
-    cmd += config["guppy_basecaller"]["base_calling_options"]
-    if barcode is True:
-        cmd += " --barcode_kits {} ".format(config["bc_kit"])
-        cmd += config["guppy_basecaller"]["base_calling_barcode_options"]
-    else:
-        cmd += " --trim_strategy dna "
-    return (cmd)
 
 def config_to_splitseqsummary(config):
     cmd = config["pycoQc"]["barcodeSplit"]
@@ -128,6 +191,7 @@ def config_to_splitseqsummary(config):
     cmd += "-o ./"
     return(cmd)
 
+# deprecated
 def config_to_pycoqc(config, seqsum, fqc_sampledir, sampleid, bc_kit):
     cmd = config["pycoQc"]["pycoQc"]
     cmd += ' ' + seqsum + ' '
@@ -155,6 +219,7 @@ def config_to_mapcmd(config):
         if protocol == 'dna':
             pref = pref + config['mapping']['mapping_dna_options'].split(' ')
             pref.append(config['genome'][config['info_dict']['organism']])
+            post.append('sort')
             post.append(
                 config['mapping']['samtools_options']
             )
@@ -167,6 +232,8 @@ def config_to_mapcmd(config):
             pref = pref + config['mapping']['mapping_rna_options'].split(' ')
             pref = pref + ['--junc-bed', config['transcripts'][org]]
             pref.append(config['genome'][org])
+            post.append('sort')
+
             post.append(
                 config['mapping']['samtools_options']
             )
@@ -179,6 +246,7 @@ def config_to_mapcmd(config):
             pref = pref + config['mapping']['mapping_rna_options'].split(' ')
             pref = pref + ['--junc-bed', config['transcripts'][org]]
             pref.append(config['genome'][org])
+            post.append('sort')
             post.append(
                 config['mapping']['samtools_options']
             )

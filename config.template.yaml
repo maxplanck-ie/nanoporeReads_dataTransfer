@@ -1,6 +1,10 @@
 options:
   sleep_time: 1 #in hour
 
+snakemake: 
+  conda_prefix: /path/to/conda/prefix
+  cores: 24
+
 paths:
   baseDir: /path/to/ont/files
   outputDir: /path/to/trnasfer/input/
@@ -44,7 +48,8 @@ nanocomp:
 
 pycoQc:
   barcodeSplit: /path/to/pycoqc/Barcode_split -u -v -f
-  pycoQc: /path/to/pycoqc/bin/pycoQC --summary_file
+  pycoQc: "pycoQC"
+  pycoQc_opts: ""
 
 genome:
   drosophila: /path/to/genome.fa

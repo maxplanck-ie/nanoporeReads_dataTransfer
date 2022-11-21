@@ -47,6 +47,10 @@ rule dna_mapping:
                 genome = config['info_dict']['organism']
                 logfile.write("Valid organism: {}\n".format(genome))
                 pref, post = config_to_mapcmd(config)
+                logfile.write("Pref = \n")
+                logfile.write("{}\n".format(pref))
+                logfile.write("Post = \n")
+                logfile.write("{}\n".format(post))
                 if pref:
                     analysis_dir = os.path.join(
                         final_path,
@@ -71,6 +75,7 @@ rule dna_mapping:
                             final_path,
                             'Project_' + p,
                             'Sample_' + sample,
+                            'pass',
                             config['data'][sample]['Sample_Name'] + '.fastq.gz'
                         )
                         logfile.write("fqFile path = {}".format(fqFile))

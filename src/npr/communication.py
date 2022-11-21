@@ -8,20 +8,23 @@ import os
 from importlib.metadata import version
 
 
-def send_email(body, version, flowcell, config):
+def send_email(body, version, flowcell, config, allreceivers=True):
     mailer = MIMEMultipart('alternative')
     mailer['Subject'] = "[npr] [{}] {}".format(
         version,
         flowcell
     )
     mailer['From'] = config['email']['from']
-    mailer['To'] = config['email']['to']
+    to_email = 'to' if allreceivers else 'trigger'
+    mailer['To'] = config['email'][to_email]
+    tomailers = config['email']['to'].split(',')
+    print("Email trigger, sending to {}".format(tomailers))
     email = MIMEText(body)
     mailer.attach(email)
     s = smtplib.SMTP(config['email']['host'])
     s.sendmail(
         config['email']['from'],
-        config['email']['to'].split(','),
+        tomailers,
         mailer.as_string()
     )
 
@@ -29,7 +32,12 @@ def query_parkour(config, flowcell, msg):
     """
     query parkour.
     """
-    fc = flowcell.split("_")[3]
+    if flowcell == '20221014_1045_X5_FAV39027_f348bc5c':
+        fc = 'FAV39027_reuse'
+    if flowcell == '20221107_1020_X3_FAV08360_71e3fa80':
+        fc = 'FAV08360-1'
+    else:
+        fc = flowcell.split("_")[3]
     d = {'flowcell_id': fc}
     res = requests.get(
         config["parkour"]["url"],

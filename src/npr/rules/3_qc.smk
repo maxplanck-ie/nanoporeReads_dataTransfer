@@ -10,37 +10,34 @@ from npr.snakehelper import grab_seqsummary
 
 rule pycoQc_fastq:
     input:
-        "flags/2_renamed.done"
+        fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz",
+        sequencing_summary="Project_{project}/Sample_{sample_id}/sequencing_summary.txt",
     output:
-        touch('flags/3_qc.done')
+        "FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"
     log:
-        log = 'log/3_qc.log'
-    run:
-        # Assumption is only 1 project per flowcell..
-        with open(log.log, 'w') as logfile:
-            for sample_id in config['data']['samples']:
-                logfile.write("pycoqc on sample {}\n".format(sample_id))
-                sample_dic = config['data'][sample_id]
-                sample_project = sample_dic['Sample_Project']
-                fqc_dir = os.path.join(
-                    'FASTQC_Project_' + sample_project
-                )
-                fqc_sampledir = os.path.join(
-                    fqc_dir,
-                    'Sample_' + sample_id
-                )
-                project_sampledir = fqc_sampledir.replace('FASTQC_', '')
-                if not os.path.exists(fqc_dir):
-                    os.mkdir(fqc_dir)
-                os.mkdir(fqc_sampledir)
-                cmd = config_to_pycoqc(
-                    config,
-                    grab_seqsummary(project_sampledir),
-                    fqc_sampledir,
-                    sample_id,
-                    config['bc_kit']
-                )
-                print(cmd)
-                logfile.write("pycoqc command:\n")
-                logfile.write("{}\n".format(cmd))
-                sp.check_call(cmd, shell=True)
+        'log/pycoqc/project-{project}_id-{sample_id}_name-{sample_name}.log'
+    shell:
+        "pycoQC --summary_file {input.sequencing_summary} " 
+        "{config[pycoQc][pycoQc_opts]} "
+        "-o {output} > {log} 2>&1"
+
+rule fastqc: 
+    input: 
+        "Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz"
+    output: 
+        html="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html",
+        zip="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.zip", # suffix _fastqc.zip is necessary for multiqc
+    params: "--quiet"
+    threads: 16
+    log:
+        "log/fastqc/project-{project}_id-{sample_id}_name-{sample_name}.log"
+    wrapper: 
+        "v1.12.2/bio/fastqc"
+    
+
+rule qc: 
+    input: 
+        pycoQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"),
+        fastqc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html"),
+    output: 
+        touch("flags/3_qc.done")

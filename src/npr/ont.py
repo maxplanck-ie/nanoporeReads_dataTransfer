@@ -15,6 +15,7 @@ from npr.ont_pipeline import find_new_flowcell
 from npr.ont_pipeline import read_flowcell_info
 from npr.ont_pipeline import read_samplesheet
 from npr.communication import query_parkour, send_email
+from npr.snakehelper import getfast5foot
 import subprocess as sp
 from importlib.metadata import version
 from pathlib import Path
@@ -63,7 +64,14 @@ def main(config):
         if flowcell:
             info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict)
-
+            print("Sending mail trigger.")
+            send_email(
+                "Flowcell {} found. Starting pipeline.".format(flowcell),
+                version('npr'),
+                os.path.basename(flowcell),
+                config,
+                allreceivers=False
+            )
             # read samplesheet
             bc_kit,data = read_samplesheet(config)
             config["data"] = data
@@ -105,15 +113,20 @@ def main(config):
                 fnames.sort(key=os.path.getctime)
                 n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
             
+            print("Starting snakemake on file {} with configfile {} using workdir {}..."
+                  .format(snakefile_file, configFile, output_directory), file=sys.stderr)
             snak_stat = snakemake.snakemake(
                 snakefile = snakefile_file,
-                debug = True,
-                #cores = 25,
+                #debug = True,
+                #cores = config["snakemake"]["cores"],
+                **config['snakemake'],
                 max_jobs_per_second = 1,
                 printshellcmds = True,
                 verbose = True,
                 configfiles = [configFile],
-                workdir = output_directory
+                workdir = output_directory,
+                use_conda = True,
+                rerun_triggers= ['mtime']
             )
             if not snak_stat:
                 msg += "snake crashed."
@@ -121,11 +134,17 @@ def main(config):
             Path(os.path.join(output_directory, 'analysis.done')).touch()
             print(config)
             msg = 'Project: {}\n'.format(config['data']['projects'][0])
-            msg += 'pod5 compression: {}\n'.format(config['info_dict']['pod5 compression'])
+            msg += 'pod5 compression: {}\n'.format(
+                getfast5foot(
+                    config['info_dict']['base_path'],
+                    config['info_dict']['flowcell_path']
+                )
+            )
             msg += 'organism: {}\n'.format(config['info_dict']['organism'])
             msg += 'flowcell: {}\n'.format(config['info_dict']['flowcell'])
             msg += 'kit: {}\n'.format(config['info_dict']['kit'])
             msg += 'barcoding: {}\n'.format(config['info_dict']['barcoding'])
+            msg += 'barcoding kit: {}\n'.format(config['info_dict']['barcode_kit'])
             msg += 'protocol: {}\n'.format(config['info_dict']['protocol'])
             msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
             msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
@@ -136,3 +155,4 @@ def main(config):
             print("No flowcells found. I go back to sleep.")
             sleep()
             continue
+
