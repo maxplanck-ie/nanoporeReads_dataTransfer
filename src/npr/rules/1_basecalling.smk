@@ -6,11 +6,13 @@ rule pod5:
        touch('flags/1_pod5.done')
     params:
         idir = config["info_dict"]["base_path"],
-        baseout = config['info_dict']['flowcell_path']
+        baseout = config['info_dict']['flowcell_path'],
+        log  = 'log/cmdline.log'
     run:
         fast5_to_pod5(
-            params['idir'],
-            params['baseout']
+            params.idir,
+            params.baseout,
+            params.log
         )
 
 rule basecall:
@@ -18,6 +20,10 @@ rule basecall:
         'flags/1_pod5.done'
     output: touch("flags/1_basecalling.done")
     params:
-        cfg = config
+        cfg = config,
+        log = 'log/cmdline.log'
     run:
-        basecalling(params['cfg'])
+        cmd = basecalling(
+            params.cfg,
+            params.log
+        )

@@ -6,13 +6,12 @@ import glob
 import subprocess as sp
 from pathlib import Path
 
-def fast5_to_pod5(basepath, baseout):
+def fast5_to_pod5(basepath, baseout, logf):
     '''
     searches for 'fast5*' directories in basepath
     runs pod5 conversion 
     outputs pod5 combined into baseout/pod5*.
     '''
-
     odir = os.path.join(
         baseout,
         'pod5'
@@ -26,9 +25,14 @@ def fast5_to_pod5(basepath, baseout):
         '--active-readers',
         '10'
     ]
+    if not os.path.exists('log'):
+        os.mkdir('log')
+    with open(logf, 'w') as f:
+        f.write('#pod5-conversion cmd:\n')
+        f.write(' '.join(podracercmd) + '\n')
     sp.check_output(podracercmd)
 
-def basecalling(config):
+def basecalling(config, logf):
     pod5dir = os.path.join(
         config['info_dict']['flowcell_path'],
         'pod5'
@@ -57,6 +61,9 @@ def basecalling(config):
             '--trim_strategy',
             'dna'
             ]
+    with open(logf, 'a') as f:
+        f.write("#guppy-basecaller cmd:\n")
+        f.write(' '.join(cmd) + '\n')
     sp.check_output(cmd)
 
 
