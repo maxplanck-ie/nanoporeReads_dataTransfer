@@ -8,7 +8,7 @@ from npr.snakehelper import config_to_mapcmd
 from npr.snakehelper import grab_seqsummary
 
 
-rule dna_mapping:
+rule alignments:
     input:
         'flags/4_transfer.done'
     output:

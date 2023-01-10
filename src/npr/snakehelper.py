@@ -6,7 +6,7 @@ import glob
 import subprocess as sp
 from pathlib import Path
 
-def fast5_to_pod5(basepath, baseout, logf):
+def fast5_to_pod5(basepath, baseout, cmdlinef):
     '''
     searches for 'fast5*' directories in basepath
     runs pod5 conversion 
@@ -27,12 +27,12 @@ def fast5_to_pod5(basepath, baseout, logf):
     ]
     if not os.path.exists('log'):
         os.mkdir('log')
-    with open(logf, 'w') as f:
+    with open(cmdlinef, 'w') as f:
         f.write('#pod5-conversion cmd:\n')
         f.write(' '.join(podracercmd) + '\n')
     sp.check_output(podracercmd)
 
-def basecalling(config, logf):
+def basecalling(config, cmdlinef, logf):
     pod5dir = os.path.join(
         config['info_dict']['flowcell_path'],
         'pod5'
@@ -61,7 +61,10 @@ def basecalling(config, logf):
             '--trim_strategy',
             'dna'
             ]
-    with open(logf, 'a') as f:
+    if config['info_dict']['protocol'] == 'rna':
+        cmd = cmd +\
+            config['guppy_basecaller']['base_calling_RNA_options'].split(' ')
+    with open(cmdlinef, 'a') as f:
         f.write("#guppy-basecaller cmd:\n")
         f.write(' '.join(cmd) + '\n')
     sp.check_output(cmd)
@@ -89,8 +92,8 @@ def glob2reports(globStr, base_path, flowcell_path):
                 globStr
             )
     )
-    if not globber:
-        sys.exit("Not {} files found..".format(globStr))
+    # if not globber:
+    #     sys.exit("Not {} files found..".format(globStr))
     for s in globber:
         dest = os.path.join(
             flowcell_path,

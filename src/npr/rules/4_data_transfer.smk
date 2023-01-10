@@ -10,7 +10,7 @@ from npr.snakehelper import get_seqdir
 from npr.snakehelper import genome_index
 from npr.snakehelper import overwrite_dir
 
-rule data_transfer:
+rule transfer_data:
     input:
         'flags/3_qc.done'
     output:

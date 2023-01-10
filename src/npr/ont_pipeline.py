@@ -106,22 +106,41 @@ def read_flowcell_info(config, info_dict):
             '*json'
         )
     )
-    with open(json_file[0]) as f: # assume only 1 file
-        jsondata = json.load(f)
-    info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
-    info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
-    info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
-    # double check args. This needs a cleaner solution.
-    for rg in jsondata['protocol_run_info']['args']:
-        if rg == '--barcoding' and not info_dict['barcoding']:
-            print("Json bool for barcoding wrong ! Override !")
-            info_dict['barcoding'] = True
-        if rg.startswith('barcoding_kits'):
-            start = rg.find('[') + 1
-            stop = rg.find(']')
-            info_dict['barcode_kit'] = rg[start:stop].replace('\"', '')
-    if 'barcode_kit' not in info_dict:
-        info_dict['barcode_kit'] = 'no_bc'
+    if json_file:
+        with open(json_file[0]) as f: # assume only 1 file
+            jsondata = json.load(f)
+        info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
+        info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
+        info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
+        # double check args. This needs a cleaner solution.
+        for rg in jsondata['protocol_run_info']['args']:
+            if rg == '--barcoding' and not info_dict['barcoding']:
+                print("Json bool for barcoding wrong ! Override !")
+                info_dict['barcoding'] = True
+            if rg.startswith('barcoding_kits'):
+                start = rg.find('[') + 1
+                stop = rg.find(']')
+                info_dict['barcode_kit'] = rg[start:stop].replace('\"', '')
+        if 'barcode_kit' not in info_dict:
+            info_dict['barcode_kit'] = 'no_bc'
+    else:
+        # try to get md file.
+        finsum = glob.glob(
+            os.path.join(
+                base_path,
+                'final_summary*txt'
+            )
+        )[0]
+        if finsum:
+            for line in open(finsum, 'r'):
+                if line.strip().startswith('protocol='):
+                    info_dict['flowcell'] = line.strip().split(':')[-2]
+                    info_dict['kit'] = line.strip().split(':')[-1]
+                    print("assuming no barcode.")
+                    info_dict['barcode_kit'] = 'no_bc'
+                    info_dict['barcoding'] = False
+        else:
+            sys.exit("no json file, no final summary txt file found. exiting.")
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
     modeldic = yaml.safe_load(
