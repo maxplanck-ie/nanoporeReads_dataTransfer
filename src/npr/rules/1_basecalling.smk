@@ -1,7 +1,7 @@
 from npr.snakehelper import basecalling
 from npr.snakehelper import fast5_to_pod5
 
-rule pod5:
+rule fast5_to_pod5:
     output:
        touch('flags/1_pod5.done')
     params:
@@ -15,15 +15,18 @@ rule pod5:
             params.log
         )
 
-rule basecall:
+rule guppy_basecalling:
     input:
         'flags/1_pod5.done'
     output: touch("flags/1_basecalling.done")
+    log:
+        log = 'log/basecalling.log'
     params:
         cfg = config,
-        log = 'log/cmdline.log'
+        cmdline = 'log/cmdline.log'
     run:
         cmd = basecalling(
             params.cfg,
-            params.log
+            params.cmdline,
+            log.log
         )

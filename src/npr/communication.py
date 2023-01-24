@@ -53,6 +53,7 @@ def query_parkour(config, flowcell, msg):
         info_dict = {}
         msg += "Parkour query 200.\n"
         parkour_dict = res.json()
+        print(parkour_dict)
         first_key = list(parkour_dict.keys())[0]
         first_entry = list(parkour_dict[first_key].keys())[0]
         organism = parkour_dict[first_key][first_entry][-3]
@@ -64,7 +65,9 @@ def query_parkour(config, flowcell, msg):
         elif "RNA" in protocol:
             protocol = 'rna'
         else:
-            sys.exit("protocol not found")
+            print('protocol not found Default to dna.')
+            protocol = 'dna'
+            #sys.exit("protocol not found")
         info_dict['protocol'] = protocol
         if organism not in config['genome'].keys():
             organism = "other"

@@ -8,7 +8,7 @@ from npr.snakehelper import config_to_pycoqc
 from npr.snakehelper import grab_seqsummary
 
 
-rule pycoQc_fastq:
+rule qc_pycoqc:
     input:
         fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz",
         sequencing_summary="Project_{project}/Sample_{sample_id}/sequencing_summary.txt",
@@ -21,7 +21,7 @@ rule pycoQc_fastq:
         "{config[pycoQc][pycoQc_opts]} "
         "-o {output} > {log} 2>&1"
 
-rule fastqc: 
+rule qc_fastqc: 
     input: 
         "Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz"
     output: 
@@ -35,7 +35,7 @@ rule fastqc:
         "v1.12.2/bio/fastqc"
     
 
-rule qc: 
+rule qc_reformat: 
     input: 
         pycoQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"),
         fastqc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html"),

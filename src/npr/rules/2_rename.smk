@@ -16,7 +16,7 @@ del metadata["projects"]
 del metadata["samples"]
 metadata = pd.DataFrame(metadata).T
 
-rule rename:
+rule rename_files:
     input:
         "flags/1_basecalling.done"
     output:
