@@ -22,7 +22,7 @@ def fast5_to_pod5(basepath, baseout, cmdlinef):
         odir, # pod5out
         '--recursive',
         '--force-overwrite',
-        '--active-readers',
+        '-p',
         '10'
     ]
     if not os.path.exists('log'):
