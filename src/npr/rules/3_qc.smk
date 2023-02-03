@@ -27,13 +27,14 @@ rule qc_fastqc:
     output: 
         html="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html",
         zip="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.zip", # suffix _fastqc.zip is necessary for multiqc
-    params: "--quiet"
+    params:
+        odir = lambda wildcards "FASTQC_Project_{}/Sample_{}/".format(wildcards.project, wildcards.sample_id)
     threads: 16
     log:
         "log/fastqc/project-{project}_id-{sample_id}_name-{sample_name}.log"
-    wrapper: 
-        "v1.12.2/bio/fastqc"
-    
+    shell:'''
+    fastqc -t {threads} -o {params.odir} -d {params.odir} --quiet {input}
+    '''
 
 rule qc_reformat: 
     input: 
