@@ -28,7 +28,7 @@ rule qc_fastqc:
         html="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html",
         zip="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.zip", # suffix _fastqc.zip is necessary for multiqc
     params:
-        odir = lambda wildcards "FASTQC_Project_{}/Sample_{}/".format(wildcards.project, wildcards.sample_id)
+        odir = lambda wildcards: "FASTQC_Project_{}/Sample_{}/".format(wildcards.project, wildcards.sample_id)
     threads: 16
     log:
         "log/fastqc/project-{project}_id-{sample_id}_name-{sample_name}.log"
