@@ -60,10 +60,10 @@ def main(config):
             HUP.wait(timeout=float(60*60))
         signal.signal(signal.SIGHUP, breakSleep)
 
-        flowcell, msg = find_new_flowcell(config)
+        flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
             info_dict, msg = query_parkour(config, flowcell, msg)
-            config["info_dict"] = read_flowcell_info(config, info_dict)
+            config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
             print("Sending mail trigger.")
             send_email(
                 "Flowcell {} found. Starting pipeline.".format(flowcell),
