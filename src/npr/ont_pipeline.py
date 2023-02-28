@@ -11,16 +11,51 @@ import subprocess as sp
 from npr.communication import send_email
 from npr.snakehelper import glob2reports
 
+
 def find_new_flowcell(config):
     """
-    look for new flowcells that are flagged with `transfer.final`.
+    look for new flowcells that are finished.
+    There are 3 locations we should monitor:
+     - baseDir (manually copied flow cells) - DONE
+     - offloadDir (automatically offloaded flow cells by machine)
+     - wgetDir (downloaded data from Munich / elsewhere).
+    offloadDir & wgetDir should follow the same dir structure.
+    
+    baseDir flowcells are flagged with 'transfer.final'
     """
+    #################################### offload ####################################
+    offload_path = os.path.join(
+        config['paths']['offloadDir']
+    )
+    if offload_path:
+        # Assume samplesheet.csv now marks 'ready' flow cell.
+        dirs = glob.glob(
+            os.path.join(
+                offload_path, '*/*/*/SampleSheet.csv'
+            )
+        )
+        # Sanitize dirs for now as we have junk in there.
+        # Clean me up
+        dirs = [i for i in dirs if 'PAK83895' not in i]
+    else:
+        dirs = []
+    ####################################  wget   ####################################
+    wget_path = os.path.join(
+        config['paths']['wgetDir']
+    )
+    if wget_path:
+        dirs = dirs + glob.glob(
+            os.path.join(
+                wget_path, '*/*/*/SampleSheet.csv'
+            )
+        )
+    #################################### baseDir ####################################
     # set base path
     base_path = os.path.join(
         config["paths"]["baseDir"]
     )
     # glob dirs with a transfer flag.
-    dirs = glob.glob(
+    dirs = dirs + glob.glob(
         os.path.join(
             base_path, "*/transfer.final"
         )
@@ -62,10 +97,10 @@ def find_new_flowcell(config):
                 config["input"] = {
                     'name': os.path.basename(flowcell)
                 }
-                return (os.path.basename(flowcell), msg)
-    return (None, None)
+                return (os.path.basename(flowcell), msg, flowcell)
+    return (None, None, None)
 
-def read_flowcell_info(config, info_dict):
+def read_flowcell_info(config, info_dict, base_path):
     """
      - set paths
      - copy json, summaries & samplesheet
@@ -73,10 +108,6 @@ def read_flowcell_info(config, info_dict):
      - infer model from flowcell + kit
     """
     flowcell = config["input"]["name"]
-    base_path = os.path.join(
-        config["paths"]["baseDir"],
-        flowcell
-    )
     info_dict["base_path"] = base_path
     flowcell_path = os.path.join(
         config["paths"]["outputDir"],
@@ -124,7 +155,8 @@ def read_flowcell_info(config, info_dict):
         if 'barcode_kit' not in info_dict:
             info_dict['barcode_kit'] = 'no_bc'
     else:
-        # try to get md file.
+        # try to get txt file.
+        print('base path == {}'.format(base_path))
         finsum = glob.glob(
             os.path.join(
                 base_path,
@@ -136,9 +168,40 @@ def read_flowcell_info(config, info_dict):
                 if line.strip().startswith('protocol='):
                     info_dict['flowcell'] = line.strip().split(':')[-2]
                     info_dict['kit'] = line.strip().split(':')[-1]
-                    print("assuming no barcode.")
-                    info_dict['barcode_kit'] = 'no_bc'
-                    info_dict['barcoding'] = False
+            seq_sum = glob.glob(
+                os.path.join(
+                    base_path,
+                    'sequencing_summary*txt'
+                )
+            )
+            if not seq_sum:
+                sys.exit("No sequencing summary.txt file found. exiting.")
+            else:
+                # We try and fetch a barcode kit from sequencing summary.
+                # only open up the first 2 lines, as these can grow long.
+                # if barcoding is there, there'll be a barcoding
+                lines = 0
+                head = []
+                with open(seq_sum[0], 'r') as f:
+                    for line in f:
+                        if lines < 2:
+                            head.append(line.strip().split())
+                            lines += 1
+                        else:
+                            break
+                    if 'barcode_kit' in head[0]:
+                        info_dict['barcoding'] = True
+                        bkit = head[1][head[0].index('barcode_kit')]
+                        if info_dict['kit'] == 'SQK-PCB111-24' and info_dict['barcoding']:
+                            info_dict['barcode_kit'] = 'SQK-PCB111-24'
+                        else:
+                            info_dict['barcode_kit'] = bkit
+                        print('Barcoding detected: kit = {}'.format(bkit))
+                    else:
+                        print('no evidence for barcoding in seq summary.')
+                        info_dict['barcode_kit'] = 'no_bc'
+                        info_dict['barcoding'] = False
+                    print(head[0].index('barcode_kit'))
         else:
             sys.exit("no json file, no final summary txt file found. exiting.")
     print("flowcell = {}".format(info_dict["flowcell"]))

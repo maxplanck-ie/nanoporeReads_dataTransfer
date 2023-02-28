@@ -98,6 +98,8 @@ rule rename_files:
                 for sample_id in config['data']['samples']:
                     logfile.write("Renaming sample {}\n".format(sample_id))
                     samDic = config['data'][sample_id]
+                    # Some exceptions...
+                    samDic['index_id'] = samDic['index_id'].replace('021', '21').replace('022', '22').replace('023', '23').replace('024', '24')
                     project_dir = "Project_" + samDic['Sample_Project']
                     sampleid_dir = os.path.join(
                         project_dir,
@@ -127,8 +129,6 @@ rule rename_files:
                     )
                     if not os.path.exists(passdir):
                         os.mkdir(passdir)
-                    if not os.path.exists(faildir):
-                        os.mkdir(faildir)
                     logfile.write("Passing fastq files.\n")
                     passlist = glob.glob(
                         os.path.join('fastq','pass','{}'.format(samDic['index_id']), '*fastq.gz')
@@ -143,6 +143,8 @@ rule rename_files:
                     faillist = glob.glob(
                         os.path.join('fastq','fail','{}'.format(samDic['index_id']), '*fastq.gz')
                     )
+                    if not os.path.exists(faildir):
+                        os.mkdir(faildir)
                     cmd = ['cat'] + faillist
                     with open(fail_out, 'w') as f:
                         sp.call(cmd, stdout=f)
