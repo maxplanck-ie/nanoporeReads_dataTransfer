@@ -73,13 +73,18 @@ def query_parkour(config, flowcell, msg):
             organism = "other"
         info_dict["organism"] = str(organism)
         info_dict["protocol"] = protocol
-        return (info_dict, msg)
+        return (info_dict, msg, False)
     else:
-        msg += "Parkour query failed. Crash'n'Burn.\n"
+        info_dict = {}
+        msg += "Parkour query failed for {}.\n".format(fc)
+        msg += "Trying to salvage, default to DNA - MOUSE.\n".format(fc)
+        info_dict["organism"] = 'mouse'
+        info_dict["protocol"] = 'dna'
         send_email(
             msg,
             version('npr'),
             flowcell,
             config
         )
-        sys.exit("parkour failure.")
+        return (info_dict, msg, True)
+        #sys.exit("parkour failure.")
