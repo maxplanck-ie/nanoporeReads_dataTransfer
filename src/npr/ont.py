@@ -62,16 +62,16 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
-            info_dict, msg = query_parkour(config, flowcell, msg)
+            info_dict, msg, sentStat = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
-            print("Sending mail trigger.")
-            send_email(
-                "Flowcell {} found. Starting pipeline.".format(flowcell),
-                version('npr'),
-                os.path.basename(flowcell),
-                config,
-                allreceivers=False
-            )
+            if not sentStat:
+                send_email(
+                    "Flowcell {} found. Starting pipeline.".format(flowcell),
+                    version('npr'),
+                    os.path.basename(flowcell),
+                    config,
+                    allreceivers=False
+                )
             # read samplesheet
             bc_kit,data = read_samplesheet(config)
             config["data"] = data

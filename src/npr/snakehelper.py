@@ -69,7 +69,6 @@ def basecalling(config, cmdlinef, logf):
         f.write(' '.join(cmd) + '\n')
     sp.check_output(cmd)
 
-
 def retRule(rulestr, config):
     return(
         os.path.join(
