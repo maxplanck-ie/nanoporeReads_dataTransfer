@@ -31,7 +31,7 @@ def find_new_flowcell(config):
         # Assume samplesheet.csv now marks 'ready' flow cell.
         dirs = glob.glob(
             os.path.join(
-                offload_path, '*/*/*/SampleSheet.csv'
+                offload_path, '*/*/*/*html'
             )
         )
         # Sanitize dirs for now as we have junk in there.
@@ -46,7 +46,7 @@ def find_new_flowcell(config):
     if wget_path:
         dirs = dirs + glob.glob(
             os.path.join(
-                wget_path, '*/*/*/SampleSheet.csv'
+                wget_path, '*/*/*/*html'
             )
         )
     #################################### baseDir ####################################
@@ -138,6 +138,7 @@ def read_flowcell_info(config, info_dict, base_path):
         )
     )
     if json_file:
+        print("[green]Reading info from json[/green]")
         with open(json_file[0]) as f: # assume only 1 file
             jsondata = json.load(f)
         info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
@@ -153,7 +154,11 @@ def read_flowcell_info(config, info_dict, base_path):
                 stop = rg.find(']')
                 info_dict['barcode_kit'] = rg[start:stop].replace('\"', '')
         if 'barcode_kit' not in info_dict:
-            info_dict['barcode_kit'] = 'no_bc'
+            if info_dict['barcoding']:
+                print('[red] Not barcoding kit found in json. Default to flowcell kit.[/red]')
+                info_dict['barcode_kit'] = info_dict['kit']
+            else:
+                info_dict['barcode_kit'] = 'no_bc'
     else:
         # try to get txt file.
         print('base path == {}'.format(base_path))
@@ -258,6 +263,12 @@ def read_samplesheet(config):
                                         'NB', 'barcode'
                                        ),
                                        "Sample_ID": row["Sample_ID"]})
+    if len(data['samples']) > 1 and config["info_dict"]['barcoding'] == False:
+        print("[red] Danger, barcoding inferred as false, but more then 1 sample in samplesheet. [/red]")
+        print("[red] Overwrite barcoding boolean to true. [/red]")
+        config["info_dict"]['barcoding'] = True
+        print("[red] Defaulting to flowcell kit as barcode kit ! [/red]")
+        config["info_dict"]['barcode_kit'] = config["info_dict"]['kit']
     print("[green] Barcode kit determined as: {}".format(
         config["info_dict"]['barcode_kit']
     ))
