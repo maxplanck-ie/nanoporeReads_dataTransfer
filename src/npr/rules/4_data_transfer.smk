@@ -48,6 +48,32 @@ rule transfer_data:
             config['data']['finalpath'] = final_path
             if not os.path.exists(final_path):
                 os.mkdir(final_path)
+            # create a metadata yaml
+            metayaml = os.path.join(
+                final_path, 'metadata.yaml'
+            )
+            with open(metayaml, 'w') as f:
+                f.write(
+                    'flowcell: {}\n'.format(
+                        config['info_dict']['flowcell']
+                    )
+                )
+                f.write(
+                    'kit: {}\n'.format(
+                        config['info_dict']['kit']
+                    )
+                )
+                if config['info_dict']['barcoding']:
+                    f.write(
+                        'barcode_kit: {}\n'.format(
+                            config['info_dict']['barcode_kit']
+                        )
+                    )
+                f.write(
+                    'basecalling model: {}\n'.format(
+                        os.path.basename(config['info_dict']['model'])
+                    )
+                )
             # copy over data.
             logfile.write("init writing.\n")
             cp_proj = overwrite_dir(project_dir, final_path)
