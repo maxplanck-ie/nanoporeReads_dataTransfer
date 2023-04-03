@@ -36,6 +36,8 @@ def query_parkour(config, flowcell, msg):
         fc = 'FAV39027_reuse'
     if flowcell == '20221107_1020_X3_FAV08360_71e3fa80':
         fc = 'FAV08360-1'
+    if flowcell == '20230331_1220_X4_FAV22714_872a401d':
+        fc = 'FAV22714-2'
     else:
         fc = flowcell.split("_")[3]
     d = {'flowcell_id': fc}
@@ -58,7 +60,7 @@ def query_parkour(config, flowcell, msg):
         first_entry = list(parkour_dict[first_key].keys())[0]
         organism = parkour_dict[first_key][first_entry][-3]
         protocol = parkour_dict[first_key][first_entry][1]
-        if fc == 'PAK78871' or fc == 'PAK79330' or fc =='PAK77043':
+        if fc == 'PAK78871' or fc == 'PAK79330' or fc =='PAK77043' or fc == 'FAV22714-2':
             print("[red] Protocol override [/red]")
             protocol = 'cdna'
         if 'cDNA' in protocol:
