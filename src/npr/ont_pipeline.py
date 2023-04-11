@@ -57,7 +57,7 @@ def find_new_flowcell(config):
     # glob dirs with a transfer flag.
     dirs = dirs + glob.glob(
         os.path.join(
-            base_path, "*/transfer.final"
+            base_path, "*/*html"
         )
     )
     # Iterate over dirs.
@@ -72,9 +72,6 @@ def find_new_flowcell(config):
                 'analysis.done'
             )
         ):
-            msg = "New flowcell found: {} \n".format(
-                os.path.basename(flowcell)
-            )
             if not os.path.isfile(
                 os.path.join(flowcell, 'SampleSheet.csv')
             ):
@@ -87,13 +84,7 @@ def find_new_flowcell(config):
                 )
                 sys.exit("no sampleSheet.")
             else:
-                msg += "SampleSheet.csv file found. Start processing..\n"
-                # send_email(
-                #    msg,
-                #    version("npr"),
-                #    os.path.basename(flowcell),
-                #    config
-                # )
+                msg += "SampleSheet.csv file found.\n"
                 config["input"] = {
                     'name': os.path.basename(flowcell)
                 }
