@@ -74,6 +74,11 @@ rule transfer_data:
                         os.path.basename(config['info_dict']['model'])
                     )
                 )
+                f.write(
+                    'guppy version: {}\n'.format(
+                        os.path.basename(config['guppy_basecaller']['guppy_version'])
+                    )
+                )
             # copy over data.
             logfile.write("init writing.\n")
             cp_proj = overwrite_dir(project_dir, final_path)
