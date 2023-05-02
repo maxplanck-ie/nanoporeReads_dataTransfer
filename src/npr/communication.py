@@ -71,7 +71,7 @@ def query_parkour(config, flowcell, msg):
             first_entry = list(parkour_dict[first_key].keys())[0]
             organism = parkour_dict[first_key][first_entry][-3]
             protocol = parkour_dict[first_key][first_entry][1]
-            if fc == 'PAK78871' or fc == 'PAK79330' or fc =='PAK77043' or fc == 'FAV22714-2':
+            if fc == 'PAK78871' or fc == 'PAK79330' or fc =='PAK77043' or fc == 'FAV22714-2' or fc == 'PAK78965' or fc == 'PAK79757':
                 print("[red] Protocol override [/red]")
                 protocol = 'cdna'
             if 'cDNA' in protocol:

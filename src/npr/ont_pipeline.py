@@ -75,7 +75,7 @@ def find_new_flowcell(config):
             if not os.path.isfile(
                 os.path.join(flowcell, 'SampleSheet.csv')
             ):
-                msg += "No SampleSheet.csv file.. Exiting.\n"
+                msg = "No SampleSheet.csv file.. Exiting.\n"
                 send_email(
                     msg,
                     version("npr"),
@@ -84,7 +84,7 @@ def find_new_flowcell(config):
                 )
                 sys.exit("no sampleSheet.")
             else:
-                msg += "SampleSheet.csv file found.\n"
+                msg = "SampleSheet.csv file found.\n"
                 config["input"] = {
                     'name': os.path.basename(flowcell)
                 }
