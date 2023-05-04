@@ -14,7 +14,7 @@ import signal
 from npr.ont_pipeline import find_new_flowcell
 from npr.ont_pipeline import read_flowcell_info
 from npr.ont_pipeline import read_samplesheet
-from npr.communication import query_parkour, send_email
+from npr.communication import query_parkour, send_email, ship_qcreports
 from npr.snakehelper import getfast5foot
 import subprocess as sp
 from importlib.metadata import version
