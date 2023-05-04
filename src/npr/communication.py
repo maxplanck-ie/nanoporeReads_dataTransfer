@@ -5,8 +5,56 @@ from rich import print
 import requests
 import sys
 import os
+import glob
+import shutil
 from importlib.metadata import version
+import paramiko
+from scp import SCPClient
 
+def ship_qcreports(config, flowcell):
+    '''
+    update samba drive with a flowcell folder,
+    copy pycoQC reports
+    copy run report
+    '''
+    # login info.
+    _pkey = paramiko.RSAKey.from_private_key_file(
+        config['sambahost']['pkey']
+    )
+    _user = config['sambahost']['user']
+    _host = config['sambahost']['host']
+    
+    # set client.
+    client = paramiko.SSHClient()
+    policy = paramiko.AutoAddPolicy()
+    client.set_missing_host_key_policy(policy)
+    client.connect(
+        _host,
+        username=_user,
+        pkey=_pkey
+    )
+    # Create flowcell folder if it doesn't exist.
+    samba_fdir = os.path.join(
+        config['paths']['deepseq_qc'],
+        flowcell
+    )
+    _cmd = 'mkdir -p {}'.format(samba_fdir)
+    _stdin, _stdout, _stderr = client.exec_command(_cmd)
+
+    # copy run_reports & pycoQC
+    scp = SCPClient(ssh.get_transport())
+
+    pycoqcs = glob.glob(
+        os.path.join(config['info_dict']['flowcell_path'], 'FASTQC*', '*', '*pycoqc.html')
+    ) + glob.glob(
+        os.path.join(config['info_dict']['flowcell_path'], 'reports', '*pycoqc.html')
+    )
+    for qcreport in pycoqcs:
+        basename = os.path.basename(qcreport)
+        sambadest = os.path.join(samba_fdir, basename)
+        bioinfodest = os.path.join(config['paths']['bioinfocoredir'], flowcell + '_' basename)
+        scp.put(qcreport, sambadest)
+        shutil.copyfile(qcreport, bioinfodest)
 
 def send_email(body, version, flowcell, config, allreceivers=True):
     mailer = MIMEMultipart('alternative')
