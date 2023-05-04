@@ -52,9 +52,11 @@ def ship_qcreports(config, flowcell):
     for qcreport in pycoqcs:
         basename = os.path.basename(qcreport)
         sambadest = os.path.join(samba_fdir, basename)
-        bioinfodest = os.path.join(config['paths']['bioinfocoredir'], flowcell + '_' basename)
+        bioinfodest = os.path.join(config['paths']['bioinfocoredir'], flowcell + '_' + basename)
         scp.put(qcreport, sambadest)
         shutil.copyfile(qcreport, bioinfodest)
+    scp.close()
+    client.close()
 
 def send_email(body, version, flowcell, config, allreceivers=True):
     mailer = MIMEMultipart('alternative')
