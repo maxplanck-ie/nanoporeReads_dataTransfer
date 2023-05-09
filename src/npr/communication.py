@@ -42,16 +42,21 @@ def ship_qcreports(config, flowcell):
     _stdin, _stdout, _stderr = client.exec_command(_cmd)
 
     # copy run_reports & pycoQC
-    scp = SCPClient(ssh.get_transport())
+    scp = SCPClient(client.get_transport())
 
     pycoqcs = glob.glob(
         os.path.join(config['info_dict']['flowcell_path'], 'FASTQC*', '*', '*pycoqc.html')
     ) + glob.glob(
-        os.path.join(config['info_dict']['flowcell_path'], 'reports', '*pycoqc.html')
+        os.path.join(config['info_dict']['flowcell_path'], 'reports', '*.html')
     )
     for qcreport in pycoqcs:
         basename = os.path.basename(qcreport)
+        if 'pycoqc' in basename:
+            sampleID = qcreport.split('/')[-2].replace('Sample_', '')
+            projID = 'Project_' + qcreport.split('/')[-3].split('_')[2]
+            basename = projID + '_' + sampleID + '_' + basename
         sambadest = os.path.join(samba_fdir, basename)
+        print('Trying to copy {} to {}'.format(qcreport, sambadest))
         bioinfodest = os.path.join(config['paths']['bioinfocoredir'], flowcell + '_' + basename)
         scp.put(qcreport, sambadest)
         shutil.copyfile(qcreport, bioinfodest)
