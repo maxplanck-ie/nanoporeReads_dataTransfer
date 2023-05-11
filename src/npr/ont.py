@@ -14,7 +14,7 @@ import signal
 from npr.ont_pipeline import find_new_flowcell
 from npr.ont_pipeline import read_flowcell_info
 from npr.ont_pipeline import read_samplesheet
-from npr.communication import query_parkour, send_email
+from npr.communication import query_parkour, send_email, ship_qcreports
 from npr.snakehelper import getfast5foot
 import subprocess as sp
 from importlib.metadata import version
@@ -149,6 +149,7 @@ def main(config):
             msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
             msg += 'minimap2 version: {}\n\n'.format(config['mapping']['minimap2_version'])
             msg += "flowcell {} is analysed successfully".format(flowcell)
+            ship_qcreports(config, flowcell)
             send_email(msg, version('npr'), os.path.basename(flowcell), config)
         else:
             print("No flowcells found. I go back to sleep.")

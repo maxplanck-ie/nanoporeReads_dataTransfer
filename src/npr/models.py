@@ -36,17 +36,37 @@ def modellist_to_dict(_models, modeldir):
     for l in _models:
         flowcell, kit, model = l
         if flowcell not in modeldic:
-            modeldic[flowcell] = {}
+           modeldic[flowcell] = {}
+        # Assume every model has a high accuracy mode.
         if 'hac' in model:
-            supmod = os.path.join(
-                modeldir,
-                model.replace('hac', 'sup') + '.cfg'
-            )
+            # for promethion runs, this would the priority list:
+            # 1. model_sup_prom.cfg
+            # 2. model_sup.cfg
+            # 3. model_hac_prom.cfg
+            if 'prom' in model:
+                supmod_prom = os.path.join(
+                    modeldir,
+                    model.replace('hac', 'sup') + '.cfg'
+                )
+                supmod_reg = os.path.join(
+                    modeldir,
+                    model.replace('hac', 'sup').replace('_prom', '') + '.cfg'
+                )
+                if os.path.exists(supmod_prom):
+                    supmod = supmod_prom
+                elif os.path.exists(supmod_reg):
+                    supmod = supmod_reg
+            else:
+                supmod = os.path.join(
+                    modeldir,
+                    model.replace('hac', 'sup') + '.cfg'
+                )
             if os.path.exists(supmod):
                 if kit in modeldic[flowcell]:
                     bps_present = int(modeldic[flowcell][kit].split('_')[3].replace('bps', ''))
                     bps_new = int(model.split('_')[3].replace('bps', ''))
                     if bps_new > bps_present:
+                        print('replacing {} with {}'.format(modeldic[flowcell][kit], supmod))
                         modeldic[flowcell][kit] = supmod
                 else:
                     modeldic[flowcell][kit] = supmod
@@ -55,6 +75,7 @@ def modellist_to_dict(_models, modeldir):
                     bps_present = int(modeldic[flowcell][kit].split('_')[3].replace('bps', ''))
                     bps_new = int(model.split('_')[3].replace('bps', ''))
                     if bps_new > bps_present:
+                        print('replacing {} with {}'.format(modeldic[flowcell][kit], supmod))
                         modeldic[flowcell][kit] = os.path.join(modeldir, model +'.cfg')
                 else:
                     modeldic[flowcell][kit] = os.path.join(modeldir, model +'.cfg')
@@ -79,7 +100,7 @@ def modellist_to_dict(_models, modeldir):
     '--modeldir',
     type=click.Path(exists=True),
     required=True,
-    help='Specify the path to guppy directory (rootdir, not the bin).'
+    help='Specify the path to guppy data directory (datadir, not the bindir).'
 )
 @click.option(
     '-o',
