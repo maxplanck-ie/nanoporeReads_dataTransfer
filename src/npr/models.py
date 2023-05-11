@@ -66,6 +66,7 @@ def modellist_to_dict(_models, modeldir):
                     bps_present = int(modeldic[flowcell][kit].split('_')[3].replace('bps', ''))
                     bps_new = int(model.split('_')[3].replace('bps', ''))
                     if bps_new > bps_present:
+                        print('replacing {} with {}'.format(modeldic[flowcell][kit], supmod))
                         modeldic[flowcell][kit] = supmod
                 else:
                     modeldic[flowcell][kit] = supmod
@@ -74,6 +75,7 @@ def modellist_to_dict(_models, modeldir):
                     bps_present = int(modeldic[flowcell][kit].split('_')[3].replace('bps', ''))
                     bps_new = int(model.split('_')[3].replace('bps', ''))
                     if bps_new > bps_present:
+                        print('replacing {} with {}'.format(modeldic[flowcell][kit], supmod))
                         modeldic[flowcell][kit] = os.path.join(modeldir, model +'.cfg')
                 else:
                     modeldic[flowcell][kit] = os.path.join(modeldir, model +'.cfg')
@@ -98,7 +100,7 @@ def modellist_to_dict(_models, modeldir):
     '--modeldir',
     type=click.Path(exists=True),
     required=True,
-    help='Specify the path to guppy directory (rootdir, not the bin).'
+    help='Specify the path to guppy data directory (datadir, not the bindir).'
 )
 @click.option(
     '-o',
