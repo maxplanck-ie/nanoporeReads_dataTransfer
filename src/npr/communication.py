@@ -14,8 +14,8 @@ from scp import SCPClient
 def ship_qcreports(config, flowcell):
     '''
     update samba drive with a flowcell folder,
-    copy pycoQC reports
-    copy run report
+    copy pycoQC reports and run report into samba drive
+    copy both reports in bioinfo qc drive as well
     '''
     # login info.
     _pkey = paramiko.RSAKey.from_private_key_file(
@@ -34,8 +34,11 @@ def ship_qcreports(config, flowcell):
         pkey=_pkey
     )
     # Create flowcell folder if it doesn't exist.
+    yrstr = flowcell[:4]
     samba_fdir = os.path.join(
         config['paths']['deepseq_qc'],
+        'Sequence_Quality_{}'.format(yrstr),
+        'ONT_{}'.format(yrstr),
         flowcell
     )
     _cmd = 'mkdir -p {}'.format(samba_fdir)
@@ -62,6 +65,7 @@ def ship_qcreports(config, flowcell):
         shutil.copyfile(qcreport, bioinfodest)
     scp.close()
     client.close()
+
 
 def send_email(body, version, flowcell, config, allreceivers=True):
     mailer = MIMEMultipart('alternative')
