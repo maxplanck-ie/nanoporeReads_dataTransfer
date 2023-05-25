@@ -33,7 +33,7 @@ rule qc_fastqc:
     log:
         "log/fastqc/project-{project}_id-{sample_id}_name-{sample_name}.log"
     shell:'''
-    fastqc -t {threads} -o {params.odir} -d {params.odir} --quiet {input}
+    fastqc -t {threads} -o {params.odir} --dir {params.odir} --quiet {input}
     '''
 
 rule qc_reformat: 
