@@ -13,6 +13,14 @@ paths:
   logDir:
   deepseq_qc: /path/to/deepseq/qc/
 
+ignore:
+  flowcells:
+    # flowcell IDs to ignore in the offload_path
+    - 'PAK83895'
+  dirs:
+    # full dirs to ignore in the offload_path
+    - '20230512_1047_P2-7085206e51685c-A_PAK73534_a5e9ed5e'
+
 sambahost:
   # user, host & private key file where the deepseq_qc is accessible (will access over ssh)
   user: user
