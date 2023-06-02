@@ -34,7 +34,7 @@ def find_new_flowcell(config):
                 offload_path, '*/*/*/*html'
             )
         )
-
+        dirs = []
         for i in dirglob:
             if i.split('/')[-2].split('_')[3] not in config['ignore']['flowcells'] and i.split('/')[-2] not in config['ignore']['dirs']:
                 dirs.append(i)
