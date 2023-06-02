@@ -29,14 +29,15 @@ def find_new_flowcell(config):
     )
     if offload_path:
         # Assume samplesheet.csv now marks 'ready' flow cell.
-        dirs = glob.glob(
+        dirglob = glob.glob(
             os.path.join(
                 offload_path, '*/*/*/*html'
             )
         )
-        # Sanitize dirs for now as we have junk in there.
-        # Clean me up
-        dirs = [i for i in dirs if 'PAK83895' not in i]
+
+        for i in dirglob:
+            if i.split('/')[-2].split('_')[3] not in config['ignore']['flowcells'] and i.split('/')[-2] not in config['ignore']['dirs']:
+                dirs.append(i)
     else:
         dirs = []
     ####################################  wget   ####################################
@@ -62,12 +63,19 @@ def find_new_flowcell(config):
     )
     # Iterate over dirs.
     for dir in dirs:
+        print('Working with {}'.format(dir))
          # abs path to flowcell
         flowcell = os.path.dirname(dir)
         # trigger when no flowcell folder in output directory.
         if not os.path.exists(
             os.path.join(
                 config["paths"]["outputDir"],
+                os.path.basename(flowcell),
+                'analysis.done'
+            )
+        ) and not os.path.exists(
+            os.path.join(
+                config["paths"]["old_outputDir"],
                 os.path.basename(flowcell),
                 'analysis.done'
             )
