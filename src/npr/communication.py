@@ -10,6 +10,7 @@ import shutil
 from importlib.metadata import version
 import paramiko
 from scp import SCPClient
+from time import sleep
 
 def ship_qcreports(config, flowcell):
     '''
@@ -27,7 +28,8 @@ def ship_qcreports(config, flowcell):
     # set client.
     client = paramiko.SSHClient()
     policy = paramiko.AutoAddPolicy()
-    client.set_missing_host_key_policy(policy)
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
     client.connect(
         _host,
         username=_user,
@@ -41,8 +43,16 @@ def ship_qcreports(config, flowcell):
         'ONT_{}'.format(yrstr),
         flowcell
     )
+    # I think latency causes scp to fail so include sleep
     _cmd = 'mkdir -p {}'.format(samba_fdir)
     _stdin, _stdout, _stderr = client.exec_command(_cmd)
+    print('stdin:')
+    print(_stdin)
+    print('stdout:')
+    print(_stdout)
+    print('stderr:')
+    print(_stderr)
+    sleep(30)
 
     # copy run_reports & pycoQC
     scp = SCPClient(client.get_transport())
