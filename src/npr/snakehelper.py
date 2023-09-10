@@ -32,6 +32,28 @@ def fast5_to_pod5(basepath, baseout, cmdlinef):
         f.write(' '.join(podracercmd) + '\n')
     sp.check_output(podracercmd)
 
+
+
+def merge_pod5(basepath, baseout, cmdlinef):
+    '''
+    searches for 'pod5*' directories in basepath
+    runs pod5 merge 
+    outputs pod5 combined into baseout/pod5*.
+    '''
+    odir = os.path.join(
+        baseout,
+        'pod5'
+    )
+    podracercmd = [
+        'pod5 merge',
+        glob.glob(os.path.join(basepath, '*.pod5') ),
+        odir, # pod5out
+    ]
+    sp.check_output(podracercmd)
+
+
+
+
 def basecalling(config, cmdlinef, logf):
     pod5dir = os.path.join(
         config['info_dict']['flowcell_path'],
