@@ -1,5 +1,6 @@
 from npr.snakehelper import basecalling
 from npr.snakehelper import fast5_to_pod5
+from npr.snakehelper import merge_pod5
 
 rule prepare_pod5:
     output:
@@ -7,16 +8,19 @@ rule prepare_pod5:
     params:
         idir = config["info_dict"]["base_path"],
         baseout = config['info_dict']['flowcell_path'],
-        log  = 'log/cmdline.log'
+        log  = 'log/cmdline.log',
     run:
-        if (os.path.exists('pod5')):
-            echo "fast5_to_pod5(
+        if os.path.exists(os.path.join(params.idir, "pod5_pass")):
+            merge_pod5(
+                params.idir, 
+                params.baseout, 
+                params.log)
+        elif os.path.exists(os.path.join(params.idir, "fast5_pass")):
+            fast5_to_pod5(
                 params.idir,
                 params.baseout,
                 params.log
             )"
-        else:
-            echo "not here"
 
 rule guppy_basecalling:
     input:

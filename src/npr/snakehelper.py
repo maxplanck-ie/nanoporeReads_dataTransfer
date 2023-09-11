@@ -40,18 +40,31 @@ def merge_pod5(basepath, baseout, cmdlinef):
     runs pod5 merge 
     outputs pod5 combined into baseout/pod5*.
     '''
-    odir = os.path.join(
-        baseout,
-        'pod5'
-    )
-    podracercmd = [
-        'pod5 merge',
-        glob.glob(os.path.join(basepath, '*.pod5') ),
-        odir, # pod5out
+    odir = os.path.join(baseout, 'pod5')
+
+    pod5_files=glob.glob(os.path.join(basepath, "pod5_pass", "*.pod5"))
+    
+    lst_cmd = [
+        'pod5', 'merge',
+        pod5_files,
+        os.path.join(odir, "merged.pod5")  
     ]
+    
+    podracercmd = flatten_irreg_lists(lst_cmd)
+
+    if not os.path.exists('log'):
+        os.mkdir('log')
+    with open(cmdlinef, 'w') as f:
+        f.write('#pod5-merge cmd:\n')
+        f.write(' '.join(podracercmd) + '\n')
     sp.check_output(podracercmd)
 
 
+def flatten_irreg_lists(nested_list):
+    if isinstance(nested_list, list):
+        return [a for i in nested_list for a in flatten_irreg_lists(i)]
+    else:
+        return [nested_list]
 
 
 def basecalling(config, cmdlinef, logf):
