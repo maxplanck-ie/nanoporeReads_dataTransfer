@@ -192,35 +192,24 @@ def grab_seqsummary(dir):
     else:
         return(globber[0])
 
+
 def getfast5foot(f5dir, pod5dir):
-    f5foot = 0
-    pod5foot = 0
-    for d in glob.glob(
-        os.path.join(f5dir, 'fast5*')
-    ):
+    ratio_f5_pod5 = float("NaN")
+    if os.path.exists(os.path.join(f5dir, 'fast5*')):
+        f5foot = get_size_of_files(f5dir, 'fast5*')
+        pod5foot = get_size_of_files(pod5dir, 'fast5*')
+        return(round(pod5foot/f5foot, 2) )
+    return(ration_f5_pod5)
+
+def get_size_of_files(in_dir, dir_name):
+    for d in glob.glob(os.path.join(in_dir, dir_name)):
         for path, dirs, files in os.walk(d):
             for f in files:
-                f5foot += os.path.getsize(
-                    os.path.join(
-                        path,f
-                    )
+                size_files += os.path.getsize(
+                    os.path.join(path,f)
                 )
-    for d in glob.glob(
-        os.path.join(pod5dir, 'pod5*')
-    ):
-        for path, dirs, files in os.walk(d):
-            for f in files:
-                pod5foot += os.path.getsize(
-                    os.path.join(
-                        path,f
-                    )
-                )
-    return(
-        round(
-            pod5foot/f5foot,
-            2
-        )
-    )
+    return(size_files)
+
 
 def config_to_splitseqsummary(config):
     cmd = config["pycoQc"]["barcodeSplit"]

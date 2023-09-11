@@ -8,7 +8,7 @@ rule prepare_pod5:
     params:
         idir = config["info_dict"]["base_path"],
         baseout = config['info_dict']['flowcell_path'],
-        log  = 'log/cmdline.log',
+        log  = 'log/cmdline.log'
     run:
         if os.path.exists(os.path.join(params.idir, "pod5_pass")):
             merge_pod5(
@@ -20,7 +20,7 @@ rule prepare_pod5:
                 params.idir,
                 params.baseout,
                 params.log
-            )"
+            )
 
 rule guppy_basecalling:
     input:
