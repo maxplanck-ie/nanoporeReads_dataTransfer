@@ -199,7 +199,7 @@ def getfast5foot(f5dir, pod5dir):
         f5foot = get_size_of_files(f5dir, 'fast5*')
         pod5foot = get_size_of_files(pod5dir, 'fast5*')
         return(round(pod5foot/f5foot, 2) )
-    return(ration_f5_pod5)
+    return(ratio_f5_pod5)
 
 def get_size_of_files(in_dir, dir_name):
     for d in glob.glob(os.path.join(in_dir, dir_name)):

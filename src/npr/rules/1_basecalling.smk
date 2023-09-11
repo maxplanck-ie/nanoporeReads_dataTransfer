@@ -10,7 +10,9 @@ rule prepare_pod5:
         baseout = config['info_dict']['flowcell_path'],
         log  = 'log/cmdline.log'
     run:
-        if os.path.exists(os.path.join(params.idir, "pod5_pass")):
+        if os.path.exists(os.path.join(params.baseout, "pod5", "merged.pod5")):
+            print("Merged pod5 file exist")
+        elif os.path.exists(os.path.join(params.idir, "pod5_pass")):
             merge_pod5(
                 params.idir, 
                 params.baseout, 
