@@ -24,6 +24,7 @@ def expand_project_path(path, metadata=metadata, wc_mapping=wc_mapping):
     mapping = {k : metadata[v] for k, v in wc_mapping.items()}
     return expand(path, zip, **mapping)
 
+include: retRule("0_prepare.smk", config)
 include: retRule("1_basecalling.smk", config)
 include: retRule("2_rename.smk", config)
 include: retRule("3_qc.smk", config)
@@ -32,6 +33,7 @@ include: retRule("5_mapping.smk", config)
 
 rule all:
     input:
+        'flags/0_prepare.done',
         'flags/1_basecalling.done',
         'flags/2_renamed.done',
         'flags/3_qc.done',
