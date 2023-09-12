@@ -32,6 +32,41 @@ def fast5_to_pod5(basepath, baseout, cmdlinef):
         f.write(' '.join(podracercmd) + '\n')
     sp.check_output(podracercmd)
 
+
+
+def merge_pod5(basepath, baseout, cmdlinef):
+    '''
+    searches for 'pod5*' directories in basepath
+    runs pod5 merge 
+    outputs pod5 combined into baseout/pod5*.
+    '''
+    odir = os.path.join(baseout, 'pod5')
+
+    pod5_files=glob.glob(os.path.join(basepath, "pod5_pass", "*.pod5"))
+    
+    lst_cmd = [
+        'pod5', 'merge',
+        pod5_files,
+        os.path.join(odir, "merged.pod5")  
+    ]
+    
+    podracercmd = flatten_irreg_lists(lst_cmd)
+
+    if not os.path.exists('log'):
+        os.mkdir('log')
+    with open(cmdlinef, 'w') as f:
+        f.write('#pod5-merge cmd:\n')
+        f.write(' '.join(podracercmd) + '\n')
+    sp.check_output(podracercmd)
+
+
+def flatten_irreg_lists(nested_list):
+    if isinstance(nested_list, list):
+        return [a for i in nested_list for a in flatten_irreg_lists(i)]
+    else:
+        return [nested_list]
+
+
 def basecalling(config, cmdlinef, logf):
     pod5dir = os.path.join(
         config['info_dict']['flowcell_path'],
@@ -157,35 +192,26 @@ def grab_seqsummary(dir):
     else:
         return(globber[0])
 
+
 def getfast5foot(f5dir, pod5dir):
-    f5foot = 0
-    pod5foot = 0
-    for d in glob.glob(
-        os.path.join(f5dir, 'fast5*')
-    ):
+    if os.path.exists(os.path.join(f5dir, 'fast5*')):
+        f5foot = get_size_of_files(f5dir, 'fast5*')
+        pod5foot = get_size_of_files(pod5dir, 'fast5*')
+        try:
+            ratio_f5_pod5 = round(pod5foot/f5foot, 2)
+        except ZeroDivisionError:
+            ratio_f5_pod5 = float("NaN") 
+    return(ratio_f5_pod5)
+
+def get_size_of_files(in_dir, dir_name):
+    for d in glob.glob(os.path.join(in_dir, dir_name)):
         for path, dirs, files in os.walk(d):
             for f in files:
-                f5foot += os.path.getsize(
-                    os.path.join(
-                        path,f
-                    )
+                size_files += os.path.getsize(
+                    os.path.join(path,f)
                 )
-    for d in glob.glob(
-        os.path.join(pod5dir, 'pod5*')
-    ):
-        for path, dirs, files in os.walk(d):
-            for f in files:
-                pod5foot += os.path.getsize(
-                    os.path.join(
-                        path,f
-                    )
-                )
-    return(
-        round(
-            pod5foot/f5foot,
-            2
-        )
-    )
+    return(size_files)
+
 
 def config_to_splitseqsummary(config):
     cmd = config["pycoQc"]["barcodeSplit"]

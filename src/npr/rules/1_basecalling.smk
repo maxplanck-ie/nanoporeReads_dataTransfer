@@ -1,7 +1,8 @@
 from npr.snakehelper import basecalling
 from npr.snakehelper import fast5_to_pod5
+from npr.snakehelper import merge_pod5
 
-rule fast5_to_pod5:
+rule prepare_pod5:
     output:
        touch('flags/1_pod5.done')
     params:
@@ -9,11 +10,19 @@ rule fast5_to_pod5:
         baseout = config['info_dict']['flowcell_path'],
         log  = 'log/cmdline.log'
     run:
-        fast5_to_pod5(
-            params.idir,
-            params.baseout,
-            params.log
-        )
+        if os.path.exists(os.path.join(params.baseout, "pod5", "merged.pod5")):
+            print("Merged pod5 file exist")
+        elif os.path.exists(os.path.join(params.idir, "pod5_pass")):
+            merge_pod5(
+                params.idir, 
+                params.baseout, 
+                params.log)
+        elif os.path.exists(os.path.join(params.idir, "fast5_pass")):
+            fast5_to_pod5(
+                params.idir,
+                params.baseout,
+                params.log
+            )
 
 rule guppy_basecalling:
     input:
