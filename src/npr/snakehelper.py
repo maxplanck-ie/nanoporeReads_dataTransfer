@@ -194,11 +194,13 @@ def grab_seqsummary(dir):
 
 
 def getfast5foot(f5dir, pod5dir):
-    ratio_f5_pod5 = float("NaN")
     if os.path.exists(os.path.join(f5dir, 'fast5*')):
         f5foot = get_size_of_files(f5dir, 'fast5*')
         pod5foot = get_size_of_files(pod5dir, 'fast5*')
-        return(round(pod5foot/f5foot, 2) )
+        try:
+            ratio_f5_pod5 = round(pod5foot/f5foot, 2)
+        except ZeroDivisionError:
+            ratio_f5_pod5 = float("NaN") 
     return(ratio_f5_pod5)
 
 def get_size_of_files(in_dir, dir_name):
