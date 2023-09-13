@@ -160,7 +160,6 @@ def query_parkour(config, flowcell, msg):
             info_dict["protocol"] = protocol
             msg += "nucleic acid  type = {}\n".format(protocol)
             msg += "organism = {}\n".format(organism)
-            msg += "project id = {}\n".format(config["data"]["Sample_Project"])
             return (info_dict, msg)
     info_dict = {}
     msg += "Parkour query failed for {}.\n".format(fc)

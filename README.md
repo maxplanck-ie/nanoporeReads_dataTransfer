@@ -1,12 +1,20 @@
 # nanoporeReads_dataTransfer
 A pipeline to transfer the Nanopore reads to the end users
 
+# Installation
+```bash
+git clone git@github.com:maxplanck-ie/nanoporeReads_dataTransfer.git
+cd nanoporeReads_dataTransfer
+mamba env create -n ont -f env.yml 
+mamba activate ont
+pip install .
+```
+
 # Usage
 ```bash
-mamba env create -f env.yml
-mamba activate ontPipe;
-python ont_pipeline.py
+ont -c config.yaml
 ```
+
 # Example input path:
 ```bash
 ../path/to/flowcell/
