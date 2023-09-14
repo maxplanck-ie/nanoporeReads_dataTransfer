@@ -62,6 +62,7 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
+            #info_dict = { "organism":"other", "protocol":"dna"}
             info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
             send_email(
