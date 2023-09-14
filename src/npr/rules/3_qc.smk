@@ -14,10 +14,13 @@ rule qc_porechop:
         fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}_porechop.fastq.gz",
         info="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.info",
     threads: 8
+    params:
+        # guppy returns "U" for RNA so -abi will not work
+        flag="-abi" if config['info_dict']['protocol'] != 'rna' else "",
     log:
         err='log/porechop/project-{project}_id-{sample_id}_name-{sample_name}.err'
     shell:'''
-        porechop_abi -t {threads} -i {input.fastq} -o {output.fastq} > {output.info} 2> {log.err}
+        porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {output.fastq} > {output.info} 2> {log.err}
     '''
 
 rule qc_pycoqc:
