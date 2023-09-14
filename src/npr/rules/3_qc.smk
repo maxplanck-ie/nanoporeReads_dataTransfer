@@ -7,6 +7,22 @@ import glob
 from npr.snakehelper import config_to_pycoqc
 from npr.snakehelper import grab_seqsummary
 
+rule qc_porechop:
+    input:
+        fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz",
+    output:
+        fastq="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.fastq",
+        info="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.info",
+        summary="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.summary",
+    log:
+        err='log/porechop/project-{project}_id-{sample_id}_name-{sample_name}.err'
+    shell:'''
+        porechop_abi -t {threads} -i {input.fastq} -o {output.fastq} > {output.info} 2> {log.err}
+        # || avoids non-zero exit status if grep returns nothing
+        # see: https://unix.stackexchange.com/questions/330660
+        ( grep "adapter" {output.info} || [[ $? == 1 ]] )  > {output.summary}
+        sed -n '/Barcode  Reads/,$p'  {output.info} >> {output.summary} 2> {log.err}
+        '''
 
 rule qc_pycoqc:
     input:
@@ -39,6 +55,7 @@ rule qc_fastqc:
 rule qc_reformat: 
     input: 
         pycoQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"),
+        porechopQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.summary"),
         fastqc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html"),
     output: 
         touch("flags/3_qc.done")
