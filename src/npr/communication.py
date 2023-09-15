@@ -99,7 +99,7 @@ def send_email(body, version, flowcell, config, allreceivers=True):
 
 def query_parkour(config, flowcell, msg):
     """
-    query parkour.
+    query parkour to return info_dict (protocol and organism)
     """
     # Old manual escapes.
     if flowcell == '20221014_1045_X5_FAV39027_f348bc5c':
