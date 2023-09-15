@@ -102,14 +102,14 @@ def find_new_flowcell(config):
 
     # Iterate over all flowcell in dir
     for flowcell in dirs:
-        print('Working with {}'.format(flowcell))   
+        print('Working with {}'.format(flowcell))
 
         # test if 'analysis.done' exists for this flowcell
         if analysis_done(flowcell, config):
-            return (None, None, None)  
+            return (None, None, None)
         
         # exit if sampleSheet.csv does not exists
-        ss = os.path.join(flowcell, 'SampleSheet.csv') 
+        ss = os.path.join(flowcell, 'SampleSheet.csv')
         if not os.path.isfile(ss):
             msg = "No SampleSheet.csv file.. Exiting.\n"
             send_email(
