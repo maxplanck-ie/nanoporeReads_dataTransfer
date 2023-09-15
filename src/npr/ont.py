@@ -36,17 +36,37 @@ from pathlib import Path
    help='specify a custom yaml file.',
    show_default=True
 )
-# run workflow.
 
-def ont(configfile):
+@click.option(
+    "-d",
+    "--directory",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    required=False,
+    default=None,  # Default: unspecified (defined in config)
+    help="Specify a custom directory."
+)
+
+# run workflow.
+def ont(**kwargs):
     # print what config is used.
     print(
-        "Starting pipeline with: [green]{}[/green]".format(configfile)
+        "Starting pipeline with config: [green]{}[/green]".format(kwargs['configfile'])
     )
+
+
     # Load config up.
-    config = yaml.safe_load(
-        open(configfile)
+    config = yaml.safe_load(open(kwargs['configfile']))
+
+    # update config if runtime args have been set
+    if ( kwargs['directory'] is not None):
+        config['paths']['offloadDir'] = kwargs['directory']
+
+    print(
+        "Watch directory: [green]{}[/green]".format(config['paths']['offloadDir'])
     )
+
+    #print(config); sys.exit(1)
+
     # start workflow.
     main(config)
 
@@ -62,8 +82,8 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
-            #info_dict = { "organism":"other", "protocol":"dna"}
-            info_dict, msg = query_parkour(config, flowcell, msg)
+            info_dict = { "organism":"other", "protocol":"rna"}
+            #info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
             send_email(
                 "Flowcell {} found. Starting pipeline.\n".format(flowcell) + msg,

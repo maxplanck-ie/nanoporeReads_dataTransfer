@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import glob
 import pandas as pd
 import numpy as np
@@ -11,93 +12,120 @@ import subprocess as sp
 from npr.communication import send_email
 from npr.snakehelper import glob2reports
 
+def analysis_done(flowcell, config):
+    """
+    Determine whether flowcell has already been analysed
+    Notice that such an analysis could have been done at different locations
+    """
+    loc1 = os.path.join(
+        config["paths"]["outputDir"],
+        os.path.basename(flowcell),
+        'analysis.done'
+        )
+    loc2 = os.path.join(
+        config["paths"]["old_outputDir"],
+        os.path.basename(flowcell),
+        'analysis.done'
+        )
+
+    if os.path.exists(loc1) or os.path.exists(loc2):
+        return True
+
+    return False
+
+def filter_flowcell(json, config):
+    """
+    decide whether to keep a flowcell based on exclusion rules defined in config
+    the exclusion rules are specific to our MPI-IE setup
+
+    example json file: "report_PAQ97481_20230818_1514_e1253480.json"
+    example fc direct: "20230818_1512_P2S-00500-A_PAQ97481_e1253480"
+    """
+
+    # get parent directory of json report = flowcell directory
+    fc_dir = os.path.dirname(json)
+    fc_dir = os.path.basename(fc_dir.rstrip('/'))
+    #print("json: {} , fc_dir: {} ".format(json, fc_dir))
+
+    if fc_dir in config['ignore']['dirs']:
+        print("ignore fc_dir {} because of config ".format(fc_dir))
+        return True
+    
+    # MPI-IE specific pattern for flowcells
+    pattern = r"\d{8}_\d{4}_\w+-\d{5}-[A-Z0-9]+_([A-Z0-9]+)_\d+"
+    match = re.match(pattern, fc_dir)
+    if match:
+        fc_id = match.group(1)
+        if fc_id in config['ignore']['flowcells']:
+            print("ignore fc_id {} because of config ".format(fc_id))
+            return True
+        
+    # flowcell does not match MPI-IE naming convention: don't filter
+    # return False
+
+    # be extra cautious: get fc_id and fc_dir from (large) json file
+    # this is slow, but it will only be done for a few non-standard flowcells
+    fc_yaml = yaml.safe_load(open(json))
+    fc_id  = fc_yaml['protocol_run_info']['flow_cell']['flow_cell_id']
+    fc_dir = fc_yaml['protocol_run_info']['output_path']
+    fc_dir = os.path.basename(fc_dir.rstrip('/'))  
+    if fc_dir in config['ignore']['dirs']:
+        print("ignore fc_dir {} because of config ".format(fc_dir))
+        return True
+    if fc_id in config['ignore']['flowcells']:
+        print("ignore fc_id {} because of config ".format(fc_id))
+        return True
+
+    return False
+
 
 def find_new_flowcell(config):
     """
-    look for new flowcells that are finished.
-    There are 3 locations we should monitor:
-     - baseDir (manually copied flow cells) - DONE
-     - offloadDir (automatically offloaded flow cells by machine)
-     - wgetDir (downloaded data from Munich / elsewhere).
-    offloadDir & wgetDir should follow the same dir structure.
-    
+    look for new flowcells inf offloadDir   
     baseDir flowcells are flagged with 'transfer.final'
     """
     #################################### offload ####################################
     offload_path = os.path.join(
         config['paths']['offloadDir']
     )
+    dirs = []
     if offload_path:
-        # Assume samplesheet.csv now marks 'ready' flow cell.
-        dirglob = glob.glob(
-            os.path.join(
-                offload_path, '*/*/*/*html'
-            )
-        )
-        dirs = []
-        for i in dirglob:
-            if i.split('/')[-2].split('_')[3] not in config['ignore']['flowcells'] and i.split('/')[-2] not in config['ignore']['dirs']:
-                dirs.append(i)
-    else:
-        dirs = []
-    ####################################  wget   ####################################
-    wget_path = os.path.join(
-        config['paths']['wgetDir']
-    )
-    if wget_path:
-        dirs = dirs + glob.glob(
-            os.path.join(
-                wget_path, '*/*/*/*html'
-            )
-        )
-    #################################### baseDir ####################################
-    # set base path
-    base_path = os.path.join(
-        config["paths"]["baseDir"]
-    )
-    # glob dirs with a transfer flag.
-    dirs = dirs + glob.glob(
-        os.path.join(
-            base_path, "*/*html"
-        )
-    )
-    # Iterate over dirs.
-    for dir in dirs:
-        print('Working with {}'.format(dir))
-         # abs path to flowcell
-        flowcell = os.path.dirname(dir)
-        # trigger when no flowcell folder in output directory.
-        if not os.path.exists(
-            os.path.join(
-                config["paths"]["outputDir"],
+        # Assume that report*.json mark 'ready' flow cells
+        # depending on the offload_path
+        pattern = os.path.join(offload_path, '**', 'report*.json')
+        jsons = glob.glob(pattern, recursive=True)
+
+        for j in jsons:
+            if not filter_flowcell(j,config):
+                # collect full path to json
+                dirs.append(os.path.dirname(j))
+
+    # Iterate over all flowcell in dir
+    for flowcell in dirs:
+        print('Working with {}'.format(flowcell))   
+
+        # test if 'analysis.done' exists for this flowcell
+        if analysis_done(flowcell, config):
+            return (None, None, None)  
+        
+        # exit if sampleSheet.csv does not exists
+        ss = os.path.join(flowcell, 'SampleSheet.csv') 
+        if not os.path.isfile(ss):
+            msg = "No SampleSheet.csv file.. Exiting.\n"
+            send_email(
+                msg,
+                version("npr"),
                 os.path.basename(flowcell),
-                'analysis.done'
+                config
             )
-        ) and not os.path.exists(
-            os.path.join(
-                config["paths"]["old_outputDir"],
-                os.path.basename(flowcell),
-                'analysis.done'
-            )
-        ):
-            if not os.path.isfile(
-                os.path.join(flowcell, 'SampleSheet.csv')
-            ):
-                msg = "No SampleSheet.csv file.. Exiting.\n"
-                send_email(
-                    msg,
-                    version("npr"),
-                    os.path.basename(flowcell),
-                    config
-                )
-                sys.exit("no sampleSheet.")
-            else:
-                msg = "SampleSheet.csv file found.\n"
-                config["input"] = {
-                    'name': os.path.basename(flowcell)
-                }
-                return (os.path.basename(flowcell), msg, flowcell)
-    return (None, None, None)
+            sys.exit("no sampleSheet.")
+        
+        # return flowcell to ont()
+        msg = "SampleSheet.csv file found.\n"
+        config["input"] = {
+            'name': os.path.basename(flowcell)
+        }
+        return (os.path.basename(flowcell), msg, flowcell)
 
 def read_flowcell_info(config, info_dict, base_path):
     """

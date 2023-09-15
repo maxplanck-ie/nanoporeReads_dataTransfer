@@ -6,12 +6,13 @@ snakemake:
   cores: 24
 
 paths:
-  baseDir: /path/to/ont/files
+  offloadDir: /path/to/ont/files
   outputDir: /path/to/trnasfer/input/
   groupDir: /root/to/transfer
   external_groupDir: /root/to/transfer/external/
   logDir:
   deepseq_qc: /path/to/deepseq/qc/
+  bioinfocoredir: /path/to/bionfo_qc
 
 ignore:
   flowcells:
