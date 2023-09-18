@@ -82,8 +82,8 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
-            #info_dict = { "organism":"other", "protocol":"rna"}
-            info_dict, msg = query_parkour(config, flowcell, msg)
+            info_dict = { "organism":"other", "protocol":"rna"}
+            #info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
             send_email(
                 "Flowcell {} found. Starting pipeline.\n".format(flowcell) + msg,
@@ -151,8 +151,7 @@ def main(config):
             if not snak_stat:
                 msg += "snake crashed."
                 sys.exit()
-            Path(os.path.join(output_directory, 'analysis.done')).touch()
-            print(config)
+           
             msg = 'Project: {}\n'.format(config['data']['projects'][0])
             msg += 'pod5 compression: {}\n'.format(
                 getfast5foot(
@@ -166,12 +165,21 @@ def main(config):
             msg += 'barcoding: {}\n'.format(config['info_dict']['barcoding'])
             msg += 'barcoding kit: {}\n'.format(config['info_dict']['barcode_kit'])
             msg += 'protocol: {}\n'.format(config['info_dict']['protocol'])
-            msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
-            msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
+            if config['basecaller']=="guppy":
+                msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
+                msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
+            if config['basecaller']=="dorado":
+                msg += 'dorado version: {}\n'.format(config['dorado_basecaller']['dorado_version'])
+                msg += 'dorado model: {}\n'.format(config["dorado_basecaller"]["dorado_model"])
             msg += 'minimap2 version: {}\n\n'.format(config['mapping']['minimap2_version'])
             msg += "flowcell {} is analysed successfully".format(flowcell)
             ship_qcreports(config, flowcell)
+
+            print(msg)
             send_email(msg, version('npr'), os.path.basename(flowcell), config)
+            
+            Path(os.path.join(output_directory, 'analysis.done')).touch()
+            #print(config)
         else:
             print("No flowcells found. I go back to sleep.")
             sleep()

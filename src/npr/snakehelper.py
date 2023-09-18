@@ -67,7 +67,77 @@ def flatten_irreg_lists(nested_list):
         return [nested_list]
 
 
-def basecalling(config, cmdlinef, logf):
+def dorado_basecalling(config, cmdlinef, logf):
+
+    # model directory
+    model=os.path.join(
+        config["dorado_basecaller"]["model_directory"],
+        config["dorado_basecaller"]["dorado_model"]
+    )
+
+    if not os.path.exists(model):
+        print("[red] Model {} not available [/red]".format(model))
+        sys.exit(1)
+
+    # input directory: data
+    pod5dir = os.path.join(
+        config['info_dict']['flowcell_path'],
+        'pod5'
+    )
+
+    # output file (BAM format)
+    bamdir = pod5dir.replace('pod5', 'bam')
+    if not os.path.exists(bamdir):
+        try:
+            os.mkdir(bamdir)
+        except Exception as e:
+            print("[red] Creating {}. Error: {}[/red]".format(bamdir,e))
+            sys.exit(1)
+
+    outbam =  os.path.join(
+        bamdir,
+        'dorado_basecalled.bam'
+    )
+
+    # if the output BAM already exists resume basecalling
+    dorado_resume = []
+    if os.path.exists(outbam):
+        print("[yellow] File {} is already available. Resume basecalling [/yellow]".format(outbam))
+        oldbam = outbam.replace('.bam' , '.previous.bam')
+        shutil.move(outbam, oldbam)
+        dorado_resume = [ '--resume-from' , oldbam ]
+
+    # include dorado options passed to config
+    dorado_opt= []
+    if config["dorado_basecaller"]["dorado_options"]:
+        dorado_opt = config["dorado_basecaller"]["dorado_options"].split(' ')
+
+    cmd = [ config['dorado_basecaller']['dorado_cmd'] ] +\
+        [ 'basecaller' ] +\
+        dorado_opt +\
+        dorado_resume +\
+        [ model ] +\
+        [ pod5dir ] +\
+        [ ">", outbam ]
+
+    cmd = ' '.join(cmd)
+    print('[yellow] {} [/yellow]'.format(cmd))
+    with open(logf, 'a') as f:
+        f.write("#dorado-basecaller cmd:\n")
+        f.write(cmd + '\n')
+
+    try:
+        with open(logf, "a") as f:
+            res = sp.run(cmd, stderr=f, shell=True)
+    except sp.CalledProcessError as e:
+        print("[red] Dorado failed with return code [/red]", e.returncode)
+        print(res)
+        print("[red] Check also file {} [/red]".format(logf))
+        sys.exit(1)
+
+
+
+def guppy_basecalling(config, cmdlinef, logf):
     pod5dir = os.path.join(
         config['info_dict']['flowcell_path'],
         'pod5'
@@ -99,9 +169,10 @@ def basecalling(config, cmdlinef, logf):
     if config['info_dict']['protocol'] == 'rna':
         cmd = cmd +\
             config['guppy_basecaller']['base_calling_RNA_options'].split(' ')
-    with open(cmdlinef, 'a') as f:
+    with open(logf, 'a') as f:
         f.write("#guppy-basecaller cmd:\n")
         f.write(' '.join(cmd) + '\n')
+    print(cmd)
     sp.check_output(cmd)
 
 def retRule(rulestr, config):
