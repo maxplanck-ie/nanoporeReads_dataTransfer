@@ -86,27 +86,31 @@ def dorado_basecalling(config, cmdlinef, logf):
     )
 
     # output file (BAM format)
-    bamdir = pod5dir.replace('pod5', 'bam')
-    if not os.path.exists(bamdir):
+    oform = 'fastq'     # alternatively 'bam'
+    outdir = pod5dir.replace('pod5', oform)
+    if not os.path.exists(outdir):
         try:
-            os.mkdir(bamdir)
+            os.mkdir(outdir)
         except Exception as e:
-            print("[red] Creating {}. Error: {}[/red]".format(bamdir,e))
+            print("[red] Creating {}. Error: {}[/red]".format(outdir,e))
             sys.exit(1)
 
-    outbam =  os.path.join(
-        bamdir,
-        'dorado_basecalled.bam'
+    outfile =  os.path.join(
+        outdir,
+        'dorado_basecalled.' + oform
     )
 
-    # if the output BAM already exists resume basecalling
+    # if the output file (BAM or fastq) already exists resume basecalling
+    # Notice: resume works only from BAM
     dorado_resume = []
-    if os.path.exists(outbam):
-        print("[yellow] File {} is already available. Resume basecalling [/yellow]".format(outbam))
-        oldbam = outbam.replace('.bam' , '.previous.bam')
-        shutil.move(outbam, oldbam)
-        dorado_resume = [ '--resume-from' , oldbam ]
+    if os.path.exists(outfile):
+        print("[yellow] File {} is already available. Resume basecalling [/yellow]".format(outfile))
+        #oldfile = outfile.replace('.bam' , '.previous.bam')
+        oldfile = outfile.replace('.', '.previous.', 1)
+        shutil.move(outfile, oldfile)
+        dorado_resume = [ '--resume-from' , oldfile ]
 
+    breakpoint()
     # include dorado options passed to config
     dorado_opt= []
     if config["dorado_basecaller"]["dorado_options"]:
@@ -115,10 +119,11 @@ def dorado_basecalling(config, cmdlinef, logf):
     cmd = [ config['dorado_basecaller']['dorado_cmd'] ] +\
         [ 'basecaller' ] +\
         dorado_opt +\
+        [ '--emit-fastq' ] +\
         dorado_resume +\
         [ model ] +\
         [ pod5dir ] +\
-        [ ">", outbam ]
+        [ ">", outfile ]
 
     cmd = ' '.join(cmd)
     print('[yellow] {} [/yellow]'.format(cmd))
