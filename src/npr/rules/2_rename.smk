@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+
+"""
+Warning: 
+This workflow assumes that all barcodes are present and subsequent fastqs can be generated.
+This is particularly problematic for missing barcodes.
+Currently the rule will fail after waiting for missing file.
+Do not touch empty files as subsequent QC step will fail with empty input.
+Instead the SampleSheet (config['data']) should be adjusted
+"""
+
 import os
 import sys
 import subprocess as sp
@@ -94,6 +104,7 @@ rule rename_files:
                 logfile.write("barcoding detected.\n")
                 splitcmd = config_to_splitseqsummary(config)
                 logfile.write("splitcmd: {}\n".format(splitcmd))
+                # Split fastq/sequencing_summary.txt by barcode
                 sp.check_call(splitcmd, shell=True)
                 for sample_id in config['data']['samples']:
                     logfile.write("Renaming sample {}\n".format(sample_id))
@@ -133,9 +144,16 @@ rule rename_files:
                     passlist = glob.glob(
                         os.path.join('fastq','pass','{}'.format(samDic['index_id']), '*fastq.gz')
                     )
-                    cmd = ['cat'] + passlist
-                    with open(pass_out, 'w') as f:
-                        sp.call(cmd, stdout=f)
+                    # passlist might be empty if barcode is not found
+                    if passlist:
+                        cmd = ['cat'] + passlist
+                        with open(pass_out, 'w') as f:
+                            sp.call(cmd, stdout=f)
+                    else:
+                        # Create an empty file at fail_out
+                        print('barcode {} not found. Touch {}'.format(samDic['index_id'], pass_out))
+                        #Path(pass_out).touch()
+
                     #for f in passlist:
                     #    os.remove(f)
                     #fail
@@ -145,14 +163,24 @@ rule rename_files:
                     )
                     if not os.path.exists(faildir):
                         os.mkdir(faildir)
-                    cmd = ['cat'] + faillist
-                    with open(fail_out, 'w') as f:
-                        sp.call(cmd, stdout=f)
 
-                    shutil.copy(
-                        'sequencing_summary_{}.txt'.format(samDic['index_id']),
-                        os.path.join(
-                            sampleid_dir,
-                            'sequencing_summary.txt'
-                        )
-                    )
+                    # faillist might be empty if barcode is not found
+                    if faillist:
+                        cmd = ['cat'] + faillist
+                        with open(fail_out, 'w') as f:
+                            sp.call(cmd, stdout=f)
+                    else:
+                        # Create an empty file at fail_out
+                        print('barcode {} not found. Touch {}'.format(samDic['index_id'], fail_out))
+                        #Path(fail_out).touch()
+
+                    ss_file = 'sequencing_summary_{}.txt'.format(samDic['index_id'])
+                    ss_new = os.path.join(sampleid_dir, 'sequencing_summary.txt')
+                    breakpoint()
+                    if Path(ss_file).exists():
+                        shutil.copy( ss_file, ss_new )
+                        logfile.write('copied {} to {}'.format(ss_file, ss_new))
+                    else:
+                        #Path(ss_new).touch()
+                        logfile.write('no such file {}'.format(ss_file))
+                        logfile.write('Some barcodes from sample sheet seem to be missing in data: {}'.format(ss_file))
