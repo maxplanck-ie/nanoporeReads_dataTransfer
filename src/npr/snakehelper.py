@@ -66,6 +66,25 @@ def flatten_irreg_lists(nested_list):
     else:
         return [nested_list]
 
+def run_command(cmd,logf):
+    """
+    run command and print stderr to log file logf
+    """
+    print('[yellow] {} [/yellow]'.format(cmd))
+    with open(logf, 'a') as f:
+        f.write("### command: ###\n")
+        f.write(cmd + '\n')
+
+    # run 
+    try:
+        with open(logf, "a") as f:
+            res = sp.run(cmd, stderr=f, shell=True)
+    except sp.CalledProcessError as e:
+        print("[red] Failed with return code [/red]", e.returncode)
+        print(res)
+        print("[red] Check also file {} [/red]".format(logf))
+        sys.exit(1)
+
 
 def dorado_basecalling(config, cmdlinef, logf):
 
@@ -85,8 +104,8 @@ def dorado_basecalling(config, cmdlinef, logf):
         'pod5'
     )
 
-    # output file: bam or fastq
-    oform = config["dorado_basecaller"]["dorado_output"]  # 'fastq' or 'bam'
+    # output file: currently Dorado will return a single BAM file
+    oform = 'bam'
     outdir = pod5dir.replace('pod5', oform)
     if not os.path.exists(outdir):
         try:
@@ -115,8 +134,9 @@ def dorado_basecalling(config, cmdlinef, logf):
     if config["dorado_basecaller"]["dorado_options"]:
         dorado_opt = config["dorado_basecaller"]["dorado_options"].split(' ')
 
-    if config["dorado_basecaller"]["dorado_output"]=='fastq':
-        dorado_opt = dorado_opt + ['--emit-fastq']
+    #discarded effort to have alternative fastq output with '--emit-fastq'
+    #if config["dorado_basecaller"]["dorado_output"]=='fastq':
+    #    dorado_opt = dorado_opt + ['--emit-fastq']
 
     cmd = [ config['dorado_basecaller']['dorado_cmd'] ] +\
         [ 'basecaller' ] +\
@@ -124,29 +144,31 @@ def dorado_basecalling(config, cmdlinef, logf):
         dorado_resume +\
         [ model ] +\
         [ pod5dir ]
-    breakpoint()
-    
-    # If output is fastq also compress
-    if config["dorado_basecaller"]["dorado_output"]=='fastq':
-        cmd.append('| gzip > {}.gz'.format(outfile))
-    else:
-        cmd.append('> {}'.format(outfile))
-
+    cmd.append('> {}'.format(outfile))
     cmd = ' '.join(cmd)
-    print('[yellow] {} [/yellow]'.format(cmd))
-    with open(logf, 'a') as f:
-        f.write("#dorado-basecaller cmd:\n")
-        f.write(cmd + '\n')
+    run_command(cmd, logf)
 
-    try:
-        with open(logf, "a") as f:
-            res = sp.run(cmd, stderr=f, shell=True)
-    except sp.CalledProcessError as e:
-        print("[red] Dorado failed with return code [/red]", e.returncode)
-        print(res)
-        print("[red] Check also file {} [/red]".format(logf))
-        sys.exit(1)
+    # run sequence summary
+    # put output into fastq directory (historical reasons: that's where pycoQC will be looking)
+    fastq_dir = pod5dir.replace('pod5', 'fastq')
+    os.makedirs(fastq_dir, exist_ok=True)
+    seq_sum = os.path.join(fastq_dir, 'sequencing_summary.txt')
 
+    cmd = [ config['dorado_basecaller']['dorado_cmd'], 'summary', outfile ]
+    cmd.append('> {}'.format(seq_sum))
+    cmd = ' '.join(cmd)
+    run_command(cmd, logf)
+
+    # convert bam to fastq.gz
+    if config["dorado_basecaller"]["dorado_output"]=='fastq':
+        fastq_dir = os.path.join(fastq_dir, 'pass')   
+        os.makedirs(fastq_dir, exist_ok=True)                    # create .../fastq/pass
+        bn=os.path.basename(outfile).replace('bam','fastq.gz')
+        fastq_file = os.path.join(fastq_dir, bn)                 # .../fastq/pass/*.fastq.gz
+
+        cmd = ['samtools', 'bam2fq', outfile, '| gzip >', fastq_file]
+        cmd = ' '.join(cmd)
+        run_command(cmd, logf)
 
 
 def guppy_basecalling(config, cmdlinef, logf):
