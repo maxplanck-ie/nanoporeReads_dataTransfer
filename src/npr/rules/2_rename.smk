@@ -26,6 +26,22 @@ del metadata["projects"]
 del metadata["samples"]
 metadata = pd.DataFrame(metadata).T
 
+def cat_list(file_list, outfile, msg=""):
+    """
+    concatenate files (fastq.gz) in file_list and send them to outfile
+    include checks in case list is empty
+    """
+
+    # file_list might be empty (e.g if barcode is not found)
+    if file_list:
+        cmd = ['cat'] + file_list
+        with open(outfile, 'w') as f:
+            sp.call(cmd, stdout=f)
+    else:
+        print('file_list is empty. {}'.format(msg))
+        #Path(outfile).touch()
+
+
 rule rename_files:
     input:
         "flags/1_basecalling.done"
@@ -80,26 +96,25 @@ rule rename_files:
                 passlist = glob.glob(
                     os.path.join('fastq','pass','*fastq.gz')
                 )
-                cmd = ['cat'] + passlist
-                with open(pass_out, 'w') as f:
-                    sp.call(cmd, stdout=f)
+                cat_list(passlist, pass_out, msg="No fail/*fastq.gz")
                 #for f in passlist:
                 #    os.remove(f)
                 #fail
                 logfile.write("failing fastq files.\n")
                 faillist = glob.glob('fastq/fail/*fastq.gz')
-                cmd = ['cat'] + faillist
-                with open(fail_out, 'w') as f:
-                    sp.call(cmd, stdout=f)
+                cat_list(faillist, fail_out, msg="No fail/*fastq.gz")
                 #for f in faillist:
                 #    os.remove(f)
+
                 logfile.write("Copy sequencing_summary to sample folder.\n")
-                shutil.copy(
-                    'fastq/sequencing_summary.txt',
-                    os.path.join(
-                        sampleid_dir, 
-                        'sequencing_summary.txt'
-                ))
+                ss_file = 'fastq/sequencing_summary.txt'
+                ss_new = os.path.join(sampleid_dir, 'sequencing_summary.txt')
+                if Path(ss_file).exists():
+                    shutil.copy( ss_file, ss_new )
+                    logfile.write('copied {} to {}'.format(ss_file, ss_new))
+                else:
+                    #Path(ss_new).touch()
+                    logfile.write('no such file {}. Check basecalling.'.format(ss_file))
             else:
                 logfile.write("barcoding detected.\n")
                 splitcmd = config_to_splitseqsummary(config)
@@ -144,15 +159,9 @@ rule rename_files:
                     passlist = glob.glob(
                         os.path.join('fastq','pass','{}'.format(samDic['index_id']), '*fastq.gz')
                     )
-                    # passlist might be empty if barcode is not found
-                    if passlist:
-                        cmd = ['cat'] + passlist
-                        with open(pass_out, 'w') as f:
-                            sp.call(cmd, stdout=f)
-                    else:
-                        # Create an empty file at fail_out
-                        print('barcode {} not found.'.format(samDic['index_id']))
-                        #Path(pass_out).touch()
+
+                    cat_list(passlist, pass_out, msg="No pass/" + samDic['index_id'])
+
 
                     #for f in passlist:
                     #    os.remove(f)
@@ -164,15 +173,7 @@ rule rename_files:
                     if not os.path.exists(faildir):
                         os.mkdir(faildir)
 
-                    # faillist might be empty if barcode is not found
-                    if faillist:
-                        cmd = ['cat'] + faillist
-                        with open(fail_out, 'w') as f:
-                            sp.call(cmd, stdout=f)
-                    else:
-                        # Create an empty file at fail_out
-                        print('barcode {} not found.'.format(samDic['index_id']))
-                        #Path(fail_out).touch()
+                    cat_list(faillist, fail_out, msg="No fail/" + samDic['index_id'])
 
                     ss_file = 'sequencing_summary_{}.txt'.format(samDic['index_id'])
                     ss_new = os.path.join(sampleid_dir, 'sequencing_summary.txt')
