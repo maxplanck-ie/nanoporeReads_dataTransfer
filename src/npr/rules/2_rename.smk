@@ -151,7 +151,7 @@ rule rename_files:
                             sp.call(cmd, stdout=f)
                     else:
                         # Create an empty file at fail_out
-                        print('barcode {} not found. Touch {}'.format(samDic['index_id'], pass_out))
+                        print('barcode {} not found.'.format(samDic['index_id']))
                         #Path(pass_out).touch()
 
                     #for f in passlist:
@@ -171,12 +171,11 @@ rule rename_files:
                             sp.call(cmd, stdout=f)
                     else:
                         # Create an empty file at fail_out
-                        print('barcode {} not found. Touch {}'.format(samDic['index_id'], fail_out))
+                        print('barcode {} not found.'.format(samDic['index_id']))
                         #Path(fail_out).touch()
 
                     ss_file = 'sequencing_summary_{}.txt'.format(samDic['index_id'])
                     ss_new = os.path.join(sampleid_dir, 'sequencing_summary.txt')
-                    breakpoint()
                     if Path(ss_file).exists():
                         shutil.copy( ss_file, ss_new )
                         logfile.write('copied {} to {}'.format(ss_file, ss_new))
