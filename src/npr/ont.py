@@ -82,8 +82,8 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
-            info_dict = { "organism":"other", "protocol":"rna"}
-            #info_dict, msg = query_parkour(config, flowcell, msg)
+            #info_dict = { "organism":"other", "protocol":"rna"}
+            info_dict, msg = query_parkour(config, flowcell, msg)
             config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
             send_email(
                 "Flowcell {} found. Starting pipeline.\n".format(flowcell) + msg,
@@ -149,7 +149,9 @@ def main(config):
                 rerun_triggers= ['mtime']
             )
             if not snak_stat:
-                msg += "snake crashed."
+                msg += "snake crashed with {}".format(snak_stat)
+                print('[red] {} [/red]'.format(msg))
+                # send email here
                 sys.exit()
            
             msg = 'Project: {}\n'.format(config['data']['projects'][0])
