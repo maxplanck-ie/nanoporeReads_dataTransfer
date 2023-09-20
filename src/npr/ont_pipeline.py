@@ -173,6 +173,8 @@ def read_flowcell_info(config, info_dict, base_path):
         info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
         info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
         info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
+        info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
             if rg == '--barcoding' and not info_dict['barcoding']:
