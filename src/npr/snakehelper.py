@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+import re
 from rich import print
 import glob
 import subprocess as sp
@@ -85,13 +86,53 @@ def run_command(cmd,logf):
         print("[red] Check also file {} [/red]".format(logf))
         sys.exit(1)
 
+def guppy2dorado(model_name):
+    """
+    This is an effort to translate model names
+    Currently the model is encode in the report*.json or can be obtained from
+    >pod5 inspect debug <pod5>
+    However, those models follow guppy naming conventions and have to be translated to dorado
+    Below is a brute force translation which should work for most runs until it fails
+    It will ikely have to be extended
+    Notice that the there is also a limited set of dorado models that will need update
+    """
+    new_name = model_name
+    if re.match(r'^rna', model_name):
+        new_name='rna002_70bps_hac@v3'
+    elif re.match(r'^dna_r9.4.1', model_name):
+        new_name='dna_r9.4.1_e8_sup@v3.3'
+    elif re.match(r'^dna_r10.4.1', model_name):
+        new_name='dna_r10.4.1_e8.2_400bps_sup@v4.2.0'
+
+    print("[red] guppy2dorado: {} -> {}[/red]".format(model_name,new_name))
+    return new_name
 
 def dorado_basecalling(config, cmdlinef, logf):
+    """
+    1. get model name
+    2. check if basecalling had been started (existing bam file)
+    3. run dorado basecalling
+    4. create sequencing_summary.txt and put it to fastq/
+    5. convert *.bam to *.fastq.gz and put it into fastq/pass
+    Notice:
+    - dorado does not yet do barcode splitting and only a single bam file will be produced
+    - there is no split into pass/ fail/ based on min_qscore (--min_score=0)
+    - fastq.gz creation seems an overload, but subsequent workflows depent on it
+    """
+    # model name = default model (inferred from json)
+    model_name = config['info_dict']['model_def']
+
+    # try to translate model name to dorado schema
+    model_name = guppy2dorado(model_name)
+
+    # overwrite model name if specified in config explicitly
+    if config["dorado_basecaller"]["dorado_model"]:
+        model_name = config["dorado_basecaller"]["dorado_model"]
 
     # model directory
     model=os.path.join(
         config["dorado_basecaller"]["model_directory"],
-        config["dorado_basecaller"]["dorado_model"]
+        model_name
     )
 
     if not os.path.exists(model):
