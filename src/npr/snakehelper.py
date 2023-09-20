@@ -85,8 +85,8 @@ def dorado_basecalling(config, cmdlinef, logf):
         'pod5'
     )
 
-    # output file (BAM format)
-    oform = 'fastq'     # alternatively 'bam'
+    # output file: bam or fastq
+    oform = config["dorado_basecaller"]["dorado_output"]  # 'fastq' or 'bam'
     outdir = pod5dir.replace('pod5', oform)
     if not os.path.exists(outdir):
         try:
@@ -100,30 +100,37 @@ def dorado_basecalling(config, cmdlinef, logf):
         'dorado_basecalled.' + oform
     )
 
-    # if the output file (BAM or fastq) already exists resume basecalling
-    # Notice: resume works only from BAM
+    # if the output file (BAM) already exists resume basecalling
+    # Notice: resume only works with BAM
     dorado_resume = []
-    if os.path.exists(outfile):
+    if oform == 'bam' and os.path.exists(outfile):
         print("[yellow] File {} is already available. Resume basecalling [/yellow]".format(outfile))
-        #oldfile = outfile.replace('.bam' , '.previous.bam')
-        oldfile = outfile.replace('.', '.previous.', 1)
+        oldfile = outfile.replace('.bam' , '.previous.bam')
         shutil.move(outfile, oldfile)
         dorado_resume = [ '--resume-from' , oldfile ]
 
-    breakpoint()
+ 
     # include dorado options passed to config
     dorado_opt= []
     if config["dorado_basecaller"]["dorado_options"]:
         dorado_opt = config["dorado_basecaller"]["dorado_options"].split(' ')
 
+    if config["dorado_basecaller"]["dorado_output"]=='fastq':
+        dorado_opt = dorado_opt + ['--emit-fastq']
+
     cmd = [ config['dorado_basecaller']['dorado_cmd'] ] +\
         [ 'basecaller' ] +\
         dorado_opt +\
-        [ '--emit-fastq' ] +\
         dorado_resume +\
         [ model ] +\
-        [ pod5dir ] +\
-        [ ">", outfile ]
+        [ pod5dir ]
+    breakpoint()
+    
+    # If output is fastq also compress
+    if config["dorado_basecaller"]["dorado_output"]=='fastq':
+        cmd.append('| gzip > {}.gz'.format(outfile))
+    else:
+        cmd.append('> {}'.format(outfile))
 
     cmd = ' '.join(cmd)
     print('[yellow] {} [/yellow]'.format(cmd))

@@ -12,6 +12,11 @@ rule basecalling:
         cfg = config,
         cmdline = 'log/cmdline.log',
     run:
+        if params.basecaller == "dorado" and config["info_dict"]['barcoding']:
+            params.basecaller = "guppy"
+            print('[red] dorado is not yet compatible with barcoding [/red]')
+            print('[red] Overwrite params.basecaller: {} [/red]'.format(params.basecaller))
+
         if params.basecaller == "dorado":
             print('[yellow] run dorado [/yellow]')
             cmd = dorado_basecalling(
