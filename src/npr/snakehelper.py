@@ -78,7 +78,7 @@ def run_command(cmd,logf):
     # run 
     try:
         with open(logf, "a") as f:
-            res = sp.run(cmd, stderr=f, shell=True)
+            res = sp.run(cmd, stderr=f, check=True, shell=True)
     except sp.CalledProcessError as e:
         print("[red] Failed with return code [/red]", e.returncode)
         print(res)
