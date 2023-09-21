@@ -57,14 +57,13 @@ rule qc_kraken:
     output:
         report="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.report",
         output="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.output",
-        stderr="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.stderr"
     params:
         db=config['kraken']['db'],
         threads=config['kraken']['threads'],
     log:
-        err="log/kraken/project-{project}_id-{sample_id}_name-{sample_name}.log"
+        stderr="log/kraken/project-{project}_id-{sample_id}_name-{sample_name}.log"
     shell:'''
-        kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {output.output} --report {output.report} 2> {output.stderr}
+        kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {output.output} --report {output.report} 2> {log.stderr}
     '''
 
 rule qc_multiqc: 
