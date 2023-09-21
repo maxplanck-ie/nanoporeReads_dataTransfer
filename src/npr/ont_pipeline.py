@@ -61,7 +61,7 @@ def filter_flowcell(json, config):
             return True
         
     # flowcell does not match MPI-IE naming convention: don't filter
-    # return False
+    return False
 
     # be extra cautious: get fc_id and fc_dir from (large) json file
     # this is slow, but it will only be done for a few non-standard flowcells
@@ -104,10 +104,10 @@ def find_new_flowcell(config):
     for flowcell in dirs:
         print('Working with {}'.format(flowcell))
 
-        # test if 'analysis.done' exists for this flowcell
+        # test and continue if 'analysis.done' exists for this flowcell
         if analysis_done(flowcell, config):
-            return (None, None, None)
-        
+            continue
+
         # exit if sampleSheet.csv does not exists
         ss = os.path.join(flowcell, 'SampleSheet.csv')
         if not os.path.isfile(ss):
@@ -126,6 +126,8 @@ def find_new_flowcell(config):
             'name': os.path.basename(flowcell)
         }
         return (os.path.basename(flowcell), msg, flowcell)
+
+    return (None, None, None)
 
 def read_flowcell_info(config, info_dict, base_path):
     """
@@ -171,6 +173,8 @@ def read_flowcell_info(config, info_dict, base_path):
         info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
         info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
         info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
+        info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
             if rg == '--barcoding' and not info_dict['barcoding']:
