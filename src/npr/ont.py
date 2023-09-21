@@ -149,10 +149,11 @@ def main(config):
                 rerun_triggers= ['mtime']
             )
             if not snak_stat:
-                msg += "snake crashed."
+                msg += "snake crashed with {}".format(snak_stat)
+                print('[red] {} [/red]'.format(msg))
+                # send email here
                 sys.exit()
-            Path(os.path.join(output_directory, 'analysis.done')).touch()
-            print(config)
+           
             msg = 'Project: {}\n'.format(config['data']['projects'][0])
             msg += 'pod5 compression: {}\n'.format(
                 getfast5foot(
@@ -166,12 +167,21 @@ def main(config):
             msg += 'barcoding: {}\n'.format(config['info_dict']['barcoding'])
             msg += 'barcoding kit: {}\n'.format(config['info_dict']['barcode_kit'])
             msg += 'protocol: {}\n'.format(config['info_dict']['protocol'])
-            msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
-            msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
+            if config['basecaller']=="guppy":
+                msg += 'guppy version: {}\n'.format(config['guppy_basecaller']['guppy_version'])
+                msg += 'guppy model: {}\n'.format(config['info_dict']['model'].split('/')[-1])
+            if config['basecaller']=="dorado":
+                msg += 'dorado version: {}\n'.format(config['dorado_basecaller']['dorado_version'])
+                msg += 'dorado model: {}\n'.format(config["dorado_basecaller"]["dorado_model"])
             msg += 'minimap2 version: {}\n\n'.format(config['mapping']['minimap2_version'])
             msg += "flowcell {} is analysed successfully".format(flowcell)
             ship_qcreports(config, flowcell)
+
+            print(msg)
             send_email(msg, version('npr'), os.path.basename(flowcell), config)
+            
+            Path(os.path.join(output_directory, 'analysis.done')).touch()
+            #print(config)
         else:
             print("No flowcells found. I go back to sleep.")
             sleep()
