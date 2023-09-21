@@ -39,6 +39,7 @@ def cat_list(file_list, outfile, msg=""):
             sp.call(cmd, stdout=f)
     else:
         print('file_list is empty. {}'.format(msg))
+        sys.exit(1)
         #Path(outfile).touch()
 
 
