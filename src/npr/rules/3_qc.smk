@@ -56,14 +56,14 @@ rule qc_kraken:
         fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz"
     output:
         report="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.report",
-        output="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.output",
     params:
         db=config['kraken']['db'],
         threads=config['kraken']['threads'],
+        output="-"  # "FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.output",
     log:
         stderr="log/kraken/project-{project}_id-{sample_id}_name-{sample_name}.log"
     shell:'''
-        kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {output.output} --report {output.report} 2> {log.stderr}
+        kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {params.output} --report {output.report} 2> {log.stderr}
     '''
 
 rule qc_multiqc: 
