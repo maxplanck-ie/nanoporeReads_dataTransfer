@@ -51,11 +51,28 @@ rule qc_fastqc:
     fastqc --memory=4096 -t {threads} -o {params.odir} --dir {params.odir} --quiet {input}
     '''
 
+rule qc_kraken:
+    input:
+        fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz"
+    output:
+        report="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.report",
+        output="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.output",
+        stderr="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.stderr"
+    params:
+        db=config['kraken']['db'],
+        threads=config['kraken']['threads'],
+    log:
+        err="log/kraken/project-{project}_id-{sample_id}_name-{sample_name}.log"
+    shell:'''
+        kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {output.output} --report {output.report} 2> {output.stderr}
+    '''
+
 rule qc_multiqc: 
     input: 
         pycoQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"),
         porechopQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.info"),
         fastqc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html"),
+        krakenQC=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.report"),
     output: 
         html="FASTQC_Project_{project}/multiqc/multiqc_report.html", 
     params:
