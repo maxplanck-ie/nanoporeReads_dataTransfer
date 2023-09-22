@@ -79,7 +79,10 @@ def ship_qcreports(config, flowcell):
 
 
 def standard_text(config, QC):
-
+    """
+    Draft a short letter to end user that will be part of the success email
+    Include also QC metrics obtained from multiqc report
+    """
     samples = QC.pop('samples')
     frame = "\n-------\n"
     msg="Dear <...>\n" +\
@@ -96,6 +99,10 @@ def standard_text(config, QC):
 
 
 def send_email(subject, body, config, allreceivers=True):
+    """
+    Send email including key information about the run
+    Also print message to stdout
+    """
     mailer = MIMEMultipart('alternative')
     mailer['Subject'] = "[npr] [{}] {} {}".format(
         version('npr'),
