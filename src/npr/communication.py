@@ -18,7 +18,7 @@ def ship_qcreports(config, flowcell):
     copy pycoQC reports and run report into samba drive
     copy both reports in bioinfo qc drive as well
     '''
-    return(0)
+
     # login info.
     _pkey = paramiko.RSAKey.from_private_key_file(
         config['sambahost']['pkey']
