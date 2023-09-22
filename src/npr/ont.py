@@ -54,6 +54,19 @@ from pathlib import Path
     help="Run snakemake as --dryrun"
 )
 
+@click.option(
+    "--organism",
+    default=None,
+    show_default=True,
+    help="If known, specify organism as --organism"
+)
+
+@click.option(
+    "--protocol",
+    default=None,
+    show_default=True,
+    help="If known, specify protocol as --protocol"
+)
 # run workflow.
 def ont(**kwargs):
     # print what config is used.
@@ -88,9 +101,15 @@ def ont(**kwargs):
         "ont_pipeline.smk"
     )
 
-
-
-    #print(config); sys.exit(1)
+    # initialize config['init'] - but this could also be defined in config.yaml
+    if 'info_dict' not in config:
+        config['info_dict'] = {}
+    if ( kwargs['organism'] is not None):
+        config['info_dict']['organism'] = kwargs['organism']
+        print("Set organism to {}".format(config['info_dict']['organism']))
+    if ( kwargs['protocol'] is not None):
+        config['info_dict']['protocol'] = kwargs['protocol']
+        print("Set protocol to {}".format(config['info_dict']['protocol']))
 
     # start workflow.
     main(config)
@@ -107,9 +126,13 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
-            #info_dict = { "organism":"other", "protocol":"rna"}
-            info_dict, msg = query_parkour(config, flowcell, msg)
-            config["info_dict"] = read_flowcell_info(config, info_dict, base_path)
+            if ('organism' not in config['info_dict'] or
+                'protocol' not in config['info_dict']):
+                # need parkour query only if 'organism' or 'protocol' is undefined
+                msg = query_parkour(config, flowcell, msg)
+            # The following should be simplified but I did not want to touch
+            # read_flow_cell_info() for now
+            config["info_dict"] = read_flowcell_info(config, config["info_dict"], base_path)
             send_email(
                 "Flowcell {} found. Starting pipeline.\n".format(flowcell) + msg,
                 version('npr'),

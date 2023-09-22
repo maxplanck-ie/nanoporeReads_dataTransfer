@@ -109,7 +109,12 @@ def query_parkour(config, flowcell, msg):
     if flowcell == '20230331_1220_X4_FAV22714_872a401d':
         fc = 'FAV22714-2'
     else:
-        fc = flowcell.split("_")[3]
+        try:
+            fc = flowcell.split("_")[3]
+        except Exception as e:
+            print('Error: flowcell "{}" cannot be queried in parkour.'.format(flowcell))
+            print('Exception: {}'.format(e))
+            sys.exit(1)
     # test for flow cell re-use.
     # flowcell that's re-used gets higher increment.
     postfixes = ['-5', '-4', '-3', '-2', '-1']
@@ -152,16 +157,14 @@ def query_parkour(config, flowcell, msg):
             else:
                 print('protocol not found Default to dna.')
                 protocol = 'dna'
-                #sys.exit("protocol not found")
-            info_dict['protocol'] = protocol
+            config['info_dict']['protocol'] = protocol
             if organism not in config['genome'].keys():
                 organism = "other"
-            info_dict["organism"] = str(organism)
-            info_dict["protocol"] = protocol
+            config['info_dict']['organism'] = str(organism)
             msg += "nucleic acid  type = {}\n".format(protocol)
             msg += "organism = {}\n".format(organism)
-            return (info_dict, msg)
-    info_dict = {}
+            return (msg)
+
     msg += "Parkour query failed for {}.\n".format(fc)
     msg += "Parkour queries tried:\n"
     for fq in flowcellqueries:
