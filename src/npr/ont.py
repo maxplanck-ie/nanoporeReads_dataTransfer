@@ -43,7 +43,15 @@ from pathlib import Path
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     required=False,
     default=None,  # Default: unspecified (defined in config)
-    help="Specify a custom directory."
+    help="Specify a custom input directory."
+)
+
+@click.option(
+    "--dryrun",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Run snakemake as --dryrun"
 )
 
 # run workflow.
@@ -53,17 +61,34 @@ def ont(**kwargs):
         "Starting pipeline with config: [green]{}[/green]".format(kwargs['configfile'])
     )
 
-
-    # Load config up.
+    # Load config from file
     config = yaml.safe_load(open(kwargs['configfile']))
 
     # update config if runtime args have been set
     if ( kwargs['directory'] is not None):
         config['paths']['offloadDir'] = kwargs['directory']
-
     print(
-        "Watch directory: [green]{}[/green]".format(config['paths']['offloadDir'])
+        "Watching directory: [green]{}[/green]".format(config['paths']['offloadDir'])
     )
+
+    if ( kwargs['dryrun'] is not False):
+        config['snakemake']['dryrun'] = True
+        print("Use snakemake in dryrun.")
+
+    # add rulesPath to config['paths'] _not_ to config['snakemake']
+    # since 'rulesPath' is not a snakemake option
+    config['paths']['rulesPath'] = os.path.join(
+        os.path.realpath(os.path.dirname(__file__)),
+        'rules'
+    )
+
+    # snakefile to config['snakemake']
+    config['snakemake']['snakefile'] = os.path.join(
+        config['paths']['rulesPath'],
+        "ont_pipeline.smk"
+    )
+
+
 
     #print(config); sys.exit(1)
 
@@ -98,31 +123,26 @@ def main(config):
             config["bc_kit"] = bc_kit
             print(config["data"])
             print("samplesheet is read sucessfully")
-            # Include the rulePath in the configFile.
-            config['paths']['rulesPath'] = os.path.join(
-                os.path.realpath(os.path.dirname(__file__)),
-                'rules'
+
+            config['info_dict']['logfile']=os.path.join(
+                config['info_dict']['flowcell_path'],
+                "log",
+                "ont.log"
             )
+
             # write the updated config file under the output path
             configFile = os.path.join(
-                config["paths"]["outputDir"],
-                config["input"]["name"],
+                config['info_dict']['flowcell_path'],
                 "pipeline_config.yaml"
             )
+            config['info_dict']['configFile']=configFile
+            #print(config)
             with open(configFile, 'w') as f:
                 yaml.dump(config, f, default_flow_style=False)
 
-            #run snakemake
-            output_directory = os.path.join(
-                config["paths"]["outputDir"],
-                config["input"]["name"]
-            )
-            snakefile_file = os.path.join(
-                os.path.realpath(os.path.dirname(__file__)),
-                "rules",
-                "ont_pipeline.smk"
-            )
-
+            """
+            # This seems to be unused
+            output_directory = config['info_dict']['flowcell_path']
             # snakemake log file
             fnames = glob.glob(
                 os.path.join(output_directory, 'ont_run-[0-9]*.log')
@@ -132,28 +152,25 @@ def main(config):
             else:
                 fnames.sort(key=os.path.getctime)
                 n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
-            
-            print("Starting snakemake on file {} with configfile {} using workdir {}..."
-                  .format(snakefile_file, configFile, output_directory), file=sys.stderr)
+            """
+            print("[green]Starting snakemake. [/green]")
+            print("file    {}".format(config['snakemake']['snakefile']))
+            print("config  {}".format(config['info_dict']['configFile']))
+            print("workdir {}".format(config['info_dict']['flowcell_path']))
+
+            # static parameters are defined in dict config['snakemake']
+            # flowcell specific parameters are taken from config['info_dict']
             snak_stat = snakemake.snakemake(
-                snakefile = snakefile_file,
-                #debug = True,
-                #cores = config["snakemake"]["cores"],
                 **config['snakemake'],
-                max_jobs_per_second = 1,
-                printshellcmds = True,
-                verbose = True,
-                configfiles = [configFile],
-                workdir = output_directory,
-                use_conda = True,
-                rerun_triggers= ['mtime']
+                configfiles = [ config['info_dict']['configFile'] ],
+                workdir = config['info_dict']['flowcell_path'],
             )
             if not snak_stat:
                 msg += "snake crashed with {}".format(snak_stat)
                 print('[red] {} [/red]'.format(msg))
                 # send email here
                 sys.exit()
-           
+
             msg = 'Project: {}\n'.format(config['data']['projects'][0])
             msg += 'pod5 compression: {}\n'.format(
                 getfast5foot(
@@ -180,7 +197,7 @@ def main(config):
             print(msg)
             send_email(msg, version('npr'), os.path.basename(flowcell), config)
             
-            Path(os.path.join(output_directory, 'analysis.done')).touch()
+            Path(os.path.join(config['info_dict']['flowcell_path'], 'analysis.done')).touch()
             #print(config)
         else:
             print("No flowcells found. I go back to sleep.")
