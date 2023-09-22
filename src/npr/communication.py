@@ -18,6 +18,7 @@ def ship_qcreports(config, flowcell):
     copy pycoQC reports and run report into samba drive
     copy both reports in bioinfo qc drive as well
     '''
+    return(0)
     # login info.
     _pkey = paramiko.RSAKey.from_private_key_file(
         config['sambahost']['pkey']
@@ -77,12 +78,39 @@ def ship_qcreports(config, flowcell):
     client.close()
 
 
-def send_email(body, version, flowcell, config, allreceivers=True):
+def standard_text(config, QC):
+
+    samples = QC.pop('samples')
+    frame = "\n-------\n"
+    msg="Dear <...>\n" +\
+     "The sequencing and first analysis for Project {} is finished\n".format(config['data']['projects']) +\
+     "\n" +\
+    "Ouput Folder: {}\n".format(config['info_dict']['transfer_path']) +\
+    "Quality Metrics (from mulitQC): \n" +\
+    frame +\
+    "Samples: {}\n".format(samples) +\
+    "\n".join([f"{key}: {value}" for key, value in QC.items()]) +\
+    frame +\
+    "Please let me know if something is unclear or if you have any other questions.\n\nKind regards.\n"
+    return msg 
+
+
+def send_email(subject, body, config, allreceivers=True):
     mailer = MIMEMultipart('alternative')
-    mailer['Subject'] = "[npr] [{}] {}".format(
-        version,
-        flowcell
+    mailer['Subject'] = "[npr] [{}] {} {}".format(
+        version('npr'),
+        subject,
+        os.path.basename(config['info_dict']['base_path'])
     )
+
+    # add standard information from config['info_dict'] to each message
+    info = 'Project: {}\n'.format(config['data']['projects']) +\
+        'Samples: {}\n'.format(config['data']['samples']) +\
+        "\n".join([f"{key}: {value}" for key, value in config['info_dict'].items()]) +\
+            '\nbasecaller: {}\n'.format(config['basecaller'])
+    frame = "=====\n"
+    body = body + frame + info + frame
+
     mailer['From'] = config['email']['from']
     to_email = 'to' if allreceivers else 'trigger'
     mailer['To'] = config['email'][to_email]
@@ -90,12 +118,15 @@ def send_email(body, version, flowcell, config, allreceivers=True):
     print("Email trigger, sending to {}".format(tomailers))
     email = MIMEText(body)
     mailer.attach(email)
-    s = smtplib.SMTP(config['email']['host'])
-    s.sendmail(
-        config['email']['from'],
-        tomailers,
-        mailer.as_string()
-    )
+    if config['email']['host'] is not None:
+        s = smtplib.SMTP(config['email']['host'])
+        s.sendmail(
+            config['email']['from'],
+            tomailers,
+            mailer.as_string()
+        )
+    print('[green]Subject: {}\n{}[/green]'.format(mailer['Subject'], body)) 
+
 
 def query_parkour(config, flowcell, msg):
     """
@@ -169,10 +200,5 @@ def query_parkour(config, flowcell, msg):
     msg += "Parkour queries tried:\n"
     for fq in flowcellqueries:
         msg += "{}\n".format(fq)
-    send_email(
-        msg,
-        version('npr'),
-        flowcell,
-        config
-    )
+    send_email('Error with flowcell:', msg, config)
     sys.exit("parkour failure.")
