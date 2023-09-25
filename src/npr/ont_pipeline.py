@@ -111,13 +111,8 @@ def find_new_flowcell(config):
         # exit if sampleSheet.csv does not exists
         ss = os.path.join(flowcell, 'SampleSheet.csv')
         if not os.path.isfile(ss):
-            msg = "No SampleSheet.csv file.. Exiting.\n"
-            send_email(
-                msg,
-                version("npr"),
-                os.path.basename(flowcell),
-                config
-            )
+            msg = "No SampleSheet.csv file.\n"
+            send_email('Error for flowcell:', msg, config)
             sys.exit("no sampleSheet.")
         
         # return flowcell to ont()
@@ -304,3 +299,16 @@ def read_samplesheet(config):
         config["info_dict"]['barcode_kit']
     ))
     return config["info_dict"]['barcode_kit'], data
+
+def get_periphery(config):
+    """
+    Return the full pathname to the flowcell in the periphery
+    as it should be there after transfer
+    """
+    group    = config['data']['projects'][0].split("_")[-1].lower()
+    groupdir = os.path.join(config["paths"]["groupDir"],group)
+    # Warning: get_seqdir _creates_ directories as side effect
+    groupONT = get_seqdir(groupdir, "sequencing_data")
+    fc_base  = os.path.basename(config['info_dict']['flowcell_path'])
+    periphery = os.path.join(groupONT,fc_base)
+    return(periphery)

@@ -4,8 +4,39 @@ import sys
 import re
 from rich import print
 import glob
+import yaml
 import subprocess as sp
 from pathlib import Path
+
+def scan_multiqc(config):
+    """
+    Collect QC metrices from multiqc json file
+    """
+    QC = { 'read_quality':float('nan'),
+          'N50':float('nan'),
+          'alignment_rate':float('nan'),
+          }
+    # get json file from multiqc
+    json = os.path.join(
+        config['info_dict']['transfer_path'],
+        'FASTQC_Project_' + config['data']['projects'][0],
+        'multiqc',
+        'multiqc_data',
+        'multiqc_data.json'
+    )
+    if not os.path.exists(json):
+        print('[red]Warning. json does not exit: {}[/red]'.format(json))
+
+    jy = yaml.safe_load(open(json))
+
+    dd=jy['report_saved_raw_data']['multiqc_fastqc']
+    QC['samples'] = list(dd.keys())
+    QC['total_sequences'] = [v.get('Total Sequences', None) for v in dd.values()]
+    QC['total_bases'] = [v.get('Total Bases', None) for v in dd.values()]
+    QC['sequence_length_range'] = [v.get('Sequence length', None) for v in dd.values()]
+    QC['median_sequence_length'] = [v.get('median_sequence_length', None) for v in dd.values()]
+
+    return(QC)
 
 def fast5_to_pod5(basepath, baseout, cmdlinef):
     '''
