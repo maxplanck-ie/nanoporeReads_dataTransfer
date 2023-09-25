@@ -10,7 +10,7 @@ import yaml
 import json
 import subprocess as sp
 from npr.communication import send_email
-from npr.snakehelper import glob2reports
+from npr.snakehelper import glob2reports, get_seqdir
 
 def analysis_done(flowcell, config):
     """

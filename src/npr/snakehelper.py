@@ -8,14 +8,37 @@ import yaml
 import subprocess as sp
 from pathlib import Path
 
+def monitor_storage(config):
+    """
+    collect information on added storage in transfered directory
+    and overall storage in partition
+    """
+    path=config['info_dict']['transfer_path']
+    SM = {}   # storage monitor
+
+    # get du information for newly added directory
+    du_out = sp.check_output(
+        ['du', '-sh', path],
+        universal_newlines=True, stderr=sp.STDOUT
+    )
+    SM['added_storage'] = du_out.split()[0]
+
+    # get partition_info from df: (header, info, '^\n')
+    df_lines = sp.check_output(
+        ['df', '-g', path],
+        universal_newlines=True, stderr=sp.STDOUT
+    ).strip().split('\n')
+
+    # remove header (= use last line) and split into columns
+    df_out = df_lines[-1].split()
+    SM['available_storage_GB'], SM['available_storage_perc'] = [df_out[3], df_out[4]]
+    return(SM)
+
 def scan_multiqc(config):
     """
     Collect QC metrices from multiqc json file
     """
-    QC = { 'read_quality':float('nan'),
-          'N50':float('nan'),
-          'alignment_rate':float('nan'),
-          }
+    QC = {}
     # get json file from multiqc
     json = os.path.join(
         config['info_dict']['transfer_path'],
@@ -26,15 +49,30 @@ def scan_multiqc(config):
     )
     if not os.path.exists(json):
         print('[red]Warning. json does not exit: {}[/red]'.format(json))
+        return(QC)
 
     jy = yaml.safe_load(open(json))
 
+    # get QC metrics from FastQC (pass reads)
     dd=jy['report_saved_raw_data']['multiqc_fastqc']
     QC['samples'] = list(dd.keys())
-    QC['total_sequences'] = [v.get('Total Sequences', None) for v in dd.values()]
-    QC['total_bases'] = [v.get('Total Bases', None) for v in dd.values()]
-    QC['sequence_length_range'] = [v.get('Sequence length', None) for v in dd.values()]
-    QC['median_sequence_length'] = [v.get('median_sequence_length', None) for v in dd.values()]
+    QC['pass_total_sequences'] = [v.get('Total Sequences', None) for v in dd.values()]
+    QC['pass_total_bases'] = [v.get('Total Bases', None) for v in dd.values()]
+    QC['pass_sequence_length_range'] = [v.get('Sequence length', None) for v in dd.values()]
+    QC['pass_sequence_length_median'] = [v.get('median_sequence_length', None) for v in dd.values()]
+    QC['pass_percent_gc'] = [ v.get('%GC', None) for v in dd.values() ]
+    QC['pass_percent_dedup'] = [ round(v.get('total_deduplicated_percentage', None),2) for v in dd.values() ]
+
+    # get QC metrics from pycoQC (fron all reads)
+    # unfortunately jy['report_general_stats_data'] is a list and not a dict
+    # first need to get the index of pycoQC (should be 2) 
+    screens = list(jy['report_data_sources'].keys())   # list of QC screens (FastQC, ...)
+    pyco_idx = screens.index('pycoQC')                 # index
+    dd = jy['report_general_stats_data'][pyco_idx]     # dictionary
+    QC['all_median_phred_score'] = [round(v.get('all_median_phred_score', None),2) for v in dd.values()]
+    QC['all_N50'] = [v.get('all_n50', None) for v in dd.values()]
+#    QC['all_bases_pyco'] = [v.get('all_bases', None) for v in dd.values()]
+#    QC['all_reads_pyco'] = [v.get('all_reads', None) for v in dd.values()]
 
     return(QC)
 

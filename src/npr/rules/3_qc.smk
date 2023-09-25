@@ -28,13 +28,14 @@ rule qc_pycoqc:
         fastq="Project_{project}/Sample_{sample_id}/pass/{sample_name}.fastq.gz",
         sequencing_summary="Project_{project}/Sample_{sample_id}/sequencing_summary.txt",
     output:
-        "FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"
+        html="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html",
+        json="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.json"
     log:
         'log/pycoqc/project-{project}_id-{sample_id}_name-{sample_name}.log'
     shell:
         "pycoQC --summary_file {input.sequencing_summary} " 
         "{config[pycoQc][pycoQc_opts]} "
-        "-o {output} > {log} 2>&1"
+        "-o {output.html} -j {output.json}> {log} 2>&1"
 
 rule qc_fastqc: 
     input: 
@@ -65,10 +66,9 @@ rule qc_kraken:
     shell:'''
         kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {params.output} --report {output.report} 2> {log.stderr}
     '''
-
 rule qc_multiqc: 
     input: 
-        pycoQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.html"),
+        pycoQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_pycoqc.json"),
         porechopQc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.info"),
         fastqc=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_fastqc.html"),
         krakenQC=expand_project_path("FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_kraken.report"),
