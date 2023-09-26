@@ -42,7 +42,8 @@ def merge_pod5(basepath, baseout, cmdlinef):
     '''
     odir = os.path.join(baseout, 'pod5')
 
-    pod5_files=glob.glob(os.path.join(basepath, "pod5_pass", "*.pod5"))
+    pattern = os.path.join(basepath, "pod5_pass", "**", "*.pod5")
+    pod5_files = glob.glob(pattern, recursive=True)
     
     lst_cmd = [
         'pod5', 'merge',
