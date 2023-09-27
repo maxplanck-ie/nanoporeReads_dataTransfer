@@ -111,6 +111,8 @@ def ont(**kwargs):
     if ( kwargs['protocol'] is not None):
         config['info_dict']['protocol'] = kwargs['protocol']
         print("Set protocol to {}".format(config['info_dict']['protocol']))
+    # add conda env path where executable live
+    config['paths']['conda_env'] = sys.prefix
 
     # start workflow.
     main(config)
@@ -127,6 +129,7 @@ def main(config):
         def sleep():
             HUP.wait(timeout=float(60*60))
         signal.signal(signal.SIGHUP, breakSleep)
+
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
