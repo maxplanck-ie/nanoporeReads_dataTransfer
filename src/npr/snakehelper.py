@@ -25,7 +25,7 @@ def monitor_storage(config):
 
     # get partition_info from df: (header, info, '^\n')
     df_lines = sp.check_output(
-        ['df', '-g', path],
+        ['df', '-BG', path],
         universal_newlines=True, stderr=sp.STDOUT
     ).strip().split('\n')
 
