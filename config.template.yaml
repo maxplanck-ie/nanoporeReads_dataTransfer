@@ -14,13 +14,14 @@ snakemake:
   rerun_triggers: ['mtime']
   debug: False
 
+# ssh credential for samba host
 sambahost:
   user: samba_user
   host: samba_host
   pkey: path/to/private_key
 
 paths:
-  offloadDir: /path/to/ont/files (fast5 or pod5)
+  offloadDir: /path/to/ont/files (fast5 or pod5)      (output from ONT)
   old_outputDir: /path/to/output/old_for_legacy
   outputDir: /path/to/output/the_real_one             (aka as work dir)
   groupDir: /rootpath/to/transfer/for/internal/groups (aka "periphery")
@@ -38,8 +39,9 @@ ignore:
     - '20230512_1047_P2-7085206e51685c-A_PAK73534_a5e9ed5e'
     - ...
 
+# credential to query parkour
 parkour:
-  url: parkour/api/url/
+  url: parkour/api/url/  # leave empty to disable Parkour access
   user: account
   password: password
   pem: path/to/certificate
