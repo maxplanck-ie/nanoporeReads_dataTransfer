@@ -114,12 +114,17 @@ def send_email(subject, body, config, allreceivers=True):
         os.path.basename(config['info_dict']['base_path'])
     )
 
-    # add standard information from config['info_dict'] to each message
-    info = 'Project: {}\n'.format(config['data']['projects']) +\
-        'Samples: {}\n'.format(config['data']['samples']) +\
-        "\n".join([f"{key}: {value}" for key, value in config['info_dict'].items()]) +\
-            '\nbasecaller: {}\n'.format(config['basecaller'])
-    frame = "=====\n"
+    # add standard information from config['data'] and config['info_dict'] to each message
+    info = ""
+    if 'data' in config and 'projects' in config['data']:
+        info += 'Project: {}\n'.format(config['data']['projects'])
+    if 'data' in config and 'samples' in config['data']:
+        info += 'Samples: {}\n'.format(config['data']['samples'])
+    if 'info_dict' in config:
+        info += "\n".join([f"{key}: {value}" for key, value in config['info_dict'].items()])
+    if 'basecaller' in config:
+        info += '\nbasecaller: {}\n'.format(config['basecaller'])
+    frame = "\n=====\n"
     body = body + frame + info + frame
 
     mailer['From'] = config['email']['from']
@@ -141,8 +146,12 @@ def send_email(subject, body, config, allreceivers=True):
 
 def query_parkour(config, flowcell, msg):
     """
-    query parkour to return info_dict (protocol and organism)
+    query parkour to update info_dict (protocol and organism)
     """
+    if not config["parkour"]["url"]:
+        msg += "Parkour URL not specified."
+        return(msg)
+
     # Old manual escapes.
     if flowcell == '20221014_1045_X5_FAV39027_f348bc5c':
         fc = 'FAV39027_reuse'
@@ -154,8 +163,9 @@ def query_parkour(config, flowcell, msg):
         try:
             fc = flowcell.split("_")[3]
         except Exception as e:
-            print('Error: flowcell "{}" cannot be queried in parkour.'.format(flowcell))
-            print('Exception: {}'.format(e))
+            print('[red]Exception: {}[/red]'.format(e))
+            msg += 'Parkour Error: flowcell "{}" cannot be queried in parkour.'.format(flowcell)
+            send_email('Error with flowcell:', msg, config)
             sys.exit(1)
     # test for flow cell re-use.
     # flowcell that's re-used gets higher increment.
@@ -197,14 +207,14 @@ def query_parkour(config, flowcell, msg):
             elif "RNA" in protocol:
                 protocol = 'rna'
             else:
-                print('protocol not found Default to dna.')
+                print('protocol not found. Default to dna.')
                 protocol = 'dna'
+
+            # update config['info_dict']
             config['info_dict']['protocol'] = protocol
             if organism not in config['genome'].keys():
                 organism = "other"
             config['info_dict']['organism'] = str(organism)
-            msg += "nucleic acid  type = {}\n".format(protocol)
-            msg += "organism = {}\n".format(organism)
             return (msg)
 
     msg += "Parkour query failed for {}.\n".format(fc)
@@ -212,4 +222,4 @@ def query_parkour(config, flowcell, msg):
     for fq in flowcellqueries:
         msg += "{}\n".format(fq)
     send_email('Error with flowcell:', msg, config)
-    sys.exit("parkour failure.")
+    sys.exit("[red] parkour failure. [/red]")
