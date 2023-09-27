@@ -64,7 +64,8 @@ guppy_basecaller:
 # use with care: many guppy options are not functional or unsupported
   base_calling_barcode_options: --enable_trim_barcodes
   base_calling_RNA_options: --reverse_sequence true --u_substitution true --trim_strategy rna
-  models: /path/to/guppy/model.cfg 
+  models: /path/to/guppy/model.cfg
+  guppy_mod:  # specify 5mc_cg or similar if modification call is desired
 
 mapping:
   index_options: -t 5 -K 20M -x map-ont -d
