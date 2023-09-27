@@ -245,6 +245,12 @@ def read_flowcell_info(config, info_dict, base_path):
         open(config['guppy_basecaller']['models'])
     )
     info_dict['model'] = modeldic[info_dict['flowcell']][info_dict['kit']]
+    # modify model name if modification calling is desired
+    if config['guppy_basecaller']['guppy_mod'] is not None:
+        patt = r'(\w*)_(\w{3,4}\.cfg)'
+        repl = "modbases_" + config['guppy_basecaller']['guppy_mod']
+        info_dict['model'] = re.sub(patt, r'\1_{}_\2'.format(repl),info_dict['model'])
+
     print('model = {}'.format(info_dict['model']))
     poddirpass = os.path.join(
         flowcell_path,
