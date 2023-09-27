@@ -10,7 +10,7 @@ import yaml
 import json
 import subprocess as sp
 from npr.communication import send_email
-from npr.snakehelper import glob2reports
+from npr.snakehelper import glob2reports, get_seqdir
 
 def analysis_done(flowcell, config):
     """
@@ -50,16 +50,16 @@ def filter_flowcell(json, config):
     if fc_dir in config['ignore']['dirs']:
         print("ignore fc_dir {} because of config ".format(fc_dir))
         return True
-    
+
     # MPI-IE specific pattern for flowcells
-    pattern = r"\d{8}_\d{4}_\w+-\d{5}-[A-Z0-9]+_([A-Z0-9]+)_\d+"
-    match = re.match(pattern, fc_dir)
-    if match:
-        fc_id = match.group(1)
-        if fc_id in config['ignore']['flowcells']:
-            print("ignore fc_id {} because of config ".format(fc_id))
-            return True
-        
+    fc_id = fc_dir.split('_')
+    if len(fc_id)>1:
+        fc_id = fc_id[-2]
+
+    if fc_id in config['ignore']['flowcells']:
+        print("ignore fc_id {} because of config ".format(fc_id))
+        return True
+
     # flowcell does not match MPI-IE naming convention: don't filter
     return False
 
@@ -108,6 +108,9 @@ def find_new_flowcell(config):
         if analysis_done(flowcell, config):
             continue
 
+        # needed here to communicate flowcell with send_email
+        config['info_dict']['base_path'] = flowcell
+
         # exit if sampleSheet.csv does not exists
         ss = os.path.join(flowcell, 'SampleSheet.csv')
         if not os.path.isfile(ss):
@@ -120,6 +123,7 @@ def find_new_flowcell(config):
         config["input"] = {
             'name': os.path.basename(flowcell)
         }
+
         return (os.path.basename(flowcell), msg, flowcell)
 
     return (None, None, None)

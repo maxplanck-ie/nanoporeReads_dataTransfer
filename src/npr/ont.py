@@ -16,7 +16,7 @@ from npr.ont_pipeline import read_flowcell_info
 from npr.ont_pipeline import read_samplesheet
 from npr.ont_pipeline import get_periphery
 from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
-from npr.snakehelper import getfast5foot, get_seqdir, scan_multiqc
+from npr.snakehelper import getfast5foot, get_seqdir, scan_multiqc, monitor_storage
 import subprocess as sp
 from importlib.metadata import version
 from pathlib import Path
@@ -202,10 +202,19 @@ def main(config):
                     config['info_dict']['flowcell_path']
                 )
             )
+            # spread the news
             ship_qcreports(config, flowcell)
-            QC = scan_multiqc(config)
-            msg=standard_text(config, QC)
+            config['QC'] = scan_multiqc(config)
+            config['SM'] = monitor_storage(config)
+            msg = standard_text(config)
             send_email("Successfully finished flowcell:", msg, config)
+
+            summaryFile = os.path.join(
+                config['info_dict']['flowcell_path'],
+                "log/summary.yaml"
+            )
+            with open(summaryFile, 'w') as f:
+                yaml.dump(config, f,default_flow_style=False)
 
             Path(os.path.join(config['info_dict']['flowcell_path'], 'analysis.done')).touch()
 

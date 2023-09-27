@@ -78,21 +78,25 @@ def ship_qcreports(config, flowcell):
     client.close()
 
 
-def standard_text(config, QC):
+def standard_text(config):
     """
     Draft a short letter to end user that will be part of the success email
     Include also QC metrics obtained from multiqc report
     """
+    QC, SM = config['QC'], config['SM']
     samples = QC.pop('samples')
     frame = "\n-------\n"
     msg="Dear <...>\n" +\
      "The sequencing and first analysis for Project {} is finished\n".format(config['data']['projects']) +\
      "\n" +\
-    "Ouput Folder: {}\n".format(config['info_dict']['transfer_path']) +\
-    "Quality Metrics (from mulitQC): \n" +\
+    "Ouput Folder: {}".format(config['info_dict']['transfer_path']) +\
     frame +\
+    "Quality Metrics (from mulitQC) \n" +\
     "Samples: {}\n".format(samples) +\
     "\n".join([f"{key}: {value}" for key, value in QC.items()]) +\
+    frame +\
+    "Storage Footprint \n" +\
+    "\n".join([f"{key}: {value}" for key, value in SM.items()]) +\
     frame +\
     "Please let me know if something is unclear or if you have any other questions.\n\nKind regards.\n"
     return msg 

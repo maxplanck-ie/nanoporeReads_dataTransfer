@@ -121,6 +121,8 @@ rule alignments:
                             '-a',
                             bamfile,
                             '-o',
-                            bamfile.replace('.bam', '.html')
+                            bamfile.replace('.bam', '.html'),
+                            '-j',
+                            bamfile.replace('.bam', '.json')
                         ]
                         sp.check_call(' '.join(qcCmd), shell=True)
