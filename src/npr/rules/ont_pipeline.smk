@@ -30,6 +30,7 @@ include: retRule("2_rename.smk", config)
 include: retRule("3_qc.smk", config)
 include: retRule("4_data_transfer.smk", config)
 include: retRule("5_mapping.smk", config)
+include: retRule("6_multiqc.smk", config)
 
 rule all:
     input:
@@ -39,3 +40,4 @@ rule all:
         'flags/3_qc.done',
         'flags/4_transfer.done',
         'flags/5_mapping.done'
+        'flags/6_multiqc.done'
