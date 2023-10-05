@@ -1,10 +1,80 @@
 import os
 import shutil
 import sys
+import re
 from rich import print
 import glob
+import yaml
 import subprocess as sp
 from pathlib import Path
+
+def monitor_storage(config):
+    """
+    collect information on added storage in transfered directory
+    and overall storage in partition
+    """
+    path=config['info_dict']['transfer_path']
+    SM = {}   # storage monitor
+
+    # get du information for newly added directory
+    du_out = sp.check_output(
+        ['du', '-sh', path],
+        universal_newlines=True, stderr=sp.STDOUT
+    )
+    SM['added_storage'] = du_out.split()[0]
+
+    # get partition_info from df: (header, info, '^\n')
+    df_lines = sp.check_output(
+        ['df', '-BG', path],
+        universal_newlines=True, stderr=sp.STDOUT
+    ).strip().split('\n')
+
+    # remove header (= use last line) and split into columns
+    df_out = df_lines[-1].split()
+    SM['available_storage_GB'], SM['available_storage_perc'] = [df_out[3], df_out[4]]
+    return(SM)
+
+def scan_multiqc(config):
+    """
+    Collect QC metrices from multiqc json file
+    """
+    QC = {}
+    # get json file from multiqc
+    json = os.path.join(
+        config['info_dict']['transfer_path'],
+        'FASTQC_Project_' + config['data']['projects'][0],
+        'multiqc',
+        'multiqc_data',
+        'multiqc_data.json'
+    )
+    if not os.path.exists(json):
+        print('[red]Warning. json does not exit: {}[/red]'.format(json))
+        return(QC)
+
+    jy = yaml.safe_load(open(json))
+
+    # get QC metrics from FastQC (pass reads)
+    dd=jy['report_saved_raw_data']['multiqc_fastqc']
+    QC['samples'] = list(dd.keys())
+    QC['pass_total_sequences'] = [v.get('Total Sequences', None) for v in dd.values()]
+    QC['pass_total_bases'] = [v.get('Total Bases', None) for v in dd.values()]
+    QC['pass_sequence_length_range'] = [v.get('Sequence length', None) for v in dd.values()]
+    QC['pass_sequence_length_median'] = [v.get('median_sequence_length', None) for v in dd.values()]
+    QC['pass_percent_gc'] = [ v.get('%GC', None) for v in dd.values() ]
+    QC['pass_percent_dedup'] = [ round(v.get('total_deduplicated_percentage', None),2) for v in dd.values() ]
+
+    # get QC metrics from pycoQC (fron all reads)
+    # unfortunately jy['report_general_stats_data'] is a list and not a dict
+    # first need to get the index of pycoQC (should be 2) 
+    screens = list(jy['report_data_sources'].keys())   # list of QC screens (FastQC, ...)
+    pyco_idx = screens.index('pycoQC')                 # index
+    dd = jy['report_general_stats_data'][pyco_idx]     # dictionary
+    QC['all_median_phred_score'] = [round(v.get('all_median_phred_score', None),2) for v in dd.values()]
+    QC['all_N50'] = [v.get('all_n50', None) for v in dd.values()]
+#    QC['all_bases_pyco'] = [v.get('all_bases', None) for v in dd.values()]
+#    QC['all_reads_pyco'] = [v.get('all_reads', None) for v in dd.values()]
+
+    return(QC)
 
 def fast5_to_pod5(basepath, baseout, cmdlinef):
     '''
@@ -67,8 +137,152 @@ def flatten_irreg_lists(nested_list):
     else:
         return [nested_list]
 
+def run_command(cmd,logf):
+    """
+    run command and print stderr to log file logf
+    """
+    print('[yellow] {} [/yellow]'.format(cmd))
+    with open(logf, 'a') as f:
+        f.write("### command: ###\n")
+        f.write(cmd + '\n')
 
-def basecalling(config, cmdlinef, logf):
+    # run 
+    try:
+        with open(logf, "a") as f:
+            res = sp.run(cmd, stderr=f, check=True, shell=True)
+    except sp.CalledProcessError as e:
+        print("[red] Failed with return code [/red]", e.returncode)
+        print(res)
+        print("[red] Check also file {} [/red]".format(logf))
+        sys.exit(1)
+
+def guppy2dorado(model_name):
+    """
+    This is an effort to translate model names
+    Currently the model is encode in the report*.json or can be obtained from
+    >pod5 inspect debug <pod5>
+    However, those models follow guppy naming conventions and have to be translated to dorado
+    Below is a brute force translation which should work for most runs until it fails
+    It will ikely have to be extended
+    Notice that the there is also a limited set of dorado models that will need update
+    """
+    new_name = model_name
+    if re.match(r'^rna', model_name):
+        new_name='rna002_70bps_hac@v3'
+    elif re.match(r'^dna_r9.4.1', model_name):
+        new_name='dna_r9.4.1_e8_sup@v3.3'
+    elif re.match(r'^dna_r10.4.1', model_name):
+        new_name='dna_r10.4.1_e8.2_400bps_sup@v4.2.0'
+
+    print("[red] guppy2dorado: {} -> {}[/red]".format(model_name,new_name))
+    return new_name
+
+def dorado_basecalling(config, cmdlinef, logf):
+    """
+    1. get model name
+    2. check if basecalling had been started (existing bam file)
+    3. run dorado basecalling
+    4. create sequencing_summary.txt and put it to fastq/
+    5. convert *.bam to *.fastq.gz and put it into fastq/pass
+    Notice:
+    - dorado does not yet do barcode splitting and only a single bam file will be produced
+    - there is no split into pass/ fail/ based on min_qscore (--min_score=0)
+    - fastq.gz creation seems an overload, but subsequent workflows depent on it
+    """
+    # model name = default model (inferred from json)
+    model_name = config['info_dict']['model_def']
+
+    # try to translate model name to dorado schema
+    model_name = guppy2dorado(model_name)
+
+    # overwrite model name if specified in config explicitly
+    if config["dorado_basecaller"]["dorado_model"]:
+        model_name = config["dorado_basecaller"]["dorado_model"]
+
+    # model directory
+    model=os.path.join(
+        config["dorado_basecaller"]["model_directory"],
+        model_name
+    )
+
+    if not os.path.exists(model):
+        print("[red] Model {} not available [/red]".format(model))
+        sys.exit(1)
+
+    # input directory: data
+    pod5dir = os.path.join(
+        config['info_dict']['flowcell_path'],
+        'pod5'
+    )
+
+    # output file: currently Dorado will return a single BAM file
+    oform = 'bam'
+    outdir = pod5dir.replace('pod5', oform)
+    if not os.path.exists(outdir):
+        try:
+            os.mkdir(outdir)
+        except Exception as e:
+            print("[red] Creating {}. Error: {}[/red]".format(outdir,e))
+            sys.exit(1)
+
+    outfile =  os.path.join(
+        outdir,
+        'dorado_basecalled.' + oform
+    )
+
+    # if the output file (BAM) already exists resume basecalling
+    # Notice: resume only works with BAM
+    dorado_resume = []
+    if oform == 'bam' and os.path.exists(outfile):
+        print("[yellow] File {} is already available. Resume basecalling [/yellow]".format(outfile))
+        oldfile = outfile.replace('.bam' , '.previous.bam')
+        shutil.move(outfile, oldfile)
+        dorado_resume = [ '--resume-from' , oldfile ]
+
+ 
+    # include dorado options passed to config
+    dorado_opt= []
+    if config["dorado_basecaller"]["dorado_options"]:
+        dorado_opt = config["dorado_basecaller"]["dorado_options"].split(' ')
+
+    #discarded effort to have alternative fastq output with '--emit-fastq'
+    #if config["dorado_basecaller"]["dorado_output"]=='fastq':
+    #    dorado_opt = dorado_opt + ['--emit-fastq']
+
+    cmd = [ config['dorado_basecaller']['dorado_cmd'] ] +\
+        [ 'basecaller' ] +\
+        dorado_opt +\
+        dorado_resume +\
+        [ model ] +\
+        [ pod5dir ]
+    cmd.append('> {}'.format(outfile))
+    cmd = ' '.join(cmd)
+    run_command(cmd, logf)
+
+    # run sequence summary
+    # put output into fastq directory (historical reasons: that's where pycoQC will be looking)
+    fastq_dir = pod5dir.replace('pod5', 'fastq')
+    os.makedirs(fastq_dir, exist_ok=True)
+    seq_sum = os.path.join(fastq_dir, 'sequencing_summary.txt')
+
+    cmd = [ config['dorado_basecaller']['dorado_cmd'], 'summary', outfile ]
+    cmd.append('> {}'.format(seq_sum))
+    cmd = ' '.join(cmd)
+    run_command(cmd, logf)
+
+    # convert bam to fastq.gz
+    if config["dorado_basecaller"]["dorado_output"]=='fastq':
+        fastq_dir = os.path.join(fastq_dir, 'pass')   
+        os.makedirs(fastq_dir, exist_ok=True)                    # create .../fastq/pass
+        bn=os.path.basename(outfile).replace('bam','fastq.gz')
+        fastq_file = os.path.join(fastq_dir, bn)                 # .../fastq/pass/*.fastq.gz
+
+        cmd = ['samtools', 'bam2fq', outfile, '| gzip >', fastq_file]
+        cmd = ' '.join(cmd)
+        run_command(cmd, logf)
+
+
+def guppy_basecalling(config, cmdlinef, logf):
     pod5dir = os.path.join(
         config['info_dict']['flowcell_path'],
         'pod5'
@@ -100,9 +314,10 @@ def basecalling(config, cmdlinef, logf):
     if config['info_dict']['protocol'] == 'rna':
         cmd = cmd +\
             config['guppy_basecaller']['base_calling_RNA_options'].split(' ')
-    with open(cmdlinef, 'a') as f:
+    with open(logf, 'a') as f:
         f.write("#guppy-basecaller cmd:\n")
         f.write(' '.join(cmd) + '\n')
+    print(cmd)
     sp.check_output(cmd)
 
 def retRule(rulestr, config):

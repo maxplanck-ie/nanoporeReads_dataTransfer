@@ -1,90 +1,113 @@
 options:
   sleep_time: 1 #in hour
 
-snakemake: 
+# static snakemake params that will passed
+snakemake:                                                                                                
   conda_prefix: /path/to/conda/prefix
-  cores: 24
+  cores: 4
+  dryrun: False
+  printdag: False
+  max_jobs_per_second: 1
+  printshellcmds: true
+  use_conda: true
+  verbose: true
+  rerun_triggers: ['mtime']
+  debug: False
+
+# ssh credential for samba host
+sambahost:
+  user: samba_user
+  host: samba_host
+  pkey: path/to/private_key
 
 paths:
-  baseDir: /path/to/ont/files
-  outputDir: /path/to/trnasfer/input/
-  groupDir: /root/to/transfer
-  external_groupDir: /root/to/transfer/external/
-  logDir:
-  deepseq_qc: /path/to/deepseq/qc/
+  offloadDir: /path/to/ont/files (fast5 or pod5)      (output from ONT)
+  old_outputDir: /path/to/output/old_for_legacy
+  outputDir: /path/to/output/the_real_one             (aka as work dir)
+  groupDir: /rootpath/to/transfer/for/internal/groups (aka "periphery")
+  external_groupDir: /rootpath/to/transfer/for/external/groups
+  deepseq_qc: /path/to/deepseq/qc/ (SAMBA)
+  bioinfocoredir: /path/to/bionfo_qc (scp)
 
 ignore:
   flowcells:
     # flowcell IDs to ignore in the offload_path
     - 'PAK83895'
+    - ...
   dirs:
-    # full dirs to ignore in the offload_path
+    # flowcell paths to ignore
     - '20230512_1047_P2-7085206e51685c-A_PAK73534_a5e9ed5e'
+    - ...
 
-sambahost:
-  # user, host & private key file where the deepseq_qc is accessible (will access over ssh)
-  user: user
-  host: host
-  pkey: path/to/private_key
-
+# credential to query parkour
 parkour:
-  url: parkour/api/url
+  url: parkour/api/url/  # leave empty to disable Parkour access
   user: account
   password: password
+  pem: path/to/certificate
+
+
+basecaller: dorado # or guppy ()
+
+dorado_basecaller:
+  dorado_cmd: /path/to/dorado/basecaller
+  dorado_version: 
+  dorado_options: 
+  dorado_output: fastq # set to activate bam2fastq conversion (default for legacy)
+  dorado_model: # model name to overwrite inferred name
+  model_directory: /path/to/dorado/models
 
 guppy_basecaller:
   base_calling_cmd: path/to/guppy_basecaller
-  base_calling_options: --recursive --compress_fastq --device cuda:0 --num_callers 10 --chunk_size 500 --chunks_per_runner 768 --gpu_runners_per_device 8
-# guppy benchmark: https://esr-nz.github.io/gpu_basecalling_testing/gpu_benchmarking.html
-  base_calling_barcode_options: --trim_barcodes --num_barcode_threads 10
+  guppy_version: '6.5.7'
+  base_calling_options: --recursive --compress_fastq --chunk_size 2000 --chunks_per_runner 420 --do_read_splitting --trim_primers --trim_adapters --detect_mid_strand_adapter --detect_adapter
+# use with care: many guppy options are not functional or unsupported
+  base_calling_barcode_options: --enable_trim_barcodes
   base_calling_RNA_options: --reverse_sequence true --u_substitution true --trim_strategy rna
-  dna_model: /path/to/guppy/dna/model.cfg #hac
-  rna_model: /path/to/guppy/rna/model.cfg
-
-flowcell:
-  compatible_flowcells: FLO-MIN106
-  compatible_kits:  [SQK-PCS109,SQK-RNA002,SQK-RNA003,SQK-PCB109,SQK-LSK109,SQK-RAD004]
-  compatible_kits_with_barcoding: SQK-PCB109
+  models: /path/to/guppy/model.cfg
+  guppy_mod:  # specify 5mc_cg or similar if modification call is desired
 
 mapping:
   index_options: -t 5 -K 20M -x map-ont -d
   mapping_cmd: path/to/minimap2
-  mapping_dna_options: -t 2 -K 10M -ax map-ont -L
-  mapping_rna_options: -t 4 -K 10M -ax splice -L -u f
+  minimap2_version: '2.24-r1122'
+  mapping_dna_options: -t 40 -I100g -ax map-ont -L
+  mapping_rna_options: -t 40 -I100g -ax splice -L -u f
   samtools_cmd: /path/to/samtools
-  samtools_options: -@ 4
+  samtools_options: -@ 4 -m 200G -T /tmp
   bedtools_cmd: /path/to/bedtools
   bedtools_option: -s -split -name
 
 nanocomp:
-  qc_cmd: /path/to/NanoComp
+  qc_cmd: NanoComp
   qc_options: -t 20 --names
 
 pycoQc:
   barcodeSplit: /path/to/pycoqc/Barcode_split -u -v -f
-  pycoQc: "pycoQC"
+  pycoQc: pycoQC
   pycoQc_opts: ""
 
 genome:
   drosophila: /path/to/genome.fa
-  mouse: /path/to/genome.fa #mm10
-  hg38: /path/to/genome.fa
+  mouse: /path/to/genome.fa
+  human: /path/to/genome.fa
   lambdaPhage: /path/to/genome.fa
-  human_rRNA: /path/to/human_rRNA.fa
-  mouse_rRNA: /path/to/mouse_rRNA.fa
+  human_rRNA: /path/to/genome.fa
+  mouse_rRNA: /path/to/genome.fa
 
 transcripts:
-  drosophila: /path/to/genes.bed
-  mouse: /path/to/genes.bed #mm10
-  hg38: /path/to/genes.bed
+  drosophila:  /path/to/genes.bed
+  mouse: /path/to/genes.bed
+  human: /path/to/genes.bed
 
 contamination_report:
 human_genome: /path/to/genome.fa
-human_rRNA: /path/to/human_rRNA.fa
+human_rRNA: /path/to/genome.fa
 mouse_genome: /path/to/genome.fa
-mouse_rRNA: /path/to/mouse_rRNA.fa
+mouse_rRNA: /path/to/genome.fa
 
 email:
   from: a@host
-  to: c@host
-  host: mail.host
+  to: b@host
+  trigger: c@host
+  host: host

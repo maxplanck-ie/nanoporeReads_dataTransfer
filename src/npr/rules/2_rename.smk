@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+
+"""
+Warning: 
+This workflow assumes that all barcodes are present and subsequent fastqs can be generated.
+This is particularly problematic for missing barcodes.
+Currently the rule will fail after waiting for missing file.
+Do not touch empty files as subsequent QC step will fail with empty input.
+Instead the SampleSheet (config['data']) should be adjusted
+"""
+
 import os
 import sys
 import subprocess as sp
@@ -15,6 +25,23 @@ metadata = dict(config["data"])
 del metadata["projects"]
 del metadata["samples"]
 metadata = pd.DataFrame(metadata).T
+
+def cat_list(file_list, outfile, msg=""):
+    """
+    concatenate files (fastq.gz) in file_list and send them to outfile
+    include checks in case list is empty
+    """
+
+    # file_list might be empty (e.g if barcode is not found)
+    if file_list:
+        cmd = ['cat'] + file_list
+        with open(outfile, 'w') as f:
+            sp.call(cmd, stdout=f)
+    else:
+        print('file_list is empty. {}'.format(msg))
+        sys.exit(1)
+        #Path(outfile).touch()
+
 
 rule rename_files:
     input:
@@ -70,30 +97,30 @@ rule rename_files:
                 passlist = glob.glob(
                     os.path.join('fastq','pass','*fastq.gz')
                 )
-                cmd = ['cat'] + passlist
-                with open(pass_out, 'w') as f:
-                    sp.call(cmd, stdout=f)
+                cat_list(passlist, pass_out, msg="No fail/*fastq.gz")
                 #for f in passlist:
                 #    os.remove(f)
                 #fail
                 logfile.write("failing fastq files.\n")
                 faillist = glob.glob('fastq/fail/*fastq.gz')
-                cmd = ['cat'] + faillist
-                with open(fail_out, 'w') as f:
-                    sp.call(cmd, stdout=f)
+                cat_list(faillist, fail_out, msg="No fail/*fastq.gz")
                 #for f in faillist:
                 #    os.remove(f)
+
                 logfile.write("Copy sequencing_summary to sample folder.\n")
-                shutil.copy(
-                    'fastq/sequencing_summary.txt',
-                    os.path.join(
-                        sampleid_dir, 
-                        'sequencing_summary.txt'
-                ))
+                ss_file = 'fastq/sequencing_summary.txt'
+                ss_new = os.path.join(sampleid_dir, 'sequencing_summary.txt')
+                if Path(ss_file).exists():
+                    shutil.copy( ss_file, ss_new )
+                    logfile.write('copied {} to {}'.format(ss_file, ss_new))
+                else:
+                    #Path(ss_new).touch()
+                    logfile.write('no such file {}. Check basecalling.'.format(ss_file))
             else:
                 logfile.write("barcoding detected.\n")
                 splitcmd = config_to_splitseqsummary(config)
                 logfile.write("splitcmd: {}\n".format(splitcmd))
+                # Split fastq/sequencing_summary.txt by barcode
                 sp.check_call(splitcmd, shell=True)
                 for sample_id in config['data']['samples']:
                     logfile.write("Renaming sample {}\n".format(sample_id))
@@ -133,9 +160,10 @@ rule rename_files:
                     passlist = glob.glob(
                         os.path.join('fastq','pass','{}'.format(samDic['index_id']), '*fastq.gz')
                     )
-                    cmd = ['cat'] + passlist
-                    with open(pass_out, 'w') as f:
-                        sp.call(cmd, stdout=f)
+
+                    cat_list(passlist, pass_out, msg="No pass/" + samDic['index_id'])
+
+
                     #for f in passlist:
                     #    os.remove(f)
                     #fail
@@ -145,14 +173,15 @@ rule rename_files:
                     )
                     if not os.path.exists(faildir):
                         os.mkdir(faildir)
-                    cmd = ['cat'] + faillist
-                    with open(fail_out, 'w') as f:
-                        sp.call(cmd, stdout=f)
 
-                    shutil.copy(
-                        'sequencing_summary_{}.txt'.format(samDic['index_id']),
-                        os.path.join(
-                            sampleid_dir,
-                            'sequencing_summary.txt'
-                        )
-                    )
+                    cat_list(faillist, fail_out, msg="No fail/" + samDic['index_id'])
+
+                    ss_file = 'sequencing_summary_{}.txt'.format(samDic['index_id'])
+                    ss_new = os.path.join(sampleid_dir, 'sequencing_summary.txt')
+                    if Path(ss_file).exists():
+                        shutil.copy( ss_file, ss_new )
+                        logfile.write('copied {} to {}'.format(ss_file, ss_new))
+                    else:
+                        #Path(ss_new).touch()
+                        logfile.write('no such file {}'.format(ss_file))
+                        logfile.write('Some barcodes from sample sheet seem to be missing in data: {}'.format(ss_file))
