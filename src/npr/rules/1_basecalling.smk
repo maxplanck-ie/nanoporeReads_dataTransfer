@@ -41,13 +41,12 @@ rule basecalling:
         cfg = config,
         cmdline = 'log/cmdline.log',
     run:
+        if params.basecaller == "dorado" and config["info_dict"]['barcoding']:
+            print('[red] dorado is not yet compatible with barcoding [/red]')
+            sys.exit(1)
 
         while not gpu_available():
             time.sleep(60)
-        if params.basecaller == "dorado" and config["info_dict"]['barcoding']:
-            params.basecaller = "guppy"
-            print('[red] dorado is not yet compatible with barcoding [/red]')
-            print('[red] Overwrite params.basecaller: {} [/red]'.format(params.basecaller))
 
         if params.basecaller == "dorado":
             print('[yellow] run dorado [/yellow]')
