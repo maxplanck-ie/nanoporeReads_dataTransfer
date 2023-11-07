@@ -93,7 +93,7 @@ def ont(**kwargs):
     # since 'rulesPath' is not a snakemake option
     config['paths']['rulesPath'] = os.path.join(
         os.path.realpath(os.path.dirname(__file__)),
-        'rules'
+        config['paths']['rulesDir']
     )
 
     # snakefile to config['snakemake']

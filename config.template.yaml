@@ -28,7 +28,7 @@ paths:
   external_groupDir: /rootpath/to/transfer/for/external/groups
   deepseq_qc: /path/to/deepseq/qc/ (SAMBA)
   bioinfocoredir: /path/to/bionfo_qc (scp)
-
+  rulesDir: relative_path_to_snakemake_rules (ass seen from ont.py)
 ignore:
   flowcells:
     # flowcell IDs to ignore in the offload_path
@@ -52,7 +52,8 @@ basecaller: dorado # or guppy ()
 dorado_basecaller:
   dorado_cmd: /path/to/dorado/basecaller
   dorado_version: 
-  dorado_options: 
+  dorado_options: --recursive
+  dorado_modifications: --modified-bases 5mCG_5hmCG
   dorado_output: fastq # set to activate bam2fastq conversion (default for legacy)
   dorado_model: # model name to overwrite inferred name
   model_directory: /path/to/dorado/models
@@ -64,8 +65,10 @@ guppy_basecaller:
 # use with care: many guppy options are not functional or unsupported
   base_calling_barcode_options: --enable_trim_barcodes
   base_calling_RNA_options: --reverse_sequence true --u_substitution true --trim_strategy rna
-  models: /path/to/guppy/model.cfg
-  guppy_mod:  # specify 5mc_cg or similar if modification call is desired
+  guppy_model: # model name to overwrite inferred name
+  model_dictionary: /path/to/guppy/model.cfg # a dictionary to convert (flowcell, kits) -> guppy_model
+  guppy_model: /path/to/guppy/model/ # overwrite inferred name
+  guppy_mod:  # specify "5mc_cg" or similar if modification call is desired
 
 mapping:
   index_options: -t 5 -K 20M -x map-ont -d
@@ -86,6 +89,9 @@ pycoQc:
   barcodeSplit: /path/to/pycoqc/Barcode_split -u -v -f
   pycoQc: pycoQC
   pycoQc_opts: ""
+
+multiqc:
+  configfile: /path/to/multiqc/config/file
 
 genome:
   drosophila: /path/to/genome.fa
