@@ -10,7 +10,7 @@ import yaml
 import json
 import subprocess as sp
 from npr.communication import send_email
-from npr.snakehelper import glob2reports, get_seqdir
+from npr.snakehelper import glob2reports, get_seqdir, guppy2dorado
 
 def analysis_done(flowcell, config):
     """
@@ -241,27 +241,39 @@ def read_flowcell_info(config, info_dict, base_path):
             sys.exit("no json file, no final summary txt file found. exiting.")
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
-    modeldic = yaml.safe_load(
-        open(config['guppy_basecaller']['models'])
-    )
-    info_dict['model'] = modeldic[info_dict['flowcell']][info_dict['kit']]
-    # modify model name if modification calling is desired
-    if config['guppy_basecaller']['guppy_mod'] is not None:
-        patt = r'(\w*)_(\w{3,4}\.cfg)'
-        repl = "modbases_" + config['guppy_basecaller']['guppy_mod']
-        info_dict['model'] = re.sub(patt, r'\1_{}_\2'.format(repl),info_dict['model'])
+
+    if (config['basecaller']=="guppy"):
+        if config['guppy_basecaller']['guppy_model'] is not None:
+            # record _full_ abnsolute path to model
+            info_dict['model'] = config['guppy_basecaller']['guppy_model']
+        else:
+            # infer model path name from flowcell and kit information using dictionary
+            modeldic = yaml.safe_load(
+                open(config['guppy_basecaller']['model_dictionary'])
+            )
+            info_dict['model'] = modeldic[info_dict['flowcell']][info_dict['kit']]
+            # modify model name if modification calling is desired
+            if config['guppy_basecaller']['guppy_mod'] is not None:
+                patt = r'(\w*)_(\w{3,4}\.cfg)'
+                repl = "modbases_" + config['guppy_basecaller']['guppy_mod']
+                info_dict['model'] = re.sub(patt, r'\1_{}_\2'.format(repl),info_dict['model'])
+
+    if (config['basecaller']=="dorado"):
+        if config['dorado_basecaller']['dorado_model'] is not None:
+            # record _full_ abnsolute path to model
+            info_dict['model'] = config['dorado_basecaller']['dorado_model']
+        else:
+            # default name of model derived from json (see above)
+            model_name = info_dict['model_def']
+            # brute force conversion to dorado
+            model_name = guppy2dorado(model_name)
+            info_dict['model'] = os.path.join(
+                config['dorado_basecaller']['model_directory'],
+                model_name
+            )
 
     print('model = {}'.format(info_dict['model']))
-    poddirpass = os.path.join(
-        flowcell_path,
-        'pod5_pass'
-    )
-    poddirfail = os.path.join(
-        flowcell_path,
-        'pod5_fail'
-    )
-    info_dict['poddirpass'] = poddirpass
-    info_dict['poddirfail'] = poddirfail
+
     return (info_dict)
 
 def read_samplesheet(config):
@@ -278,7 +290,9 @@ def read_samplesheet(config):
         skiprows=[0]
     )
 
-    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index*','no_bc', regex = True)
+    # convert: No_index? --> no_bc
+    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index.*', 'no_bc', regex = True)
+
 
 
     data=dict()
@@ -314,6 +328,8 @@ def get_periphery(config):
     """
     Return the full pathname to the flowcell in the periphery
     as it should be there after transfer
+    Warning1: assumes a _single_ project per flowcell
+    Warning2: assumes regular group directory - not applicable to 'external' projects
     """
     group    = config['data']['projects'][0].split("_")[-1].lower()
     groupdir = os.path.join(config["paths"]["groupDir"],group)
@@ -322,3 +338,41 @@ def get_periphery(config):
     fc_base  = os.path.basename(config['info_dict']['flowcell_path'])
     periphery = os.path.join(groupONT,fc_base)
     return(periphery)
+
+
+def get_dest_path(config, dir):
+    '''
+    for a given directory 'dir' (Project_\d+)_(\w+)_(\w+))
+    get target destination based on 'pi_name' in 'dir'
+    in contrast to get_periphery, this
+    '''
+
+    # default pi_name if it cannot be determined from basename(dir)
+    pi_name = "unknown"
+
+    # try to get pi_name from basename(dir)
+    match = re.match(r'^(Project_\d+)_(\w+)_(\w+)', os.path.basename(dir))
+    if match:
+        p_id, username, pi_name = match.groups()
+        pi_name = pi_name.lower()
+
+    # assume PI has directories all set up
+    groupdir = os.path.join(config["paths"]["groupDir"],pi_name)
+    if not os.path.exists(groupdir):
+        # group pi_name has no volumne so transfer somewhere else (external runs)
+        dest_path = os.path.join(
+            config["paths"]["external_groupDir"],
+            pi_name,
+            "sequencing_data/OxfordNanopore"
+        )
+        print(f"No group directory {groupdir} for PI {pi_name}")
+        print(f"Use {dest_path}")
+    else:
+        # get the most recent destination path: e.g. "{groupdir}/sequencing_data6/OxfordNanopore"
+        dest_path = get_seqdir(groupdir, "sequencing_data")
+
+    dest_path = os.path.join(
+        dest_path,
+        os.path.basename(config['info_dict']['flowcell_path'])
+    )
+    return dest_path

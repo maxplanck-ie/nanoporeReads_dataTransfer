@@ -19,6 +19,11 @@ def ship_qcreports(config, flowcell):
     copy both reports in bioinfo qc drive as well
     '''
 
+    # make shipping dependent on whether sambahost is defined - simplify testing
+    # also disables shipping to bioinfocore
+    if config['sambahost']['host'] is None:
+        return
+
     # login info.
     _pkey = paramiko.RSAKey.from_private_key_file(
         config['sambahost']['pkey']
