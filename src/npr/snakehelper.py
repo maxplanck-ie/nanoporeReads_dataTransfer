@@ -31,22 +31,35 @@ def monitor_storage(config):
 
     # remove header (= use last line) and split into columns
     df_out = df_lines[-1].split()
-    SM['available_storage_GB'], SM['available_storage_perc'] = [df_out[3], df_out[4]]
+    SM['available_storage_GB'], SM['used_storage_perc'] = [df_out[3], df_out[4]]
     return(SM)
 
 def scan_multiqc(config):
     """
     Collect QC metrices from multiqc json file
+    Warning: Assumes 1 project per flowcell
     """
     QC = {}
     # get json file from multiqc
-    json = os.path.join(
+    qc_dir_root = 'Project_'  + config['data']['projects'][0]
+    multiqc_path = os.path.join('QC','multiqc','multiqc_data','multiqc_data.json')
+    json1 = os.path.join(
         config['info_dict']['transfer_path'],
-        'FASTQC_Project_' + config['data']['projects'][0],
-        'multiqc',
-        'multiqc_data',
-        'multiqc_data.json'
+        qc_dir_root,
+        multiqc_path
     )
+
+    if os.path.exists(json1):
+        json=json1
+    else:
+        # for compatibility: revert to old location of QC files
+        multiqc_path = os.path.join('multiqc','multiqc_data','multiqc_data.json')
+        json = os.path.join(
+            config['info_dict']['transfer_path'],
+            "FASTQC_" + qc_dir_root,
+            multiqc_path,
+        )
+
     if not os.path.exists(json):
         print('[red]Warning. json does not exit: {}[/red]'.format(json))
         return(QC)
@@ -67,12 +80,33 @@ def scan_multiqc(config):
     # unfortunately jy['report_general_stats_data'] is a list and not a dict
     # first need to get the index of pycoQC (should be 2) 
     screens = list(jy['report_data_sources'].keys())   # list of QC screens (FastQC, ...)
-    pyco_idx = screens.index('pycoQC')                 # index
-    dd = jy['report_general_stats_data'][pyco_idx]     # dictionary
-    QC['all_median_phred_score'] = [round(v.get('all_median_phred_score', None),2) for v in dd.values()]
-    QC['all_N50'] = [v.get('all_n50', None) for v in dd.values()]
-#    QC['all_bases_pyco'] = [v.get('all_bases', None) for v in dd.values()]
-#    QC['all_reads_pyco'] = [v.get('all_reads', None) for v in dd.values()]
+
+    if 'pycoQC' not in screens:
+        print('[red]Warning. no pycoQC metrics in: {}[/red]'.format(json))
+    else:
+        pyco_idx = screens.index('pycoQC')                 # index
+        dd = jy['report_general_stats_data'][pyco_idx]     # dictionary
+        QC['all_median_phred_score'] = [round(v.get('all_median_phred_score', None),2) for v in dd.values()]
+        QC['all_N50'] = [v.get('all_n50', None) for v in dd.values()]
+#       QC['all_bases_pyco'] = [v.get('all_bases', None) for v in dd.values()]
+#       QC['all_reads_pyco'] = [v.get('all_reads', None) for v in dd.values()]
+
+    if 'Kraken' not in screens:
+        print('[red]Warning. no Kraken metrics in: {}[/red]'.format(json))
+    else:
+        kraken_idx = screens.index('Kraken')                 # index
+        dd = jy['report_general_stats_data'][kraken_idx]     # nested dictionary
+        QC['top_species'] = []
+        QC['top_percent'] = []
+
+        # loop over all samples (keys) and their dictionaries (values)
+        for sample_dict in dd.values():
+            sample_items = list(sample_dict.items())
+            if len(sample_items)>0:
+                # last element denotes top species and associated percentage
+                spec,perc=sample_items[-1]
+                QC['top_species'].append(spec)
+                QC['top_percent'].append(round(perc,2))
 
     return(QC)
 
@@ -112,7 +146,8 @@ def merge_pod5(basepath, baseout, cmdlinef):
     '''
     odir = os.path.join(baseout, 'pod5')
 
-    pattern = os.path.join(basepath, "pod5_pass", "**", "*.pod5")
+    # merge pod5 files in both pod5_pass/ and pod5_fail/ (the latter tends to be empty)
+    pattern = os.path.join(basepath, "pod5_*", "**", "*.pod5")
     pod5_files = glob.glob(pattern, recursive=True)
     
     lst_cmd = [
@@ -159,7 +194,7 @@ def run_command(cmd,logf):
 def guppy2dorado(model_name):
     """
     This is an effort to translate model names
-    Currently the model is encode in the report*.json or can be obtained from
+    Currently the model is encoded in the report*.json or can be obtained from
     >pod5 inspect debug <pod5>
     However, those models follow guppy naming conventions and have to be translated to dorado
     Below is a brute force translation which should work for most runs until it fails
@@ -167,11 +202,13 @@ def guppy2dorado(model_name):
     Notice that the there is also a limited set of dorado models that will need update
     """
     new_name = model_name
+    new_name = "dna_r10.4.1_e8.2_400bps_sup@v4.1.0" # most common
     if re.match(r'^rna', model_name):
         new_name='rna002_70bps_hac@v3'
     elif re.match(r'^dna_r9.4.1', model_name):
+        #not the latest model but comaptible with modification calling
         new_name='dna_r9.4.1_e8_sup@v3.3'
-    elif re.match(r'^dna_r10.4.1', model_name):
+    elif re.match(r'^dna_r10.4.1_e8.2_400bps_5khz_hac_prom', model_name):
         new_name='dna_r10.4.1_e8.2_400bps_sup@v4.2.0'
 
     print("[red] guppy2dorado: {} -> {}[/red]".format(model_name,new_name))
@@ -357,6 +394,10 @@ def glob2reports(globStr, base_path, flowcell_path):
                 )
 
 def get_seqdir(groupdir, seqdir):
+    """
+    Function returns proper target directory if a group has multiple
+    seqdir folders (sequencing_data1,2,3...)
+    """
     max_num = 0
     for dir in glob.glob(os.path.join(groupdir, seqdir+"*")):
         if dir.split(seqdir)[-1] != "":

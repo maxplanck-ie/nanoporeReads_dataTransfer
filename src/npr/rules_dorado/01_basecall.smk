@@ -1,7 +1,5 @@
-from npr.snakehelper import guppy_basecalling, dorado_basecalling
 from rich import print
 import subprocess as sp
-import time
 
 def gpu_available():
     # Check if GPU is available
@@ -29,39 +27,33 @@ def gpu_available():
     print("[yellow]GPU is busy. {} [/yellow]".format(res))
     # consider GPU as not available
     return False
-
-rule basecalling:
+        
+rule basecall:
     input:
-        'flags/0_prepare.done'
-    output: touch("flags/1_basecalling.done")
+        flag="flags/00_prepare.done",
+    output:
+        bam=output_bam,
+        flag=touch("flags/01_basecall.done")
     log:
-        log = 'log/1_basecalling.log'
+        "log/01_basecall.log"
+    benchmark:
+        "benchmarks/01_basecall.tsv"
     params:
-        basecaller = config['basecaller'],
-        cfg = config,
-        cmdline = 'log/cmdline.log',
-    run:
-        if params.basecaller == "dorado" and config["info_dict"]['barcoding']:
-            print('[red] dorado is not yet compatible with barcoding [/red]')
-            sys.exit(1)
-
+        cmd=config['dorado_basecaller']['dorado_cmd'],
+        model=config['info_dict']['model'],
+        options=config['dorado_basecaller']['dorado_options'],
+        # modification do not yet work with RNA
+        mod=config['dorado_basecaller']['dorado_modifications'] \
+            if not config['info_dict']['model_def'].startswith("rna") else "",
+        dir="pod5"
+    run: 
         while not gpu_available():
+            print("GPU is unavailable - sleep")
             time.sleep(60)
 
-        if params.basecaller == "dorado":
-            print('[yellow] run dorado [/yellow]')
-            cmd = dorado_basecalling(
-                params.cfg,
-                params.cmdline,
-                log.log
-            )
-        elif params.basecaller == "guppy":
-            print('[yellow] run guppy [/yellow]')  
-            cmd = guppy_basecalling(
-                params.cfg,
-                params.cmdline,
-                log.log
-            )
-        else:
-            print('[red]basecaller unknown: {} [/red]'.format(params.basecaller))
-            sys.exit(1)
+
+        shell(
+        """
+        {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
+        """
+        )

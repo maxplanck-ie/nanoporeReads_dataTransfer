@@ -93,7 +93,7 @@ def ont(**kwargs):
     # since 'rulesPath' is not a snakemake option
     config['paths']['rulesPath'] = os.path.join(
         os.path.realpath(os.path.dirname(__file__)),
-        'rules'
+        config['paths']['rulesDir']
     )
 
     # snakefile to config['snakemake']
@@ -102,7 +102,9 @@ def ont(**kwargs):
         "ont_pipeline.smk"
     )
 
-    # initialize config['init'] - but this could also be defined in config.yaml
+    # initialize config['info_dict']
+    # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
+    # notice that info_dict is flowcell-specific and will be reset/re-evalutated for each
     if 'info_dict' not in config:
         config['info_dict'] = {}
     if ( kwargs['organism'] is not None):
@@ -221,6 +223,8 @@ def main(config):
 
             Path(os.path.join(config['info_dict']['flowcell_path'], 'analysis.done')).touch()
 
+            # wipe config['info_dict']
+            config['info_dict']={}
         else:
             print("No flowcells found. I go back to sleep.")
             sleep()

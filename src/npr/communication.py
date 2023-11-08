@@ -19,6 +19,11 @@ def ship_qcreports(config, flowcell):
     copy both reports in bioinfo qc drive as well
     '''
 
+    # make shipping dependent on whether sambahost is defined - simplify testing
+    # also disables shipping to bioinfocore
+    if config['sambahost']['host'] is None:
+        return
+
     # login info.
     _pkey = paramiko.RSAKey.from_private_key_file(
         config['sambahost']['pkey']
@@ -169,7 +174,7 @@ def query_parkour(config, flowcell, msg):
             sys.exit(1)
     # test for flow cell re-use.
     # flowcell that's re-used gets higher increment.
-    postfixes = ['-5', '-4', '-3', '-2', '-1']
+    postfixes = ['-5', '-4', '-3', '-2', '-1','']
     flowcellqueries = []
     for pf in postfixes:
         d = {'flowcell_id': fc + pf}
