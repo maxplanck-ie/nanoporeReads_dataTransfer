@@ -1,3 +1,5 @@
+#! /bin/bash
+
 # A simple script to create a small subset (with ns reads)
 # from a list of flowcell directories as they reside on /longus/data/sequencing_data?
 # i.e there should be a single merged pod5 file to be subsampled

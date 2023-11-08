@@ -37,11 +37,11 @@ rule align:
         json = target_json,
         html = target_html,
     threads:
-        4
+        10
     shell:
         """
-        {dorado} aligner {params.genome} {input.bam_file} | samtools sort - > {output.file} 2>> {log}
-        samtools index {output.file} 2>> {log}
+        {dorado} aligner {params.genome} {input.bam_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
+        samtools index -@ {threads} {output.file} 2>> {log}
 
         # run pycoQC including bam file (for alignment)
         # notice that pycoQC is prone to fail, especially for tests with small bam files --> 

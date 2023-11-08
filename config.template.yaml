@@ -28,7 +28,7 @@ paths:
   external_groupDir: /rootpath/to/transfer/for/external/groups
   deepseq_qc: /path/to/deepseq/qc/ (SAMBA)
   bioinfocoredir: /path/to/bionfo_qc (scp)
-  rulesDir: relative_path_to_snakemake_rules (ass seen from ont.py)
+  rulesDir: relative_path_to_snakemake_rules # e.g. rules_dorado ('rules' is deprecated)
 ignore:
   flowcells:
     # flowcell IDs to ignore in the offload_path

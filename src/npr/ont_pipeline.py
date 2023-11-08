@@ -344,7 +344,8 @@ def get_dest_path(config, dir):
     '''
     for a given directory 'dir' (Project_\d+)_(\w+)_(\w+))
     get target destination based on 'pi_name' in 'dir'
-    in contrast to get_periphery, this
+    in contrast to get_periphery, this function can handle "unknown" or 
+    undeterminable PIs and will invoke an external_groupDir in such cases
     '''
 
     # default pi_name if it cannot be determined from basename(dir)
