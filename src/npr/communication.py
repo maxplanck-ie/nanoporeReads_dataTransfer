@@ -174,7 +174,7 @@ def query_parkour(config, flowcell, msg):
             sys.exit(1)
     # test for flow cell re-use.
     # flowcell that's re-used gets higher increment.
-    postfixes = ['-5', '-4', '-3', '-2', '-1']
+    postfixes = ['-5', '-4', '-3', '-2', '-1','']
     flowcellqueries = []
     for pf in postfixes:
         d = {'flowcell_id': fc + pf}
