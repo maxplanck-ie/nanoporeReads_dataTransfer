@@ -3,17 +3,19 @@ import subprocess as sp
 
 def gpu_available():
     # Check if GPU is available
-    prog="nvidia-smi"
-    query=" --query-gpu=count,memory.free,utilization.gpu,utilization.memory"
-    cmd = prog + query + " --format=csv,noheader,nounits"
+    prog = "nvidia-smi"
+    query = "--query-gpu=count,memory.free,utilization.gpu,utilization.memory"
+    monitor = [prog,  query, "--format=csv,noheader,nounits"]
+    #monitor = ["python", "-c", "import sys; sys.exit(6)"]     # fake unavailable GPU
+
     if shutil.which(prog) is None:
         # if nvidia-smi is not available assume that there is no GPU on the system
         # in such cases do not exit. if device cuda* is specified such jobs would fail latter
         print("[yellow]{} is not available. Do not monitor GPU[/yellow]".format(prog)  )
         return True
 
-    res = sp.run(cmd.split(), stdout=sp.PIPE, stderr=sp.PIPE, text=True)
-    print("GPU status: {}\n".format(res.stdout))
+    res = sp.run(monitor, stdout=sp.PIPE, stderr=sp.PIPE, text=True)
+    print("GPU status: stdout={} stderr={}\n".format(res.stdout, res.stderr))
     if res.returncode == 0:
         res = res.stdout.strip().split(',') # split csv output
         res = [int(i) for i in res]         # convert to integer
@@ -21,7 +23,7 @@ def gpu_available():
         if res[1]>20000 and res[2]<80 and res[3]<80: 
             return True
     else:
-        print("[red]{} caused an error while checking GPU status: {} [/red]".format(cmd,res.returncode))
+        print("[red]{} caused an error while checking GPU status: {} [/red]".format(" ".join(monitor),res.returncode))
         #sys.exit(1)
 
     print("[yellow]GPU is busy. {} [/yellow]".format(res))
