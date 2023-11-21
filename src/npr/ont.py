@@ -113,6 +113,9 @@ def ont(**kwargs):
     if ( kwargs['protocol'] is not None):
         config['info_dict']['protocol'] = kwargs['protocol']
         print("Set protocol to {}".format(config['info_dict']['protocol']))
+    # ensure that pipeline version is tracked in metadata.yml
+    config['info_dict']['pipeline_version']=version('npr')
+
     # add conda env path where executable live
     config['paths']['conda_env'] = sys.prefix
 

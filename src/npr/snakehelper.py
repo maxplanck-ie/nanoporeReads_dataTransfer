@@ -69,14 +69,15 @@ def scan_multiqc(config):
     # get QC metrics from FastQC (pass reads)
     dd=jy['report_saved_raw_data']['multiqc_fastqc']
     QC['samples'] = list(dd.keys())
-    QC['pass_total_sequences'] = [v.get('Total Sequences', None) for v in dd.values()]
-    QC['pass_total_bases'] = [v.get('Total Bases', None) for v in dd.values()]
-    QC['pass_sequence_length_range'] = [v.get('Sequence length', None) for v in dd.values()]
-    QC['pass_sequence_length_median'] = [v.get('median_sequence_length', None) for v in dd.values()]
-    QC['pass_percent_gc'] = [ v.get('%GC', None) for v in dd.values() ]
-    QC['pass_percent_dedup'] = [ round(v.get('total_deduplicated_percentage', None),2) for v in dd.values() ]
+    QC['total_sequences'] = [v.get('Total Sequences', None) for v in dd.values()]
+    QC['total_bases'] = [v.get('Total Bases', None) for v in dd.values()]
+    # FastQC is the wrong place to get the lengths --> pycoqc
+    # QC['sequence_length_range'] = [v.get('Sequence length', None) for v in dd.values()]
+    # QC['sequence_length_median'] = [v.get('median_sequence_length', None) for v in dd.values()]
+    QC['percent_gc'] = [ v.get('%GC', None) for v in dd.values() ]
+    QC['percent_dedup'] = [ round(v.get('total_deduplicated_percentage', None),2) for v in dd.values() ]
 
-    # get QC metrics from pycoQC (fron all reads)
+    # get QC metrics from pycoQC (for all reads)
     # unfortunately jy['report_general_stats_data'] is a list and not a dict
     # first need to get the index of pycoQC (should be 2) 
     screens = list(jy['report_data_sources'].keys())   # list of QC screens (FastQC, ...)
@@ -87,6 +88,7 @@ def scan_multiqc(config):
         pyco_idx = screens.index('pycoQC')                 # index
         dd = jy['report_general_stats_data'][pyco_idx]     # dictionary
         QC['all_median_phred_score'] = [round(v.get('all_median_phred_score', None),2) for v in dd.values()]
+        QC['all_median_read_length'] = [round(v.get('all_median_read_length', None),2) for v in dd.values()]
         QC['all_N50'] = [v.get('all_n50', None) for v in dd.values()]
 #       QC['all_bases_pyco'] = [v.get('all_bases', None) for v in dd.values()]
 #       QC['all_reads_pyco'] = [v.get('all_reads', None) for v in dd.values()]
