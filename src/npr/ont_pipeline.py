@@ -291,7 +291,13 @@ def read_samplesheet(config):
     )
 
     # convert: No_index? --> no_bc
-    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index.*', 'no_bc', regex = True)
+    if 'I7_Index_ID' not in sample_sheet.columns:
+        print("[red] Column I7_Index_ID not defined in sample_sheet [/red]")
+        exit(1)
+    # legacy fix: replace missing barcode (NaN or 'No_index.*') by 'no_bc'
+    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].fillna('no_bc')  
+    sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].replace('No_index.*','no_bc', regex=True)
+#   sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index.*', 'no_bc', regex = True)
 
 
 
