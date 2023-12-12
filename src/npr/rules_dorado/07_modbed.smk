@@ -32,6 +32,6 @@ rule bam2modbed:
     shell:'''
         # future: consider filtering zero modification or "nan" with "| awk '$11 != "nan" && $11>0.0'"
         #   remove or reduce stderr from processing
-        modbam2bed -t {threads} --combine {params.genome} {input.bam} | pigz -p {threads} > {output.bed} 2>> {log}
+        ( modbam2bed -t {threads} --combine {params.genome} {input.bam} | pigz -p {threads} > {output.bed} ) 2>> {log}
     '''
 
