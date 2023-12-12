@@ -90,6 +90,9 @@ pycoQc:
   pycoQc: pycoQC
   pycoQc_opts: ""
 
+fastqc:
+  memory: 10000
+
 multiqc:
   configfile: /path/to/multiqc/config/file
 

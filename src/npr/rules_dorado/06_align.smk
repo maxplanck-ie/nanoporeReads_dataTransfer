@@ -5,6 +5,7 @@ Align reads usign dorado aligner (minimap2)
 source_bam = sample_dat + ".bam"
 source_seqsum = sample_dat + ".seqsum"
 target_bam  = sample_ana + ".align.bam"
+target_bai  = sample_ana + ".align.bam.bai"
 target_html = sample_qc + ".align_pycoqc.html"
 target_json = sample_qc + ".align_pycoqc.json"
 target_flagstat = sample_qc + ".align.flagstat"
@@ -21,6 +22,7 @@ rule align:
         seqsum = source_seqsum
     output:
         file = target_bam,
+        bai = target_bai,
 #        html = target_html,
 #        json = target_json,
         flagstat = target_flagstat
