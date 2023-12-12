@@ -21,12 +21,13 @@ rule fastqc:
     output: 
         target
     params:
-        odir = lambda wildcards: qc_dir.format(project=wildcards.project)
+        odir = lambda wildcards: qc_dir.format(project=wildcards.project),
+        memory = config['fastqc'].get('memory', 10000)
     threads: 4
     log:
         logpat
     benchmark:
         bchpat
     shell:''' 
-        fastqc --memory=4096 -t {threads} -o {params.odir} --dir {params.odir} --quiet {input} 2> {log}
+        fastqc --memory={params.memory} -t {threads} -o {params.odir} --dir {params.odir} --quiet {input} 2> {log}
     '''
