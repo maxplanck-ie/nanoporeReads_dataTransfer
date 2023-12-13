@@ -14,9 +14,10 @@ from time import sleep
 
 def ship_qcreports(config, flowcell):
     '''
-    update samba drive with a flowcell folder,
-    copy pycoQC reports and run report into samba drive
-    copy both reports in bioinfo qc drive as well
+    Legacy shipment of QC reports. Reconsider since this generates quite some duplication
+    The idea is to solve
+     1. NGS team can only reads via SAMBA share
+     2. bioinfo may not be able to open html on analysis server
     '''
 
     # make shipping dependent on whether sambahost is defined - simplify testing
@@ -46,39 +47,64 @@ def ship_qcreports(config, flowcell):
     samba_fdir = os.path.join(
         config['paths']['deepseq_qc'],
         'Sequence_Quality_{}'.format(yrstr),
-        'ONT_{}'.format(yrstr),
-        flowcell
+        'ONT_{}'.format(yrstr)
     )
-    # I think latency causes scp to fail so include sleep
+    # I think latency causes scp to fail so include sleep (legacy from Leily?)
     _cmd = 'mkdir -p {}'.format(samba_fdir)
     _stdin, _stdout, _stderr = client.exec_command(_cmd)
-    print('stdin:')
-    print(_stdin)
-    print('stdout:')
-    print(_stdout)
+
+#    print('stdin:')
+#    print(_stdin)
+#    print('stdout:')
+#    print(_stdout)
     print('stderr:')
     print(_stderr)
     sleep(30)
 
     # copy run_reports & pycoQC
     scp = SCPClient(client.get_transport())
+    fc_dir = config['info_dict']['flowcell_path']
+    fc_name = os.path.basename(fc_dir)
+    samba_target = os.path.join(samba_fdir, fc_name)
+    bioinfo_target = os.path.join(config['paths']['bioinfocoredir'], fc_name )
 
-    pycoqcs = glob.glob(
-        os.path.join(config['info_dict']['flowcell_path'], 'FASTQC*', '*', '*pycoqc.html')
-    ) + glob.glob(
-        os.path.join(config['info_dict']['flowcell_path'], 'reports', '*.html')
-    )
-    for qcreport in pycoqcs:
-        basename = os.path.basename(qcreport)
-        if 'pycoqc' in basename:
-            sampleID = qcreport.split('/')[-2].replace('Sample_', '')
-            projID = 'Project_' + qcreport.split('/')[-3].split('_')[2]
-            basename = projID + '_' + sampleID + '_' + basename
-        sambadest = os.path.join(samba_fdir, basename)
-        print('Trying to copy {} to {}'.format(qcreport, sambadest))
-        bioinfodest = os.path.join(config['paths']['bioinfocoredir'], flowcell + '_' + basename)
-        scp.put(qcreport, sambadest)
-        shutil.copyfile(qcreport, bioinfodest)
+    print("[green]Copy QC reports[/green]")
+    print(f"... to bioinfo: {bioinfo_target}")
+    print(f"... to sambahost: {samba_target}")
+
+    # copy reports
+    reports = glob.glob( os.path.join(config['info_dict']['base_path'], 'reports', '*.html') )
+    for report in reports:
+        print(f'copy {report}')
+        shutil.copy(report, bioinfo_target)
+        try:
+            scp.put(report, samba_target)
+        except (paramiko.SSHException, socket.error) as e:
+            print(f"Error during transfer to sambahost: {str(e)}")
+
+    # copy QC directories: transfer/Project*/QC
+    for local_dir in glob.glob(f'{fc_dir}/transfer/Project*/QC/'):
+        p_dir = os.path.dirname(os.path.dirname(local_dir))
+        p_name = os.path.basename(p_dir)
+        target_dir = os.path.join(fc_name, p_name, 'QC')
+
+        # copy to bioinfo
+        bioinfo_target = os.path.join(config['paths']['bioinfocoredir'], target_dir )
+        print(f'copy {local_dir}')
+        shutil.copytree(local_dir, bioinfo_target, dirs_exist_ok=True)
+
+        # copy to sambahost
+        samba_target = os.path.join(samba_fdir, target_dir)
+        stdin, stdout, stderr = client.exec_command(f'mkdir -p {samba_target}')
+        sleep(30)
+        if stderr.read():
+            print(f"Error creating remote directory {samba_target}. Error: {stderr}")
+        try:
+            scp.put(local_dir, recursive=True, remote_path=samba_target)
+        except (paramiko.SSHException, socket.error) as e:
+            print(f"Error during transfer of {local_dir} to sambahost: {str(e)}")
+
+
     scp.close()
     client.close()
 
