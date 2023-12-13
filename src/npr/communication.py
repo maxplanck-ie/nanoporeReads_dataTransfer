@@ -59,7 +59,7 @@ def ship_qcreports(config, flowcell):
 #    print(_stdout)
     print('stderr:')
     print(_stderr)
-    sleep(10)
+    sleep(30)
 
     # copy run_reports & pycoQC
     scp = SCPClient(client.get_transport())
@@ -96,6 +96,7 @@ def ship_qcreports(config, flowcell):
         # copy to sambahost
         samba_target = os.path.join(samba_fdir, target_dir)
         stdin, stdout, stderr = client.exec_command(f'mkdir -p {samba_target}')
+        sleep(30)
         if stderr.read():
             print(f"Error creating remote directory {samba_target}. Error: {stderr}")
         try:
