@@ -19,8 +19,8 @@ def gpu_available():
     if res.returncode == 0:
         res = res.stdout.strip().split(',') # split csv output
         res = [int(i) for i in res]         # convert to integer
-        # consider GPU available if memory.free>20 MB, and utilization.gpu<80% and utilization.memory<80%
-        if res[1]>20000 and res[2]<80 and res[3]<80: 
+        # consider GPU available if memory.free>10 GB, and utilization.gpu<80% and utilization.memory<80%
+        if res[1]>10000 and res[2]<80 and res[3]<80: 
             return True
     else:
         print("[red]{} caused an error while checking GPU status: {} [/red]".format(cmd,res.returncode))
