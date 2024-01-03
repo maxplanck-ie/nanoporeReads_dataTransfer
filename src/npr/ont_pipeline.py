@@ -1,3 +1,10 @@
+#!/usr/bin/python
+
+# ont_pipeline.py
+# Helper funtions for the ONT pipeline
+# (C) 2024 Bioinformatics Core
+# Max Plank Institute for Immunobiology and Epigenetics
+
 import sys
 import os
 import re
@@ -35,7 +42,7 @@ def analysis_done(flowcell, config):
 
 def filter_flowcell(json, config):
     """
-    decide whether to keep a flowcell based on exclusion rules defined in config
+    Decide whether to keep a flowcell based on exclusion rules defined in config
     the exclusion rules are specific to our MPI-IE setup
 
     example json file: "report_PAQ97481_20230818_1514_e1253480.json"
@@ -172,7 +179,16 @@ def read_flowcell_info(config, info_dict, base_path):
         info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
         info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
         info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
-        info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+        # check run paramenters to capture model
+        model = None
+        for par in jsondata['protocol_run_info']['args']:
+            if par.startswith('--guppy_filename='):
+                px,model = par.split("=")
+                info_dict['model_def'] = model
+        if not model:
+            print("Model was not found in command parameters, capturing the default value")      
+            info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+
 
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
@@ -189,7 +205,20 @@ def read_flowcell_info(config, info_dict, base_path):
                 info_dict['barcode_kit'] = info_dict['kit']
             else:
                 info_dict['barcode_kit'] = 'no_bc'
+
+        # getting software and versions
+        info_dict['software'] = []
+        info_dict['software']['MinKNOW core'] = jsondata['protocol_run_info']['software_versions']['minknow']['full']
+        info_dict['software']['MinKNOW'] = jsondata['protocol_run_info']['software_versions']['distribution_version']
+        info_dict['software']['Bream'] = jsondata['protocol_run_info']['software_versions']['bream']
+        info_dict['software']['Configuration'] = jsondata['protocol_run_info']['software_versions']['protocol_configuration']
+        info_dict['software']['Guppy'] = jsondata['protocol_run_info']['software_versions']['guppy_connected_version']
+        # Dorado is not reported yet, will be added when it is exported in the JSON/HTML
+
     else:
+        ##################################################################################
+        ##       Text file contains only a few fields, should we remove this part?      ##
+        ##################################################################################
         # try to get txt file.
         print('base path == {}'.format(base_path))
         finsum = glob.glob(
@@ -239,6 +268,10 @@ def read_flowcell_info(config, info_dict, base_path):
                     print(head[0].index('barcode_kit'))
         else:
             sys.exit("no json file, no final summary txt file found. exiting.")
+        ##################################################################################
+        ##                                   Section end                                ##
+        ##################################################################################
+        
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
 
