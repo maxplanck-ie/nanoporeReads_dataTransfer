@@ -9,13 +9,11 @@ import sys
 import os
 import re
 import glob
-import pandas as pd
-import numpy as np
-from rich import print
-from importlib.metadata import version
 import yaml
 import json
 import subprocess as sp
+import pandas as pd
+from rich import print
 from npr.communication import send_email
 from npr.snakehelper import glob2reports, get_seqdir, guppy2dorado
 
