@@ -328,9 +328,6 @@ def read_samplesheet(config):
     # legacy fix: replace missing barcode (NaN or 'No_index.*') by 'no_bc'
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].fillna('no_bc')  
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].replace('No_index.*','no_bc', regex=True)
-#   sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index.*', 'no_bc', regex = True)
-
-
 
     data=dict()
     data['projects'] = []
