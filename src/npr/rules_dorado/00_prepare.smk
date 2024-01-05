@@ -36,3 +36,52 @@ rule prepare:
             exit
         fi
         '''
+
+rule prepare_bam:
+    input: 
+        "flags/00_start.done"
+    output:
+        flag=touch("flags/00_prepare_bam.done")
+    params:
+        idir = config["info_dict"]["base_path"],
+        baseout = os.path.join(config['info_dict']['flowcell_path'],"bam"),
+        batch_size = 500,
+        opt = '-c --no-PG'
+    threads:    
+        10
+    log: 
+        'log/00_prepare_bam.log'
+    benchmark:
+        "benchmarks/00_prepare_bam.tsv"
+    shell:'''
+        if [ -e "{params.idir}/bam_pass" ]; then
+            # there are BAM produced (default)
+            if [ -e "{params.baseout}" ]; then
+                echo "{params.baseout} exists, any BAM file will be overwritten" 2>> {log}
+            else
+                echo mkdir "{params.baseout}" 2>> {log}
+                mkdir "{params.baseout}" 2>> {log}
+            fi
+
+            # get list of BAMs to merge
+            echo find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam/bam_list.txt" 2>> {log}
+            find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam/bam_list.txt"
+            # merge BAMs in batches
+            echo split -l "{params.batch_size}" "{params.baseout}/bam/bam_list.txt" "{params.baseout}/bam/bam_list_b" 2>> {log}
+            split -l "{params.batch_size}" "{params.baseout}/bam/bam_list.txt" "{params.baseout}/bam/bam_list_b" 2>> {log}
+            for BATCH in "{params.baseout}/bam/bam_list_b*"; do
+                echo samtools merge "{params.opt}" -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
+                samtools merge "{params.opt}" -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
+            done
+            
+            # final merge
+            echo samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/bam/basecall.bam" "{params.baseout}/bam/bam_list_b*.bam" 2>> {log}
+            samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/bam/basecall.bam" "{params.baseout}/bam/bam_list_b*.bam" 2>> {log}
+            
+            # flag basecall as done
+            touch "{params.baseout}/flags/01_basecall.done"
+        else
+            echo "No BAM data found in {params.idir}" 2>> {log}
+            exit
+        fi
+        '''
