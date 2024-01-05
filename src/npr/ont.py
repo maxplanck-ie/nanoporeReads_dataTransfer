@@ -164,9 +164,10 @@ def main(config):
                 "pipeline_config.yaml"
             )
             config['info_dict']['configFile']=configFile
-            #print(config)
+            config_clean = config
+            config_clean['parkour'] = [] # remove parkour data 
             with open(configFile, 'w') as f:
-                yaml.dump(config, f, default_flow_style=False)
+                yaml.dump(config_clean, f, default_flow_style=False)
 
             send_email("Found flowcell:", msg, config, allreceivers=False)
 
