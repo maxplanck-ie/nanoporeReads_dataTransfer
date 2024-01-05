@@ -23,12 +23,7 @@ rule align:
     output:
         file = target_bam,
         bai = target_bai,
-#        html = target_html,
-#        json = target_json,
         flagstat = target_flagstat
-#    wildcard_constraints:
-#        # exclude all sample files that end on ".align.bam" (already aligned) 
-#        sample_name = r'(?!.*\.align\.bam$).*'
     log:
         logpat
     benchmark:
