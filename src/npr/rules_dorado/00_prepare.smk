@@ -69,14 +69,14 @@ rule prepare_bam:
             # merge BAMs in batches
             echo split -l "{params.batch_size}" "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
             split -l "{params.batch_size}" "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
-            for BATCH in "{params.baseout}/bam_list_b*"; do
+            for BATCH in "{params.baseout}"/bam_list_b*; do
                 echo samtools merge "{params.opt}" -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
                 samtools merge "{params.opt}" -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
             done
             
             # final merge
-            echo samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}/bam_list_b*.bam" 2>> {log}
-            samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}/bam_list_b*.bam" 2>> {log}
+            echo samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
+            samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
             
             # clean up
             echo rm "{params.baseout}/bam_list*" 2>> {log}
