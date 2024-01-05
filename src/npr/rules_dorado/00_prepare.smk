@@ -64,22 +64,27 @@ rule prepare_bam:
             fi
 
             # get list of BAMs to merge
-            echo find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam/bam_list.txt" 2>> {log}
-            find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam/bam_list.txt"
+            echo find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt" 2>> {log}
+            find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt"
             # merge BAMs in batches
-            echo split -l "{params.batch_size}" "{params.baseout}/bam/bam_list.txt" "{params.baseout}/bam/bam_list_b" 2>> {log}
-            split -l "{params.batch_size}" "{params.baseout}/bam/bam_list.txt" "{params.baseout}/bam/bam_list_b" 2>> {log}
-            for BATCH in "{params.baseout}/bam/bam_list_b*"; do
+            echo split -l "{params.batch_size}" "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
+            split -l "{params.batch_size}" "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
+            for BATCH in "{params.baseout}/bam_list_b*"; do
                 echo samtools merge "{params.opt}" -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
                 samtools merge "{params.opt}" -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
             done
             
             # final merge
-            echo samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/bam/basecall.bam" "{params.baseout}/bam/bam_list_b*.bam" 2>> {log}
-            samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/bam/basecall.bam" "{params.baseout}/bam/bam_list_b*.bam" 2>> {log}
+            echo samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}/bam_list_b*.bam" 2>> {log}
+            samtools merge "{params.opt}" -@ {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}/bam_list_b*.bam" 2>> {log}
             
+            # clean up
+            echo rm "{params.baseout}/bam_list*" 2>> {log}
+            rm "{params.baseout}/bam_list*" 2>> {log}
+
             # flag basecall as done
-            touch "{params.baseout}/flags/01_basecall.done"
+            echo touch "{params.baseout}/../flags/01_basecall.done" 2>> {log}
+            touch "{params.baseout}/../flags/01_basecall.done" 2>> {log}
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
             exit
