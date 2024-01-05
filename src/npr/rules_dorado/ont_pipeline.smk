@@ -87,7 +87,7 @@ rule finalize:
         "flags/08_pycoqc.done",
         "flags/08_kraken.done",
         "flags/08_multiqc.done",
-        "flags/09_transfer.done",
+        #"flags/09_transfer.done",
     output:    
         touch("flags/XX_snakemake.done")
     benchmark:
