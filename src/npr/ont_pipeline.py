@@ -187,7 +187,6 @@ def read_flowcell_info(config, info_dict, base_path):
             print("Model was not found in command parameters, capturing the default value")      
             info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
 
-
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
             if rg == '--barcoding' and not info_dict['barcoding']:
@@ -205,14 +204,10 @@ def read_flowcell_info(config, info_dict, base_path):
                 info_dict['barcode_kit'] = 'no_bc'
 
         # getting software and versions
-        info_dict['software'] = []
-        info_dict['software']['MinKNOW core'] = jsondata['protocol_run_info']['software_versions']['minknow']['full']
-        info_dict['software']['MinKNOW'] = jsondata['protocol_run_info']['software_versions']['distribution_version']
-        info_dict['software']['Bream'] = jsondata['protocol_run_info']['software_versions']['bream']
-        info_dict['software']['Configuration'] = jsondata['protocol_run_info']['software_versions']['protocol_configuration']
-        info_dict['software']['Guppy'] = jsondata['protocol_run_info']['software_versions']['guppy_connected_version']
-        # Dorado is not reported yet, will be added when it is exported in the JSON/HTML
-
+        if 'software_versions' in jsondata['protocol_run_info']:
+            info_dict['software'] = jsondata['protocol_run_info']['software_versions']
+            if 'guppy_connected_version' in info_dict['software']:
+                info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
     else:
         ##################################################################################
         ##       Text file contains only a few fields, should we remove this part?      ##
