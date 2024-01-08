@@ -32,7 +32,7 @@ def gpu_available():
         
 rule basecall:
     input:
-        flag="flags/00_prepare.done",
+        flag="flags/00_prepare_bam.done",
     output:
         bam=output_bam,
         flag=touch("flags/01_basecall.done")
@@ -56,10 +56,6 @@ rule basecall:
 
         shell(
         """
-        if [ -e "{output_bam}" ]; then
-            echo "{output.bam} exists, no aligment" 2>> {log}
-        else
-            {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
-        fi
+        {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
         """
         )
