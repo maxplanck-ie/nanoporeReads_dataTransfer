@@ -41,7 +41,7 @@ rule prepare_bam:
     input: 
         "flags/00_start.done"
     output:
-        flag=touch("flags/01_basecall.done") if os.path.exists(os.path.join("{params.baseout}", "basecalls.bam"))
+        flag=touch("flags/01_basecall.done") if os.path.exists(os.path.join("{params.baseout}", "basecalls.bam")) else []
     params:
         idir = config["info_dict"]["base_path"],
         baseout = os.path.join(config['info_dict']['flowcell_path'],"bam"),
