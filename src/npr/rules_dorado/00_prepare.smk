@@ -41,8 +41,7 @@ rule prepare_bam:
     input: 
         "flags/00_start.done"
     output:
-        dflag = touch("flags/00_prepare_bam.done"),
-        flag  = touch("flags/01_basecall.done") if os.path.join(config['info_dict']['flowcell_path'], "bam", "basecalls.bam") else []
+        flag = touch("flags/00_prepare_bam.done")
     params:
         idir = config["info_dict"]["base_path"],
         baseout = os.path.join(config['info_dict']['flowcell_path'],"bam"),
