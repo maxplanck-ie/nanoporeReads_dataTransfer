@@ -76,7 +76,6 @@ rule finalize:
     input:
         "flags/00_start.done",
         "flags/00_prepare.done",
-        "flags/00_prepare_bam.done",
         "flags/01_basecall.done",
         "flags/02_demux.done",
         "flags/03_rename.done",
