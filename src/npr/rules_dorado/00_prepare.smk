@@ -89,8 +89,9 @@ rule prepare_bam:
             echo rm "{params.baseout}"/bam_list* 2>> {log}
             rm "{params.baseout}"/bam_list* 2>> {log}
 
-            touch {flag_bam}
-            
+            echo touch {params.flag_bam} 2>> {log} 
+            touch {params.flag_bam} 2>> {log}
+
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
         fi
