@@ -75,9 +75,15 @@ rule prepare_bam:
             done
             
             # final merge
-            echo samtools merge {params.opt} {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
-            samtools merge {params.opt} {threads} -o "{params.baseout}/basecall.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
-            
+            if [[ $(ls "{params.baseout}"/bam_list_b*.bam | wc -l) -eq "1" ]]; then
+                # only one file was produced, just renaming it
+                echo mv "{params.baseout}"/bam_list_b*.bam "{params.baseout}/basecalls.bam" 2>> {log}
+                mv "{params.baseout}"/bam_list_b*.bam "{params.baseout}/basecalls.bam" 2>> {log}
+            else
+                echo samtools merge {params.opt} {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
+                samtools merge {params.opt} {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
+            fi
+
             # clean up
             echo rm "{params.baseout}"/bam_list* 2>> {log}
             rm "{params.baseout}"/bam_list* 2>> {log}
