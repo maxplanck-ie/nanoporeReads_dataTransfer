@@ -1,5 +1,6 @@
 '''
-Extract modification calls after alignment using "modbam2bed"
+Extract modification calls after alignment using ONT "modkit"
+https://github.com/nanoporetech/modkit
 '''
 
 # define source and target pattern
@@ -18,20 +19,14 @@ rule bam2modbed:
         bam = source
     output:
         bed = target
-    conda:
-        # mamba create -n modbam2bed -c bioconda -c conda-forge -c epi2melabs modbam2bed
-        "envs/modbam2bed.yaml"
-        #"/localenv/pipegrp/anaconda/miniconda3/envs/modbam2bed/"
     log:
         logpat
     benchmark:
         bchpat
-    params:
-        genome = config['genome'].get(org, None)
     threads: 4
     shell:'''
         # future: consider filtering zero modification or "nan" with "| awk '$11 != "nan" && $11>0.0'"
         #   remove or reduce stderr from processing
-        ( modbam2bed -t {threads} --combine {params.genome} {input.bam} | pigz -p {threads} > {output.bed} ) 2>> {log}
+        modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
     '''
 
