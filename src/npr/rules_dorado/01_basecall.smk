@@ -56,7 +56,7 @@ rule basecall:
 
         shell(
         """
-        if [ -e "{output.bam}" ]; then
+        if [ -e "{output_bam}" ]; then
             echo "{output.bam} exists, no aligment" 2>> {log}
         else
             {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
