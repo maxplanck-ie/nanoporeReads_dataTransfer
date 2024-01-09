@@ -33,7 +33,7 @@ def gpu_available():
 rule basecall:
     input:
         flag="flags/00_prepare_bam.done",
-        do_basecall = config['info_dicts']['do_basecall']
+        do_basecall = config['info_dict']['do_basecall']
     output:
         bam=output_bam,
         flag=touch("flags/01_basecall.done")
