@@ -33,6 +33,7 @@ def gpu_available():
 rule basecall:
     input:
         flag="flags/00_prepare_bam.done",
+        do_basecall = config['do_basecall']
     output:
         bam=output_bam,
         flag=touch("flags/01_basecall.done")
@@ -56,6 +57,11 @@ rule basecall:
 
         shell(
         """
-        {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
+        if [ "{input.do_basecall}" == "true" ]; then
+            echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
+            {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
+        else
+            echo "Basecall skiped" 2>> {log}
+        fi
         """
         )

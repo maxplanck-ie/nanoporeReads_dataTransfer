@@ -139,6 +139,7 @@ def read_flowcell_info(config, info_dict, base_path):
      - copy json, summaries & samplesheet
      - parse json for flowcell, kit & barcoding
      - infer model from flowcell + kit
+     - add flags for basecalling and modbed
     """
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
@@ -211,8 +212,18 @@ def read_flowcell_info(config, info_dict, base_path):
         info_dict['software']['Bream'] = jsondata['protocol_run_info']['software_versions']['bream']
         info_dict['software']['Configuration'] = jsondata['protocol_run_info']['software_versions']['protocol_configuration']
         info_dict['software']['Guppy'] = jsondata['protocol_run_info']['software_versions']['guppy_connected_version']
-        # Dorado is not reported yet, will be added when it is exported in the JSON/HTML
 
+        # decide if we do basecall or not
+        if os.path.exists(os.path.join(flowcell_path, "bam_pass")):
+            info_dict['do_basecall'] = 'false'
+        else:
+            info_dict['do_basecall'] = 'true'
+
+        # decide if we do modbed or not
+        if info_dict['model_def'].startswith("dna"):
+            info_dict['do_modbed'] = 'true'
+        else:
+            info_dict['do_modbed'] = 'false'
     else:
         ##################################################################################
         ##       Text file contains only a few fields, should we remove this part?      ##

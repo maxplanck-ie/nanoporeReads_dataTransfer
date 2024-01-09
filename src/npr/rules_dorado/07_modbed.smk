@@ -16,7 +16,8 @@ rule modbed_final:
 rule bam2modbed:
     input:
         flag = "flags/06_align.done",
-        bam = source
+        bam = source,
+        do_modbed = config['info_dict']['do_modbed']
     output:
         bed = target
     log:
@@ -27,6 +28,11 @@ rule bam2modbed:
     shell:'''
         # future: consider filtering zero modification or "nan" with "| awk '$11 != "nan" && $11>0.0'"
         #   remove or reduce stderr from processing
-        modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
+        if [ "{input.modbed}"  == "true" ]; then
+            echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
+            modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
+        else
+            echo "modbed step skip" 2>> {log}
+        fi
     '''
 

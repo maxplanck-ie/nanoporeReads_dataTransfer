@@ -45,7 +45,6 @@ rule prepare_bam:
     params:
         idir = config["info_dict"]["base_path"],
         baseout = os.path.join(config['info_dict']['flowcell_path'],"bam"),
-        flag_bam = os.path.join(config['info_dict']['flowcell_path'], "flags", "01_basecall.done"),
         batch_size = 500,
         opt = '-c --no-PG -@'
     threads:    
@@ -67,6 +66,7 @@ rule prepare_bam:
             # get list of BAMs to merge
             echo find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt" 2>> {log}
             find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt"
+
             # merge BAMs in batches
             echo split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
             split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
@@ -88,10 +88,6 @@ rule prepare_bam:
             # clean up
             echo rm "{params.baseout}"/bam_list* 2>> {log}
             rm "{params.baseout}"/bam_list* 2>> {log}
-
-            echo touch {params.flag_bam} 2>> {log} 
-            touch {params.flag_bam} 2>> {log}
-
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
         fi
