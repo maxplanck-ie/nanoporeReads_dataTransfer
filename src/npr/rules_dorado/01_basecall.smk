@@ -33,7 +33,6 @@ def gpu_available():
 rule basecall:
     input:
         flag="flags/00_prepare_bam.done",
-        do_basecall = config['info_dict']['do_basecall']
     output:
         bam=output_bam,
         flag=touch("flags/01_basecall.done")
@@ -48,7 +47,7 @@ rule basecall:
         # modification do not yet work with RNA
         mod=config['dorado_basecaller']['dorado_modifications'] \
             if not config['info_dict']['model_def'].startswith("rna") else "",
-        dir="pod5"
+        do_basecall=config['info_dict']['do_basecall']
     run: 
         while not gpu_available():
             print("GPU is unavailable - sleep")
@@ -57,7 +56,7 @@ rule basecall:
 
         shell(
         """
-        if [ "{input.do_basecall}" == "yes" ]; then
+        if [ "{params.do_basecall}" == "yes" ]; then
             echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
             {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
         else
