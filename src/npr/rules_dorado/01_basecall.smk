@@ -47,7 +47,7 @@ rule basecall:
         # modification do not yet work with RNA
         mod=config['dorado_basecaller']['dorado_modifications'] \
             if not config['info_dict']['model_def'].startswith("rna") else "",
-        do_basecall=config['info_dict']['do_basecall']
+        do_basecall=config['info_dict']['do_basecall'],
         dir='pod5'
     run: 
         while not gpu_available():
