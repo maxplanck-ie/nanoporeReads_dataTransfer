@@ -48,6 +48,7 @@ rule basecall:
         mod=config['dorado_basecaller']['dorado_modifications'] \
             if not config['info_dict']['model_def'].startswith("rna") else "",
         do_basecall=config['info_dict']['do_basecall']
+        dir='pod5'
     run: 
         while not gpu_available():
             print("GPU is unavailable - sleep")
@@ -55,8 +56,9 @@ rule basecall:
 
 
         shell(
+            echo "do_basecall: {params.do_basecall}" 2>> {log}
         """
-        if [ "{params.do_basecall}" == "yes" ]; then
+        if [[ "{params.do_basecall}" == "yes" ]]; then
             echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
             {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
         else
