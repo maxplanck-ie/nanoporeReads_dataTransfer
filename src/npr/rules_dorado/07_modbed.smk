@@ -28,7 +28,7 @@ rule bam2modbed:
     shell:'''
         # future: consider filtering zero modification or "nan" with "| awk '$11 != "nan" && $11>0.0'"
         #   remove or reduce stderr from processing
-        if [ "{input.modbed}"  == "true" ]; then
+        if [ "{input.modbed}"  == "yes" ]; then
             echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
             modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
         else

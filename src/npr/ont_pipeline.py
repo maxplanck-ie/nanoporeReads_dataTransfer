@@ -215,15 +215,15 @@ def read_flowcell_info(config, info_dict, base_path):
 
         # decide if we do basecall or not
         if os.path.exists(os.path.join(flowcell_path, "bam_pass")):
-            info_dict['do_basecall'] = 'false'
+            info_dict['do_basecall'] = 'no'
         else:
-            info_dict['do_basecall'] = 'true'
+            info_dict['do_basecall'] = 'yes'
 
         # decide if we do modbed or not
         if info_dict['model_def'].startswith("dna"):
-            info_dict['do_modbed'] = 'true'
+            info_dict['do_modbed'] = 'yes'
         else:
-            info_dict['do_modbed'] = 'false'
+            info_dict['do_modbed'] = 'no'
     else:
         ##################################################################################
         ##       Text file contains only a few fields, should we remove this part?      ##
