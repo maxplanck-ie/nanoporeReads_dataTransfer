@@ -70,24 +70,25 @@ rule prepare_bam:
             # merge BAMs in batches
             echo split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
             split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
-            for BATCH in "{params.baseout}"/bam_list_b*; do
-                echo samtools merge {params.opt} {threads} -b $BATCH -o $BATCH.bam 2>> {log}
-                samtools merge {params.opt} {threads} -b $BATCH -o $BATCH.bam 2>> {log}
-            done
+            if [[ $(ls "{params.baseout}"/bam_list_b* | wc -l) -eq "1" ]]; then
+                # only one batch is created, creating final ouput
+                echo samtools merge {params.opt} {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
+                samtools merge {params.opt} {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
             
-            # final merge
-            if [[ $(ls "{params.baseout}"/bam_list_b*.bam | wc -l) -eq "1" ]]; then
-                # only one file was produced, just renaming it
-                echo mv "{params.baseout}"/bam_list_b*.bam "{params.baseout}/basecalls.bam" 2>> {log}
-                mv "{params.baseout}"/bam_list_b*.bam "{params.baseout}/basecalls.bam" 2>> {log}
             else
+                # merge in batches, one by one to avoid opened files limit
+                for BATCH in "{params.baseout}"/bam_list_b*; do
+                    echo samtools merge {params.opt} {threads} -b $BATCH -o $BATCH.bam 2>> {log}
+                    samtools merge {params.opt} {threads} -b $BATCH -o $BATCH.bam 2>> {log}
+                done
+                # final merge
                 echo samtools merge {params.opt} {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
                 samtools merge {params.opt} {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
             fi
 
             # clean up
             echo rm "{params.baseout}"/bam_list* 2>> {log}
-            #rm "{params.baseout}"/bam_list* 2>> {log}
+            rm "{params.baseout}"/bam_list* 2>> {log}
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
         fi
