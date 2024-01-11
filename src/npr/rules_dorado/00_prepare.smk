@@ -42,7 +42,6 @@ rule prepare_bam:
         "flags/00_start.done"
     output:
         flag = touch("flags/00_prepare_bam.done"),
-        bam = os.path.join(config['info_dict']['flowcell_path'],"bam", "basecalls.bam")
     params:
         idir = config["info_dict"]["base_path"],
         baseout = os.path.join(config['info_dict']['flowcell_path'],"bam"),
@@ -89,10 +88,9 @@ rule prepare_bam:
             fi
 
             # clean up
-            echo rm "{params.baseout}"/bam_list* 2>> {log}
-            rm "{params.baseout}"/bam_list* 2>> {log}
+            #echo rm "{params.baseout}"/bam_list* 2>> {log}
+            #rm "{params.baseout}"/bam_list* 2>> {log}
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
-            touch "{params.baseout}/basecalls.bam"
         fi
         '''
