@@ -65,7 +65,7 @@ rule prepare_bam:
             # there are BAM produced
         
             # get list of BAMs to merge
-            echo find "{params.idir}/bam_pass" -name '*.bam' \> "{params.baseout}/bam_list.txt" 2>> {log}
+            echo find "{params.idir}/bam_pass" -name '*.bam' "{params.baseout}/bam_list.txt" 2>> {log}
             find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt"
 
             # merge BAMs in batches
