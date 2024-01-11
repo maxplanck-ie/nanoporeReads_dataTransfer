@@ -41,7 +41,7 @@ rule prepare_bam:
     input: 
         "flags/00_start.done"
     output:
-        flag = touch("flags/00_prepare_bam.done")
+        flag = touch("flags/00_prepare_bam.done"),
         bam = os.path.join(config['info_dict']['flowcell_path'],"bam", "basecalls.bam")
     params:
         idir = config["info_dict"]["base_path"],
