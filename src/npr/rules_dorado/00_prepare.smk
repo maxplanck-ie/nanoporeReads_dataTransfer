@@ -42,6 +42,7 @@ rule prepare_bam:
         "flags/00_start.done"
     output:
         flag = touch("flags/00_prepare_bam.done")
+        bam = os.path.join(config['info_dict']['flowcell_path'],"bam", "basecalls.bam")
     params:
         idir = config["info_dict"]["base_path"],
         baseout = os.path.join(config['info_dict']['flowcell_path'],"bam"),
@@ -54,15 +55,16 @@ rule prepare_bam:
     benchmark:
         "benchmarks/00_prepare_bam.tsv"
     shell:'''
-        if [ -e "{params.idir}/bam_pass" ]; then
-            # there are BAM produced (default)
-            if [ -e "{params.baseout}" ]; then
-                echo "{params.baseout} exists, any BAM file will be overwritten" 2>> {log}
-            else
-                echo mkdir "{params.baseout}" 2>> {log}
-                mkdir "{params.baseout}" 2>> {log}
-            fi
+        if [ -e "{params.baseout}" ]; then
+            echo "{params.baseout} exists, any BAM file will be overwritten" 2>> {log}
+        else
+            echo mkdir "{params.baseout}" 2>> {log}
+            mkdir "{params.baseout}" 2>> {log}
+        fi
 
+        if [ -e "{params.idir}/bam_pass" ]; then
+            # there are BAM produced
+        
             # get list of BAMs to merge
             echo find "{params.idir}/bam_pass" -name '*.bam' \> "{params.baseout}/bam_list.txt" 2>> {log}
             find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt"
@@ -91,5 +93,6 @@ rule prepare_bam:
             rm "{params.baseout}"/bam_list* 2>> {log}
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
+            touch "{params.baseout}/basecalls.bam"
         fi
         '''
