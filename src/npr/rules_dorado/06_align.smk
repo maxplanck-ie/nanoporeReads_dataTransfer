@@ -2,7 +2,7 @@
 Align reads usign dorado aligner (minimap2)
 '''
 # define source and target pattern
-source_bam = sample_dat + ".bam"
+source_fq = sample_dat + ".fastq.gz"
 source_seqsum = sample_dat + ".seqsum"
 target_bam  = sample_ana + ".align.bam"
 target_bai  = sample_ana + ".align.bam.bai"
@@ -18,7 +18,7 @@ rule align_final:
     
 rule align:
     input:
-        bam_file = source_bam,
+        fq_file = source_fq,
         seqsum = source_seqsum
     output:
         file = target_bam,
@@ -37,7 +37,7 @@ rule align:
         10
     shell:
         """
-        {dorado} aligner {params.genome} {input.bam_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
+        {dorado} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
         samtools index -@ {threads} {output.file} 2>> {log}
 
         # run pycoQC including bam file (for alignment)
