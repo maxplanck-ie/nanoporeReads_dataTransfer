@@ -88,8 +88,8 @@ rule prepare_bam:
             fi
 
             # clean up
-            #echo rm "{params.baseout}"/bam_list* 2>> {log}
-            #rm "{params.baseout}"/bam_list* 2>> {log}
+            echo rm "{params.baseout}"/bam_list* 2>> {log}
+            rm "{params.baseout}"/bam_list* 2>> {log}
         else
             echo "No BAM data found in {params.idir}" 2>> {log}
         fi

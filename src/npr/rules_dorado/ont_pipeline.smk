@@ -88,7 +88,7 @@ rule finalize:
         "flags/08_pycoqc.done",
         "flags/08_kraken.done",
         "flags/08_multiqc.done",
-        #"flags/09_transfer.done",
+        "flags/09_transfer.done",
     output:    
         touch("flags/XX_snakemake.done")
     benchmark:
@@ -125,4 +125,4 @@ include: f"{rule_path}/08_fastqc.smk"
 include: f"{rule_path}/08_pycoqc.smk"
 include: f"{rule_path}/08_kraken.smk"
 include: f"{rule_path}/08_multiqc.smk"
-#include: f"{rule_path}/09_transfer.smk"
+include: f"{rule_path}/09_transfer.smk"

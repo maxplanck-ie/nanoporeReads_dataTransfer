@@ -34,7 +34,6 @@ rule basecall:
     input:
         flag="flags/00_prepare_bam.done",
     output:
-        #bam=output_bam,
         flag=touch("flags/01_basecall.done")
     log:
         "log/01_basecall.log"
@@ -54,7 +53,6 @@ rule basecall:
         while not gpu_available():
             print("GPU is unavailable - sleep")
             time.sleep(60)
-
 
         shell(
         """
