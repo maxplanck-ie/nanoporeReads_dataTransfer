@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # ont.py
 # Main script to monitor new data and launch new jobs
 # (C) 2024 Bioinformatics Core
@@ -164,10 +162,8 @@ def main(config):
                 "pipeline_config.yaml"
             )
             config['info_dict']['configFile']=configFile
-            config_clean = config
-            config_clean['parkour'] = [] # remove parkour data 
             with open(configFile, 'w') as f:
-                yaml.dump(config_clean, f, default_flow_style=False)
+                yaml.dump(config, f, default_flow_style=False)
 
             send_email("Found flowcell:", msg, config, allreceivers=False)
 

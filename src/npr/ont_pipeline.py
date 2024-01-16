@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # ont_pipeline.py
 # Helper funtions for the ONT pipeline
 # (C) 2024 Bioinformatics Core
@@ -209,9 +207,6 @@ def read_flowcell_info(config, info_dict, base_path):
             if 'guppy_connected_version' in info_dict['software']:
                 info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
     else:
-        ##################################################################################
-        ##       Text file contains only a few fields, should we remove this part?      ##
-        ##################################################################################
         # try to get txt file.
         print('base path == {}'.format(base_path))
         finsum = glob.glob(
@@ -261,9 +256,6 @@ def read_flowcell_info(config, info_dict, base_path):
                     print(head[0].index('barcode_kit'))
         else:
             sys.exit("no json file, no final summary txt file found. exiting.")
-        ##################################################################################
-        ##                                   Section end                                ##
-        ##################################################################################
         
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
