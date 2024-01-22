@@ -113,6 +113,7 @@ rule finalize:
 
 include: f"{rule_path}/00_start.smk"
 include: f"{rule_path}/00_prepare.smk"
+include: f"{rule_path}/00_prepare_bam.smk"
 include: f"{rule_path}/01_basecall.smk"
 include: f"{rule_path}/02_demux.smk"
 include: f"{rule_path}/03_rename.smk"
