@@ -19,7 +19,7 @@ rule align_final:
     
 rule align:
     input:
-        bam_file = source_bam
+        bam_file = source_bam,
         fq_file = source_fq,
         seqsum = source_seqsum
     output:
