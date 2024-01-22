@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # ont_pipeline.py
 # Helper funtions for the ONT pipeline
 # (C) 2024 Bioinformatics Core
@@ -188,7 +186,6 @@ def read_flowcell_info(config, info_dict, base_path):
             print("Model was not found in command parameters, capturing the default value")      
             info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
 
-
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
             if rg == '--barcoding' and not info_dict['barcoding']:
@@ -206,13 +203,11 @@ def read_flowcell_info(config, info_dict, base_path):
                 info_dict['barcode_kit'] = 'no_bc'
 
         # getting software and versions
-        info_dict['software'] = []
-        info_dict['software']['MinKNOW core'] = jsondata['protocol_run_info']['software_versions']['minknow']['full']
-        info_dict['software']['MinKNOW'] = jsondata['protocol_run_info']['software_versions']['distribution_version']
-        info_dict['software']['Bream'] = jsondata['protocol_run_info']['software_versions']['bream']
-        info_dict['software']['Configuration'] = jsondata['protocol_run_info']['software_versions']['protocol_configuration']
-        info_dict['software']['Guppy'] = jsondata['protocol_run_info']['software_versions']['guppy_connected_version']
-
+        if 'software_versions' in jsondata['protocol_run_info']:
+            info_dict['software'] = jsondata['protocol_run_info']['software_versions']
+            if 'guppy_connected_version' in info_dict['software']:
+                info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
+                
         # decide if we do basecall or not
         if os.path.exists(os.path.join(flowcell_path, "bam_pass")):
             info_dict['do_basecall'] = 'no_basecall'
@@ -226,10 +221,8 @@ def read_flowcell_info(config, info_dict, base_path):
             info_dict['do_modbed'] = 'do_modbed'
         else:
             info_dict['do_modbed'] = 'no_modbed'
+        
     else:
-        ##################################################################################
-        ##       Text file contains only a few fields, should we remove this part?      ##
-        ##################################################################################
         # try to get txt file.
         print('base path == {}'.format(base_path))
         finsum = glob.glob(
@@ -279,9 +272,6 @@ def read_flowcell_info(config, info_dict, base_path):
                     print(head[0].index('barcode_kit'))
         else:
             sys.exit("no json file, no final summary txt file found. exiting.")
-        ##################################################################################
-        ##                                   Section end                                ##
-        ##################################################################################
         
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
@@ -341,9 +331,6 @@ def read_samplesheet(config):
     # legacy fix: replace missing barcode (NaN or 'No_index.*') by 'no_bc'
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].fillna('no_bc')  
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].replace('No_index.*','no_bc', regex=True)
-#   sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index.*', 'no_bc', regex = True)
-
-
 
     data=dict()
     data['projects'] = []
