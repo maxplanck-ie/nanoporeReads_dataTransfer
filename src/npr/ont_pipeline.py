@@ -176,15 +176,33 @@ def read_flowcell_info(config, info_dict, base_path):
         info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
         info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
         info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
-        # check run paramenters to capture model
+        
+        # check run parameters to capture model, check base calling and alignment
         model = None
+        info_dict['do_basecall'] = 'do_basecall'
+        info_dict['do_align'] = 'do_align'
+        info_dict['do_modbed'] = 'no_modbed'
+        
         for par in jsondata['protocol_run_info']['args']:
             if par.startswith('--guppy_filename='):
                 px,model = par.split("=")
                 info_dict['model_def'] = model
+                print (f"  [green]Found model as {model}[/green]")
+            elif par == '--base_calling=on':
+                info_dict['do_basecall'] = 'no_basecall'
+                print (f"  [green]Found basecalling is already done[/green]")
+            elif par == '--alignment':
+                info_dict['do_align'] = 'no_align'
+                print (f"  [green]Found alignment is already done[/green]")
+            
         if not model:
             print("Model was not found in command parameters, capturing the default value")      
             info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+
+        if 'modbases' in info_dict['model_def']:
+            info_dict['do_modbed'] = 'do_modbed'
+            print (f"  [green]Found modified bases was used, BED will be genered[/green]")
+        
 
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
@@ -207,21 +225,7 @@ def read_flowcell_info(config, info_dict, base_path):
             info_dict['software'] = jsondata['protocol_run_info']['software_versions']
             if 'guppy_connected_version' in info_dict['software']:
                 info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
-                
-        # decide if we do basecall or not
-        if os.path.exists(os.path.join(flowcell_path, "bam_pass")):
-            info_dict['do_basecall'] = 'no_basecall'
-            info_dict['do_align'] = 'no_align'
-        else:
-            info_dict['do_basecall'] = 'do_basecall'
-            info_dict['do_align'] = 'do_align'
 
-        # decide if we do modbed or not
-        if info_dict['model_def'].startswith("dna"):
-            info_dict['do_modbed'] = 'do_modbed'
-        else:
-            info_dict['do_modbed'] = 'no_modbed'
-        
     else:
         # try to get txt file.
         print('base path == {}'.format(base_path))
