@@ -184,6 +184,7 @@ def read_flowcell_info(config, info_dict, base_path):
         with open(html_file[0]) as f:
             html_cont = f.read()
         
+        info_dict["software"] = {}
         matches = re.finditer(match_html_key_val, html_cont)
         for match in matches:
             name = match.group(1)
