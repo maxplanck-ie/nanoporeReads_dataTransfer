@@ -15,6 +15,8 @@ from rich import print
 from npr.communication import send_email
 from npr.snakehelper import glob2reports, get_seqdir, guppy2dorado
 
+match_html_key_val = re.compile(r'"title": "(.+?)", "value": "(.+?)"')
+
 def analysis_done(flowcell, config):
     """
     Determine whether flowcell has already been analysed
@@ -169,15 +171,52 @@ def read_flowcell_info(config, info_dict, base_path):
             '*json'
         )
     )
+    html_file = glob.glob(
+        os.path.join(
+            flowcell_path,
+            'reports',
+            '*html'
+        )
+    )
+    if html_file:
+        print("[green]Reading info from html[/green]")
+        html_cont = ''
+        with open(html_file[0]) as f:
+            html_cont = f.read()
+        
+        matches = re.finditer(match_html_key_val, html_cont)
+        for match in matches:
+            name = match.group(1)
+            value = match.group(2)
+            if name == "Flow cell type":
+                info_dict["flowcell"] = value
+            elif name == "Kit type":
+                info_dict["kit"] = value
+            elif name == "MinKNOW":
+                info_dict["software"]["MinKNOW"] = value
+            elif name == "Bream":
+                info_dict["software"]["Bream"] = value
+            elif name == "MinKNOW Core":
+                info_dict["software"]["MinKNOW Core"] = value
+            elif name == "Configuration":
+                info_dict["software"]["Configuration"] = value
+            elif name == "Dorado":
+                info_dict["software"]["Dorado"] = value
+
     if json_file:
         print("[green]Reading info from json[/green]")
         with open(json_file[0]) as f: # assume only 1 file
             jsondata = json.load(f)
-        info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
-        info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
+
+        if not "flowcell" in info_dict:
+            info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
+        if not "kit" in info_dict:
+            info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
+        # HTML file is not reporting barcoding, we need it from the json
         info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
         
         # check run parameters to capture model, check base calling and alignment
+        # model is better defined in json, in html is badly reported
         model = None
         info_dict['do_basecall'] = 'do_basecall'
         info_dict['do_align'] = 'do_align'
@@ -220,11 +259,12 @@ def read_flowcell_info(config, info_dict, base_path):
             else:
                 info_dict['barcode_kit'] = 'no_bc'
 
-        # getting software and versions
-        if 'software_versions' in jsondata['protocol_run_info']:
-            info_dict['software'] = jsondata['protocol_run_info']['software_versions']
-            if 'guppy_connected_version' in info_dict['software']:
-                info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
+        # getting software and versions unless already defined by the html
+        if not "software" in info_dict:
+            if 'software_versions' in jsondata['protocol_run_info']:
+                info_dict['software'] = jsondata['protocol_run_info']['software_versions']
+                if 'guppy_connected_version' in info_dict['software']:
+                    info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
 
     else:
         # try to get txt file.
