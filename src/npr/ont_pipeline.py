@@ -227,6 +227,7 @@ def read_flowcell_info(config, info_dict, base_path):
             if par.startswith('--guppy_filename='):
                 px,model = par.split("=")
                 info_dict['model_def'] = model
+                info_dict['model'] = model
                 print (f"  [green]Found model as {model}[/green]")
             elif par == '--base_calling=on':
                 info_dict['do_basecall'] = 'no_basecall'
@@ -238,6 +239,7 @@ def read_flowcell_info(config, info_dict, base_path):
         if not model:
             print("Model was not found in command parameters, capturing the default value")      
             info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+            info_dict['model'] = info_dict['model_def']
 
         if 'modbases' in info_dict['model_def']:
             info_dict['do_modbed'] = 'do_modbed'
