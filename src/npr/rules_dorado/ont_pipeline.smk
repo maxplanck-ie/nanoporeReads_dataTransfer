@@ -76,6 +76,7 @@ rule finalize:
     input:
         "flags/00_start.done",
         "flags/00_prepare.done",
+        "flags/00_prepare_bam.done",
         "flags/01_basecall.done",
         "flags/02_demux.done",
         "flags/03_rename.done",
@@ -112,6 +113,7 @@ rule finalize:
 
 include: f"{rule_path}/00_start.smk"
 include: f"{rule_path}/00_prepare.smk"
+include: f"{rule_path}/00_prepare_bam.smk"
 include: f"{rule_path}/01_basecall.smk"
 include: f"{rule_path}/02_demux.smk"
 include: f"{rule_path}/03_rename.smk"

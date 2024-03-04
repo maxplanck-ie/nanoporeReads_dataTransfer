@@ -3,6 +3,7 @@ Align reads usign dorado aligner (minimap2)
 '''
 # define source and target pattern
 source_bam = sample_dat + ".bam"
+source_fq = sample_dat + ".fastq.gz"
 source_seqsum = sample_dat + ".seqsum"
 target_bam  = sample_ana + ".align.bam"
 target_bai  = sample_ana + ".align.bam.bai"
@@ -19,16 +20,12 @@ rule align_final:
 rule align:
     input:
         bam_file = source_bam,
+        fq_file = source_fq,
         seqsum = source_seqsum
     output:
         file = target_bam,
         bai = target_bai,
-#        html = target_html,
-#        json = target_json,
         flagstat = target_flagstat
-#    wildcard_constraints:
-#        # exclude all sample files that end on ".align.bam" (already aligned) 
-#        sample_name = r'(?!.*\.align\.bam$).*'
     log:
         logpat
     benchmark:
@@ -38,11 +35,19 @@ rule align:
         genome =  config['genome'].get(org, None),
         json = target_json,
         html = target_html,
+        do_align = config['info_dict']['do_align']
     threads:
-        10
+        10 # same number of threads will be applied to dorado-align and samtools
     shell:
         """
-        {dorado} aligner {params.genome} {input.bam_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
+        echo "do_align: {params.do_align}" 2>> {log}
+        if [[ "{params.do_align}" == "do_align" ]]; then
+            {dorado} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
+        else
+            echo "No alignment needed, skip" 2>> {log}
+            mv {input.bam_file} {output.file}
+        fi
+
         samtools index -@ {threads} {output.file} 2>> {log}
 
         # run pycoQC including bam file (for alignment)

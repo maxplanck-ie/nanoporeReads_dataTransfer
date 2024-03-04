@@ -107,8 +107,12 @@ def scan_multiqc(config):
             if len(sample_items)>0:
                 # last element denotes top species and associated percentage
                 spec,perc=sample_items[-1]
-                QC['top_species'].append(spec)
+                #QC['top_species'].append(spec) ## multiQC 'report_general_stats' does not contain species names
                 QC['top_percent'].append(round(perc,2))
+
+        # get top species name (multiQC reports only the top one)
+        dd = jy["report_general_stats_headers"][kraken_idx]
+        QC['top_species'].append(dd['pct_top_one']['title'].replace("% ", ""))
 
     return(QC)
 
