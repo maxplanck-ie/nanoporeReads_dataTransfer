@@ -19,8 +19,8 @@ def gpu_available():
     if res.returncode == 0:
         res = res.stdout.strip().split(',') # split csv output
         res = [int(i) for i in res]         # convert to integer
-        # consider GPU available if memory.free>20 MB, and utilization.gpu<80% and utilization.memory<80%
-        if res[1]>20000 and res[2]<80 and res[3]<80: 
+        # consider GPU available if memory.free>10 GB, and utilization.gpu<80% and utilization.memory<80%
+        if res[1]>10000 and res[2]<80 and res[3]<80: 
             return True
     else:
         print("[red]{} caused an error while checking GPU status: {} [/red]".format(" ".join(monitor),res.returncode))
@@ -32,9 +32,8 @@ def gpu_available():
         
 rule basecall:
     input:
-        flag="flags/00_prepare.done",
+        flag="flags/00_prepare_bam.done",
     output:
-        bam=output_bam,
         flag=touch("flags/01_basecall.done")
     log:
         "log/01_basecall.log"
@@ -47,15 +46,22 @@ rule basecall:
         # modification do not yet work with RNA
         mod=config['dorado_basecaller']['dorado_modifications'] \
             if not config['info_dict']['model_def'].startswith("rna") else "",
-        dir="pod5"
+        dir='pod5',
+        bam= os.path.join(config['info_dict']['flowcell_path'],"bam/basecalls.bam"),
+        do_basecall=config['info_dict']['do_basecall']
     run: 
         while not gpu_available():
             print("GPU is unavailable - sleep")
             time.sleep(60)
 
-
         shell(
         """
-        {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {output.bam} 2>> {log}
+        echo "do_basecall: {params.do_basecall}" 2>> {log}
+        if [[ "{params.do_basecall}" == "do_basecall" ]]; then
+            echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} {params.bam} 2>> {log}
+            {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
+        else
+            echo "Basecall step skip" 2>> {log}
+        fi
         """
         )

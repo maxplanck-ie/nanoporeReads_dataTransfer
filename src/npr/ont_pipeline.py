@@ -1,16 +1,21 @@
+# ont_pipeline.py
+# Helper funtions for the ONT pipeline
+# (C) 2024 Bioinformatics Core
+# Max Plank Institute for Immunobiology and Epigenetics
+
 import sys
 import os
 import re
 import glob
-import pandas as pd
-import numpy as np
-from rich import print
-from importlib.metadata import version
 import yaml
 import json
 import subprocess as sp
+import pandas as pd
+from rich import print
 from npr.communication import send_email
 from npr.snakehelper import glob2reports, get_seqdir, guppy2dorado
+
+match_html_key_val = re.compile(r'"title": "(.+?)", "value": "(.+?)"')
 
 def analysis_done(flowcell, config):
     """
@@ -35,7 +40,7 @@ def analysis_done(flowcell, config):
 
 def filter_flowcell(json, config):
     """
-    decide whether to keep a flowcell based on exclusion rules defined in config
+    Decide whether to keep a flowcell based on exclusion rules defined in config
     the exclusion rules are specific to our MPI-IE setup
 
     example json file: "report_PAQ97481_20230818_1514_e1253480.json"
@@ -134,6 +139,7 @@ def read_flowcell_info(config, info_dict, base_path):
      - copy json, summaries & samplesheet
      - parse json for flowcell, kit & barcoding
      - infer model from flowcell + kit
+     - add flags for basecalling and modbed
     """
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
@@ -165,14 +171,80 @@ def read_flowcell_info(config, info_dict, base_path):
             '*json'
         )
     )
+    html_file = glob.glob(
+        os.path.join(
+            flowcell_path,
+            'reports',
+            '*html'
+        )
+    )
+    if html_file:
+        print("[green]Reading info from html[/green]")
+        html_cont = ''
+        with open(html_file[0]) as f:
+            html_cont = f.read()
+        
+        info_dict["software"] = {}
+        matches = re.finditer(match_html_key_val, html_cont)
+        for match in matches:
+            name = match.group(1)
+            value = match.group(2)
+            if name == "Flow cell type":
+                info_dict["flowcell"] = value
+            elif name == "Kit type":
+                info_dict["kit"] = value
+            elif name == "MinKNOW":
+                info_dict["software"]["MinKNOW"] = value
+            elif name == "Bream":
+                info_dict["software"]["Bream"] = value
+            elif name == "MinKNOW Core":
+                info_dict["software"]["MinKNOW Core"] = value
+            elif name == "Configuration":
+                info_dict["software"]["Configuration"] = value
+            elif name == "Dorado":
+                info_dict["software"]["Dorado"] = value
+
     if json_file:
         print("[green]Reading info from json[/green]")
         with open(json_file[0]) as f: # assume only 1 file
             jsondata = json.load(f)
-        info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
-        info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
+
+        if not "flowcell" in info_dict:
+            info_dict["flowcell"] = jsondata['protocol_run_info']['meta_info']['tags']['flow cell']['string_value']
+        if not "kit" in info_dict:
+            info_dict["kit"] = jsondata['protocol_run_info']['meta_info']['tags']['kit']['string_value']
+        # HTML file is not reporting barcoding, we need it from the json
         info_dict['barcoding'] = bool(jsondata['protocol_run_info']['meta_info']['tags']['barcoding']['bool_value'])
-        info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+        
+        # check run parameters to capture model, check base calling and alignment
+        # model is better defined in json, in html is badly reported
+        model = None
+        info_dict['do_basecall'] = 'do_basecall'
+        info_dict['do_align'] = 'do_align'
+        info_dict['do_modbed'] = 'no_modbed'
+        
+        for par in jsondata['protocol_run_info']['args']:
+            if par.startswith('--guppy_filename='):
+                px,model = par.split("=")
+                info_dict['model_def'] = model
+                info_dict['model'] = model
+                print (f"  [green]Found model as {model}[/green]")
+            elif par == '--base_calling=on':
+                info_dict['do_basecall'] = 'no_basecall'
+                print (f"  [green]Found basecalling is already done[/green]")
+            elif par == '--alignment':
+                info_dict['do_align'] = 'no_align'
+                print (f"  [green]Found alignment is already done[/green]")
+            
+        if not model:
+            print("Model was not found in command parameters, capturing the default value")      
+            info_dict['model_def'] = jsondata['protocol_run_info']['meta_info']['tags']['default basecall model']['string_value']
+            info_dict['model'] = info_dict['model_def']
+
+        if 'modbases' in info_dict['model_def']:
+            info_dict['do_modbed'] = 'do_modbed'
+            print (f"  [green]Found modified bases was used, BED will be genered[/green]")
+        
 
         # double check args. This needs a cleaner solution.
         for rg in jsondata['protocol_run_info']['args']:
@@ -189,6 +261,14 @@ def read_flowcell_info(config, info_dict, base_path):
                 info_dict['barcode_kit'] = info_dict['kit']
             else:
                 info_dict['barcode_kit'] = 'no_bc'
+
+        # getting software and versions unless already defined by the html
+        if not "software" in info_dict:
+            if 'software_versions' in jsondata['protocol_run_info']:
+                info_dict['software'] = jsondata['protocol_run_info']['software_versions']
+                if 'guppy_connected_version' in info_dict['software']:
+                    info_dict['software']['Dorado'] = info_dict['software']['guppy_connected_version']
+
     else:
         # try to get txt file.
         print('base path == {}'.format(base_path))
@@ -239,38 +319,40 @@ def read_flowcell_info(config, info_dict, base_path):
                     print(head[0].index('barcode_kit'))
         else:
             sys.exit("no json file, no final summary txt file found. exiting.")
+        
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
 
-    if (config['basecaller']=="guppy"):
-        if config['guppy_basecaller']['guppy_model'] is not None:
-            # record _full_ abnsolute path to model
-            info_dict['model'] = config['guppy_basecaller']['guppy_model']
-        else:
-            # infer model path name from flowcell and kit information using dictionary
-            modeldic = yaml.safe_load(
-                open(config['guppy_basecaller']['model_dictionary'])
-            )
-            info_dict['model'] = modeldic[info_dict['flowcell']][info_dict['kit']]
-            # modify model name if modification calling is desired
-            if config['guppy_basecaller']['guppy_mod'] is not None:
-                patt = r'(\w*)_(\w{3,4}\.cfg)'
-                repl = "modbases_" + config['guppy_basecaller']['guppy_mod']
-                info_dict['model'] = re.sub(patt, r'\1_{}_\2'.format(repl),info_dict['model'])
+    if info_dict["do_basecall"] == "do_basecall":
+        if (config['basecaller']=="guppy"):
+            if config['guppy_basecaller']['guppy_model'] is not None:
+                # record _full_ absolute path to model
+                info_dict['model'] = config['guppy_basecaller']['guppy_model']
+            else:
+                # infer model path name from flowcell and kit information using dictionary
+                modeldic = yaml.safe_load(
+                    open(config['guppy_basecaller']['model_dictionary'])
+                )
+                info_dict['model'] = modeldic[info_dict['flowcell']][info_dict['kit']]
+                # modify model name if modification calling is desired
+                if config['guppy_basecaller']['guppy_mod'] is not None:
+                    patt = r'(\w*)_(\w{3,4}\.cfg)'
+                    repl = "modbases_" + config['guppy_basecaller']['guppy_mod']
+                    info_dict['model'] = re.sub(patt, r'\1_{}_\2'.format(repl),info_dict['model'])
 
-    if (config['basecaller']=="dorado"):
-        if config['dorado_basecaller']['dorado_model'] is not None:
-            # record _full_ abnsolute path to model
-            info_dict['model'] = config['dorado_basecaller']['dorado_model']
-        else:
-            # default name of model derived from json (see above)
-            model_name = info_dict['model_def']
-            # brute force conversion to dorado
-            model_name = guppy2dorado(model_name)
-            info_dict['model'] = os.path.join(
-                config['dorado_basecaller']['model_directory'],
-                model_name
-            )
+        elif (config['basecaller']=="dorado"):
+            if config['dorado_basecaller']['dorado_model'] is not None:
+                # record _full_ abnsolute path to model
+                info_dict['model'] = config['dorado_basecaller']['dorado_model']
+            else:
+                # default name of model derived from json (see above)
+                model_name = info_dict['model_def']
+                # brute force conversion to dorado
+                model_name = guppy2dorado(model_name)
+                info_dict['model'] = os.path.join(
+                    config['dorado_basecaller']['model_directory'],
+                    model_name
+                )
 
     print('model = {}'.format(info_dict['model']))
 
@@ -297,9 +379,6 @@ def read_samplesheet(config):
     # legacy fix: replace missing barcode (NaN or 'No_index.*') by 'no_bc'
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].fillna('no_bc')  
     sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].replace('No_index.*','no_bc', regex=True)
-#   sample_sheet['I7_Index_ID'] = sample_sheet['I7_Index_ID'].str.replace('No_index.*', 'no_bc', regex = True)
-
-
 
     data=dict()
     data['projects'] = []
