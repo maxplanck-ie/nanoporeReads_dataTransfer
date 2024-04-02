@@ -15,8 +15,6 @@ from rich import print
 from npr.communication import send_email
 from npr.snakehelper import glob2reports, get_seqdir, guppy2dorado
 
-match_html_key_val = re.compile(r'"title": "(.+?)", "value": "(.+?)"')
-
 def analysis_done(flowcell, config):
     """
     Determine whether flowcell has already been analysed
@@ -141,6 +139,7 @@ def read_flowcell_info(config, info_dict, base_path):
      - infer model from flowcell + kit
      - add flags for basecalling and modbed
     """
+
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
     flowcell_path = os.path.join(
@@ -179,6 +178,8 @@ def read_flowcell_info(config, info_dict, base_path):
         )
     )
     if html_file:
+        match_html_key_val = re.compile(r'"title": "(.+?)", "value": "(.+?)"')
+
         print("[green]Reading info from html[/green]")
         html_cont = ''
         with open(html_file[0]) as f:
@@ -219,9 +220,6 @@ def read_flowcell_info(config, info_dict, base_path):
         # check run parameters to capture model, check base calling and alignment
         # model is better defined in json, in html is badly reported
         model = None
-        info_dict['do_basecall'] = 'do_basecall'
-        info_dict['do_align'] = 'do_align'
-        info_dict['do_modbed'] = 'no_modbed'
         
         for par in jsondata['protocol_run_info']['args']:
             if par.startswith('--guppy_filename='):
