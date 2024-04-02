@@ -103,6 +103,10 @@ def find_new_flowcell(config):
                 # collect full path to json
                 dirs.append(os.path.dirname(j))
 
+    # filter flowcells based on config['target_flowcell']
+    if  config['target_flowcell']:
+        dirs = [d for d in dirs if config['target_flowcell'] in d]
+
     # Iterate over all flowcell in dir
     for flowcell in dirs:
         print('Working with {}'.format(flowcell))
@@ -345,8 +349,6 @@ def read_flowcell_info(config, info_dict, base_path):
             else:
                 # default name of model derived from json (see above)
                 model_name = info_dict['model_def']
-                # brute force conversion to dorado
-                model_name = guppy2dorado(model_name)
                 info_dict['model'] = os.path.join(
                     config['dorado_basecaller']['model_directory'],
                     model_name
