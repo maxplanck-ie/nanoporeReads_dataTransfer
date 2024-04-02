@@ -12,8 +12,8 @@ rule prepare_bam:
     params:
         idir=config["info_dict"]["base_path"],
         baseout=os.path.join(config['info_dict']['flowcell_path'], "bam"),
-        batch_size=500,
-        opt='-c --no-PG -@'
+        batch_size=config['bam_merge']['batch_size']
+        opt=config['bam_merge']['opt']
     threads:    
         10
     log: 
@@ -40,18 +40,18 @@ rule prepare_bam:
             split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
             if [[ $(ls "{params.baseout}"/bam_list_b* | wc -l) -eq "1" ]]; then
                 # only one batch is created, creating final ouput
-                echo samtools merge {params.opt} {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
-                samtools merge {params.opt} {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
+                echo samtools merge {params.opt} -@ {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
+                samtools merge {params.opt} -@ {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
             
             else
                 # merge in batches, one by one to avoid opened files limit
                 for BATCH in "{params.baseout}"/bam_list_b*; do
-                    echo samtools merge {params.opt} {threads} -b $BATCH -o $BATCH.bam 2>> {log}
-                    samtools merge {params.opt} {threads} -b $BATCH -o $BATCH.bam 2>> {log}
+                    echo samtools merge {params.opt} -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
+                    samtools merge {params.opt} -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
                 done
                 # final merge
-                echo samtools merge {params.opt} {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
-                samtools merge {params.opt} {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
+                echo samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
+                samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
             fi
 
             # clean up
