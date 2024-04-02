@@ -115,6 +115,19 @@ human_rRNA: /path/to/genome.fa
 mouse_genome: /path/to/genome.fa
 mouse_rRNA: /path/to/genome.fa
 
+# options to skip heavy computations
+info_dict:
+  do_basecall: 'do_basecall'
+  do_align: 'do_align'
+  do_modbed: 'do_modbed'
+
+bam_merge:
+  batch_size: 500
+  opt: '-c --no-PG'
+
+porechop:
+  sample_reads: 100000 # as porechop is slow, this is the max number of reads per sample to analyze
+
 email:
   from: a@host
   to: b@host
