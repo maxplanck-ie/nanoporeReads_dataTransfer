@@ -25,15 +25,18 @@ def analysis_done(flowcell, config):
         os.path.basename(flowcell),
         'analysis.done'
         )
-    loc2 = os.path.join(
-        config["paths"]["old_outputDir"],
-        os.path.basename(flowcell),
-        'analysis.done'
-        )
-
-    if os.path.exists(loc1) or os.path.exists(loc2):
+    if os.path.exists(loc1):
         return True
-
+    
+    for old_dir in config["paths"]["old_outputDirs"]:
+        loc2 = os.path.join(
+            old_dir,
+            os.path.basename(flowcell),
+            'analysis.done'
+            )
+        if os.path.exists(loc2):
+            return True
+        
     return False
 
 def filter_flowcell(json, config):
@@ -113,6 +116,7 @@ def find_new_flowcell(config):
 
         # test and continue if 'analysis.done' exists for this flowcell
         if analysis_done(flowcell, config):
+            print(' {} has been analyzed'.format(flowcell))
             continue
 
         # needed here to communicate flowcell with send_email
