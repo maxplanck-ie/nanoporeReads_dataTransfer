@@ -128,7 +128,7 @@ rule qc_porechop:
         # guppy returns "U" for RNA so -abi will not work
         # -abi with too few reads -abi is also prone to failure
         #flag="-abi" if config['info_dict']['protocol'] != 'rna' else "",
-        flag = ""
+        flag = "",
         subsample = config['porechop']['sample_reads']
     log:
         logpat
