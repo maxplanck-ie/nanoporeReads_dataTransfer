@@ -24,13 +24,13 @@ rule prepare:
         if [ -e "{params.idir}/pod5_pass" ] || [ -e "{params.idir}/pod5_fail" ]; then
             # there are pod5 produced (default)
             pod5_files=`find "{params.idir}/" -name '*.pod5'`
-            echo pod5 merge ${{pod5_files}} -o {output.pod5} 2>> {log}
-            pod5 merge ${{pod5_files}} -o {output.pod5} 2>> {log}
+            echo pod5 merge ${{pod5_files}} -o {output.pod5} -t {threads} 2>> {log}
+            pod5 merge ${{pod5_files}} -o {output.pod5} -t {threads} 2>> {log}
         elif [ -e "{params.idir}/fast5_pass" ] || [ -e "{params.idir}/fast5_fail" ]; then
             # there are fast5 produced (legacy)
             fast5_files=`find "{params.idir}/" -name '*.fast5'`
-            echo pod5 convert fast5 ${{fast5_files}} --output {output.pod5} 2>> {log}
-            pod5 convert fast5 ${{fast5_files}} --output {output.pod5} 2>> {log}
+            echo pod5 convert fast5 ${{fast5_files}} -o {output.pod5} -t {threads} --strict 2>> {log}
+            pod5 convert fast5 ${{fast5_files}} -o {output.pod5} -t {threads} --strict 2>> {log}
         else
             echo "No raw data found in {params.idir}, hopefully you got BAMs" 2>> {log}
         fi
