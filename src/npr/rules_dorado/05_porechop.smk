@@ -129,10 +129,15 @@ rule qc_porechop:
         # -abi with too few reads -abi is also prone to failure
         #flag="-abi" if config['info_dict']['protocol'] != 'rna' else "",
         flag = ""
+        subsample = config['porechop']['sample_reads']
     log:
         logpat
     benchmark:
         bchpat
     shell:'''
-        porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {output.fastq} > {output.info} 2> {log}
+        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) > {input.fastq}.subsample.fq
+        
+        porechop_abi {params.flag} -t {threads} -i {input.fastq}.subsample.fq -o {output.fastq} > {output.info} 2> {log}
+        
+        rm {input.fastq}.subsample.fq
     '''

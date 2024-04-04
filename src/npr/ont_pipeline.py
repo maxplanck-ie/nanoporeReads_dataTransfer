@@ -15,8 +15,6 @@ from rich import print
 from npr.communication import send_email
 from npr.snakehelper import glob2reports, get_seqdir, guppy2dorado
 
-match_html_key_val = re.compile(r'"title": "(.+?)", "value": "(.+?)"')
-
 def analysis_done(flowcell, config):
     """
     Determine whether flowcell has already been analysed
@@ -27,15 +25,18 @@ def analysis_done(flowcell, config):
         os.path.basename(flowcell),
         'analysis.done'
         )
-    loc2 = os.path.join(
-        config["paths"]["old_outputDir"],
-        os.path.basename(flowcell),
-        'analysis.done'
-        )
-
-    if os.path.exists(loc1) or os.path.exists(loc2):
+    if os.path.exists(loc1):
         return True
-
+    
+    for old_dir in config["paths"]["old_outputDirs"]:
+        loc2 = os.path.join(
+            old_dir,
+            os.path.basename(flowcell),
+            'analysis.done'
+            )
+        if os.path.exists(loc2):
+            return True
+        
     return False
 
 def filter_flowcell(json, config):
@@ -105,12 +106,17 @@ def find_new_flowcell(config):
                 # collect full path to json
                 dirs.append(os.path.dirname(j))
 
+    # filter flowcells based on config['target_flowcell']
+    if  config['target_flowcell']:
+        dirs = [d for d in dirs if config['target_flowcell'] in d]
+
     # Iterate over all flowcell in dir
     for flowcell in dirs:
         print('Working with {}'.format(flowcell))
 
         # test and continue if 'analysis.done' exists for this flowcell
         if analysis_done(flowcell, config):
+            print(' {} has been analyzed'.format(flowcell))
             continue
 
         # needed here to communicate flowcell with send_email
@@ -141,6 +147,7 @@ def read_flowcell_info(config, info_dict, base_path):
      - infer model from flowcell + kit
      - add flags for basecalling and modbed
     """
+
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
     flowcell_path = os.path.join(
@@ -179,6 +186,8 @@ def read_flowcell_info(config, info_dict, base_path):
         )
     )
     if html_file:
+        match_html_key_val = re.compile(r'"title": "(.+?)", "value": "(.+?)"')
+
         print("[green]Reading info from html[/green]")
         html_cont = ''
         with open(html_file[0]) as f:
@@ -219,9 +228,6 @@ def read_flowcell_info(config, info_dict, base_path):
         # check run parameters to capture model, check base calling and alignment
         # model is better defined in json, in html is badly reported
         model = None
-        info_dict['do_basecall'] = 'do_basecall'
-        info_dict['do_align'] = 'do_align'
-        info_dict['do_modbed'] = 'no_modbed'
         
         for par in jsondata['protocol_run_info']['args']:
             if par.startswith('--guppy_filename='):
@@ -347,8 +353,6 @@ def read_flowcell_info(config, info_dict, base_path):
             else:
                 # default name of model derived from json (see above)
                 model_name = info_dict['model_def']
-                # brute force conversion to dorado
-                model_name = guppy2dorado(model_name)
                 info_dict['model'] = os.path.join(
                     config['dorado_basecaller']['model_directory'],
                     model_name

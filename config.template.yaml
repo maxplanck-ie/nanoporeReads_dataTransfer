@@ -22,7 +22,9 @@ sambahost:
 
 paths:
   offloadDir: /path/to/ont/files (fast5 or pod5)      (output from ONT)
-  old_outputDir: /path/to/output/old_for_legacy
+  old_outputDirs:
+    - /path/to/output/old_for_legacy
+    - /path/to/output/old_for_legacy2
   outputDir: /path/to/output/the_real_one             (aka as work dir)
   groupDir: /rootpath/to/transfer/for/internal/groups (aka "periphery")
   external_groupDir: /rootpath/to/transfer/for/external/groups
@@ -114,6 +116,19 @@ human_genome: /path/to/genome.fa
 human_rRNA: /path/to/genome.fa
 mouse_genome: /path/to/genome.fa
 mouse_rRNA: /path/to/genome.fa
+
+# options to skip heavy computations
+info_dict:
+  do_basecall: 'do_basecall'
+  do_align: 'do_align'
+  do_modbed: 'do_modbed'
+
+bam_merge:
+  batch_size: 500
+  opt: '-c --no-PG'
+
+porechop:
+  sample_reads: 100000 # as porechop is slow, this is the max number of reads per sample to analyze
 
 email:
   from: a@host

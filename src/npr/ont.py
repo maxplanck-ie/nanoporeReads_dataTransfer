@@ -68,6 +68,15 @@ from npr.snakehelper import getfast5foot, scan_multiqc, monitor_storage
     show_default=True,
     help="If known, specify protocol as --protocol"
 )
+
+@click.option(
+    "-f",
+    "--flowcell",
+    default=None,
+    show_default=True,
+    help="Target a specific flowcell"
+)
+
 # run workflow.
 def ont(**kwargs):
     # print what config is used.
@@ -89,6 +98,10 @@ def ont(**kwargs):
         config['snakemake']['dryrun'] = True
         print("Use snakemake in dryrun.")
 
+    if ( kwargs['flowcell'] is not False):
+        config['target_flowcell'] = kwargs['flowcell']
+        print("Target flowcell is [green]{}[/green].".format(config['target_flowcell']))
+    
     # add rulesPath to config['paths'] _not_ to config['snakemake']
     # since 'rulesPath' is not a snakemake option
     config['paths']['rulesPath'] = os.path.join(
