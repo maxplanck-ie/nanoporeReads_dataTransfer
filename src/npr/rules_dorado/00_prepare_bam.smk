@@ -12,7 +12,7 @@ rule prepare_bam:
     params:
         idir=config["info_dict"]["base_path"],
         baseout=os.path.join(config['info_dict']['flowcell_path'], "bam"),
-        batch_size=config['bam_merge']['batch_size']
+        batch_size=config['bam_merge']['batch_size'],
         opt=config['bam_merge']['opt']
     threads:    
         10
