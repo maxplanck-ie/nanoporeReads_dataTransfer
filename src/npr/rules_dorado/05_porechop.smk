@@ -118,11 +118,10 @@ rule qc_porechop:
     input:
         fastq=source
     output:
-        fastq=target_fastq,
         info=target_info,
     wildcard_constraints:
-        # exclude all sample_name that end on "_porechop.fastq.gz" (already chopped) 
-        sample_name = r'(?!.*\.porechop\.fastq\.gz$).*',
+        # exclude all sample_name that end on "_porechop.info" (already chopped) 
+        sample_name = r'(?!.*\.porechop\.info$).*',
     threads: 8
     params:
         # guppy returns "U" for RNA so -abi will not work
@@ -135,9 +134,9 @@ rule qc_porechop:
     benchmark:
         bchpat
     shell:'''
-        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) > {input.fastq}.subsample.fq
+        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {input.fastq}.subsample.fq.gz
         
-        porechop_abi {params.flag} -t {threads} -i {input.fastq}.subsample.fq -o {output.fastq} > {output.info} 2> {log}
+        porechop_abi {params.flag} -t {threads} -i {input.fastq}.subsample.fq.gz -o {input.fastq}.subsample.porechop.fq.gz > {output.info} 2> {log}
         
-        rm {input.fastq}.subsample.fq
+        #rm {input.fastq}.subsample.fq.gz {input.fastq}.subsample.porechop.fq.gz
     '''
