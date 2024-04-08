@@ -18,12 +18,15 @@ rule kraken:
         report=target
     params:
         db=config['kraken']['db'],
-        threads=config['kraken']['threads'],
         output="-"  # supress output
     log:
         logpat
+    threads:
+        10
+    conda:
+        "envs/kraken.yaml"
     benchmark:
         bchpat
     shell:'''
-        kraken2 -db {params.db} --threads {params.threads} --use-names {input.fastq}  --output {params.output} --report {output.report} 2> {log}
+        kraken2 -db {params.db} --threads {threads} --use-names {input.fastq}  --output {params.output} --report {output.report} 2> {log}
     '''

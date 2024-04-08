@@ -14,8 +14,10 @@ rule prepare:
         flag=touch("flags/00_prepare.done")
     params:
         idir = config["info_dict"]["base_path"]
-    threads:    
+    threads:
         10
+    conda:
+        "envs/pod5.yaml"
     log: 
         'log/00_prepare.log'
     benchmark:

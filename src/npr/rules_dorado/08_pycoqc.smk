@@ -27,6 +27,8 @@ rule pycoqc:
         json=target_json
     benchmark:
         bchpat
+    conda:
+        "envs/align.yaml"
     shell:'''
         touch {output.html}  # since pycoqc may fail
         pycoQC --summary_file {input.seqsum} \

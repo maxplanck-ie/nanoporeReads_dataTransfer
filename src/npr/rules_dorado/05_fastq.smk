@@ -30,6 +30,8 @@ rule fastq:
         bchpat
     threads:
         16
+    conda:
+        "envs/samtools.yaml"
     shell:
         """
         # This assumes that all reads in BAM file are designated READ_OTHER 

@@ -25,10 +25,10 @@ rule bam2modbed:
         do_modbed = config['info_dict']['do_modbed']
     benchmark:
         bchpat
-    threads: 4
+    threads: 10
+    conda:
+        "envs/modkit.yaml"
     shell:'''
-        # future: consider filtering zero modification or "nan" with "| awk '$11 != "nan" && $11>0.0'"
-        #   remove or reduce stderr from processing
         if [[ "{params.do_modbed}" == "do_modbed" ]]; then
             echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
             modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}

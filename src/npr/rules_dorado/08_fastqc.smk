@@ -23,11 +23,14 @@ rule fastqc:
     params:
         odir = lambda wildcards: qc_dir.format(project=wildcards.project),
         memory = config['fastqc'].get('memory', 10000)
-    threads: 4
+    threads:
+        10
+    conda:
+        "envs/falco.yaml"
     log:
         logpat
     benchmark:
         bchpat
     shell:''' 
-        fastqc --memory={params.memory} -t {threads} -o {params.odir} --dir {params.odir} --quiet {input} 2> {log}
+        falco --memory={params.memory} -t {threads} -o {params.odir} --dir {params.odir} --quiet {input} 2> {log}
     '''

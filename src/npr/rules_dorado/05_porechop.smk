@@ -122,7 +122,9 @@ rule qc_porechop:
     wildcard_constraints:
         # exclude all sample_name that end on "_porechop.info" (already chopped) 
         sample_name = r'(?!.*\.porechop\.info$).*',
-    threads: 8
+    threads: 16
+    conda:
+        "envs/porechop.yaml"
     params:
         # guppy returns "U" for RNA so -abi will not work
         # -abi with too few reads -abi is also prone to failure

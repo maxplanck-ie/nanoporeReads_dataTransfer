@@ -14,8 +14,10 @@ rule prepare_bam:
         baseout=os.path.join(config['info_dict']['flowcell_path'], "bam"),
         batch_size=config['bam_merge']['batch_size'],
         opt=config['bam_merge']['opt']
-    threads:    
+    threads:
         10
+    conda:
+        "envs/ont_samtools.yaml"
     log: 
         'log/00_prepare_bam.log'
     benchmark:

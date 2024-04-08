@@ -23,7 +23,9 @@ rule multiqc:
         mdir=os.path.join(project_qc, 'multiqc'),
         cfg=config['multiqc']['configfile'],
         sampleDict=os.path.join(project_qc, 'sample_names.tsv'),
-        sampleSheet=os.path.join('reports', 'SampleSheet.csv'),
+        sampleSheet=os.path.join('reports', 'SampleSheet.csv')
+    conda:
+        "envs/multiqc.yaml"
     log: logpat
     benchmark: bchpat
     shell:'''
