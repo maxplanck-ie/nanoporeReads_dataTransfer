@@ -1,0 +1,7 @@
+name: ont-align
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - samtools ==  1.19.2
+  - pycoqc == 2.5.0.3

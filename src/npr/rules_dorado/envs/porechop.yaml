@@ -1,0 +1,6 @@
+name: ont_porechop
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - porechop_abi == 0.5.0

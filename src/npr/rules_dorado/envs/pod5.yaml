@@ -1,0 +1,9 @@
+name: ont_pod5
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python >= 3.10
+  - pip
+  - pip:
+    - pod5 == 0.3.10

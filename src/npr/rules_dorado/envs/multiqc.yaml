@@ -1,0 +1,6 @@
+name: ont-multiqc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - multiqc == 1.19
