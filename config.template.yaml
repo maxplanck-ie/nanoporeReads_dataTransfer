@@ -72,28 +72,11 @@ guppy_basecaller:
   guppy_model: /path/to/guppy/model/ # overwrite inferred name
   guppy_mod:  # specify "5mc_cg" or similar if modification call is desired
 
-mapping:
-  index_options: -t 5 -K 20M -x map-ont -d
-  mapping_cmd: path/to/minimap2
-  minimap2_version: '2.24-r1122'
-  mapping_dna_options: -t 40 -I100g -ax map-ont -L
-  mapping_rna_options: -t 40 -I100g -ax splice -L -u f
-  samtools_cmd: /path/to/samtools
-  samtools_options: -@ 4 -m 200G -T /tmp
-  bedtools_cmd: /path/to/bedtools
-  bedtools_option: -s -split -name
+#fastqc:
+#  memory: 10000
 
-nanocomp:
-  qc_cmd: NanoComp
-  qc_options: -t 20 --names
-
-pycoQc:
-  barcodeSplit: /path/to/pycoqc/Barcode_split -u -v -f
-  pycoQc: pycoQC
-  pycoQc_opts: ""
-
-fastqc:
-  memory: 10000
+kraken:
+  db: /path/to/kraken2/db
 
 multiqc:
   configfile: /path/to/multiqc/config/file
