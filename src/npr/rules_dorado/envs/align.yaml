@@ -4,7 +4,7 @@ channels:
   - bioconda
 dependencies:
   - python >= 3.10
+  - pip
   - samtools == 1.19.2
-  - pycoqc == 2.5.0.3
-  - pysam
-  - jupyter_highlight_selected_word
+  - pip
+    - pycoqc == 2.5.2
