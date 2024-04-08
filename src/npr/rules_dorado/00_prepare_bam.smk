@@ -17,7 +17,7 @@ rule prepare_bam:
     threads:
         10
     conda:
-        "envs/ont_samtools.yaml"
+        "envs/samtools.yaml"
     log: 
         'log/00_prepare_bam.log'
     benchmark:
