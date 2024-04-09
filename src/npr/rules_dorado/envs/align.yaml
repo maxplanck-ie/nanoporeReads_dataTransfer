@@ -6,5 +6,5 @@ dependencies:
   - python >= 3.10
   - pip
   - samtools == 1.19.2
-  - pip
-    - pycoQC
+  - pip:
+    - pycoQC == 2.5.2
