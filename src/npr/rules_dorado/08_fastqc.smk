@@ -26,11 +26,11 @@ rule fastqc:
     threads:
         10
     conda:
-        "envs/falco.yaml"
+        "envs/fastqc.yaml"
     log:
         logpat
     benchmark:
         bchpat
     shell:''' 
-        falco --memory={params.memory} -t {threads} -o {params.odir} --dir {params.odir} --quiet {input} 2> {log}
+        fastqc --memory={params.memory} -t {threads} -o {params.odir} --dir {params.odir} --quiet {input} 2> {log}
     '''
