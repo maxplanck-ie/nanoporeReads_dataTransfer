@@ -7,4 +7,4 @@ dependencies:
   - pip
   - samtools == 1.19.2
   - pip
-    - pycoqc == 2.5.2
+    - pycoQC == 2.5.2
