@@ -127,7 +127,7 @@ rule qc_porechop:
     conda:
         "ont-ppp-porechop"
     params:
-        flag = "",
+        flag = "-v 3",
         subsample = config['porechop']['sample_reads'],
         subset = subset_fastq,
         target = target_fastq
