@@ -4,6 +4,7 @@ Adaptor trimming with porechop and summary
 
 # define source and target pattern
 source = sample_dat + ".fastq.gz"
+subset_fastq = sample_dat + "_subset.fastq.gz"
 target_fastq = sample_dat + "_porechop.fastq.gz"
 target_info  =  sample_qc + "_porechop.info"
 logpat = sample_log + "_porechop.log"
@@ -116,9 +117,9 @@ rule porechop_final:
 
 rule qc_porechop:
     input:
-        fastq=source
+        fastq = source
     output:
-        info=target_info,
+        info = target_info
     wildcard_constraints:
         # exclude all sample_name that end on "_porechop.info" (already chopped) 
         sample_name = r'(?!.*\.porechop\.info$).*',
@@ -133,13 +134,7 @@ rule qc_porechop:
     benchmark:
         bchpat
     shell:'''
-        MYTEMP=$(mktemp -d /tmp/porechop.XXXXXXXXXX);
-
-        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {input.fastq}.subsample.fq.gz;
+        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {subset_fastq};
         
-        porechop_abi {params.flag} -t {threads} -i {input.fastq}.subsample.fq.gz -o {input.fastq}.subsample.porechop.fq.gz -tmp $MYTEMP > {output.info} 2> {log};
-        
-        #rm {input.fastq}.subsample.fq.gz {input.fastq}.subsample.porechop.fq.gz;
-
-        rm -rf $MYTEMP;
+        porechop_abi {params.flag} -t {threads} -i {subset_fastq} -o {target_fastq} | tee {output.info} 2> {log};
     '''
