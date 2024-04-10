@@ -18,7 +18,7 @@ transfer_dir = "transfer"
 org  = config['info_dict']['organism']
 prot = config['info_dict']['protocol']
 genome = config['genome'].get(org, None)
-analysis_name = "_".join("Analysis", org, prot)
+analysis_name = "_".join(["Analysis", org, prot])
 
 # common project-level path patterns
 project_dir = os.path.join(transfer_dir, "Project_{project}")
