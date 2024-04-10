@@ -136,7 +136,11 @@ rule qc_porechop:
     benchmark:
         bchpat
     shell:'''
-        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {params.subset};
+        echo "extractting {params.subsample} reads"
+        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {params.subset}
         
-        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} | tee {output.info} 2> {log};
+        ls -lh {params.subset}
+        
+        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2> {log}"
+        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2> {log}
     '''
