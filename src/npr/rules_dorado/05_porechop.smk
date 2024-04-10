@@ -129,12 +129,14 @@ rule qc_porechop:
     params:
         flag = "",
         subsample = config['porechop']['sample_reads']
+        subset = subset_fastq
+        target = target_fastq
     log:
         logpat
     benchmark:
         bchpat
     shell:'''
-        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {subset_fastq};
+        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {params.subset};
         
-        porechop_abi {params.flag} -t {threads} -i {subset_fastq} -o {target_fastq} | tee {output.info} 2> {log};
+        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} | tee {output.info} 2> {log};
     '''
