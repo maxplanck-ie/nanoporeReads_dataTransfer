@@ -137,8 +137,8 @@ rule qc_porechop:
         bchpat
     shell:'''
         echo "extracting {params.nlines} lines"
-        zcat {input.fastq} | head -n {params.nlines} > {params.subset}
+        zcat {input.fastq} | head -n {params.nlines} > {params.subset} 2>> {log} || true
         
-        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2> {log}"
-        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2> {log}
+        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}"
+        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}
     '''
