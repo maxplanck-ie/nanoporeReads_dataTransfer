@@ -1,4 +1,4 @@
-name: ont-align
+name: ont-ppp-align
 channels:
   - conda-forge
   - bioconda

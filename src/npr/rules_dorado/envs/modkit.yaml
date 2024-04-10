@@ -1,4 +1,4 @@
-name: ont-modkit
+name: ont-ppp-modkit
 channels:
   - conda-forge
   - bioconda

@@ -1,7 +1,0 @@
-name: modbam2bed
-channels:
-  - bioconda
-  - conda-forge
-  - epi2melabs
-dependencies:
-  - modbam2bed

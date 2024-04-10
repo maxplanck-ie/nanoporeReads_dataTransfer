@@ -1,4 +1,4 @@
-name: ont-kraken
+name: ont-ppp-kraken
 channels:
   - conda-forge
   - bioconda

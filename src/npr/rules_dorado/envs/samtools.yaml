@@ -1,4 +1,4 @@
-name: ont_samtools
+name: ont-ppp-samtools
 channels:
   - conda-forge
   - bioconda

@@ -1,4 +1,4 @@
-name: ont_porechop
+name: ont-ppp-porechop
 channels:
   - conda-forge
   - bioconda

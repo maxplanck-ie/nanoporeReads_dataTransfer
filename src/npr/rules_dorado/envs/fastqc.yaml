@@ -1,4 +1,4 @@
-name: ont-fastqc
+name: ont-ppp-fastqc
 channels:
   - conda-forge
   - bioconda

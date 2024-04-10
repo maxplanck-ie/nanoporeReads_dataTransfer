@@ -1,4 +1,4 @@
-name: ont-falco
+name: ont-ppp-falco
 channels:
   - conda-forge
   - bioconda

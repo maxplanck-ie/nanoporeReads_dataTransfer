@@ -1,4 +1,4 @@
-name: ont_pod5
+name: ont-ppp-pod5
 channels:
   - conda-forge
   - bioconda
