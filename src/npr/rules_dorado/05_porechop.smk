@@ -136,7 +136,7 @@ rule qc_porechop:
     benchmark:
         bchpat
     shell:'''
-        echo "extractting {params.subsample} reads"
+        echo "extractting {params.nlines} lines"
         gunzip -c {input.fastq} | head -n {params.nlines} > {params.subset}
         
         ls -lh {params.subset}
