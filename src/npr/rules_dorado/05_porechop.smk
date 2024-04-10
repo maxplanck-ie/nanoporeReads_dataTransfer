@@ -115,9 +115,27 @@ rule porechop_final:
         print_info(info, dir_name, key="best_start")
         print_info(info, dir_name, key="best_end")
 
-rule qc_porechop:
+rule subset_fastq:
     input:
         fastq = source
+    output:
+        subset = subset_fastq
+    threads: 4
+    params:
+        nlines = int(config['porechop']['sample_reads']) * 4,
+    log:
+        logpat
+    benchmark:
+        bchpat
+    shell:'''
+        echo "extracting {params.nlines} lines"
+        zcat {input.fastq} | head -n {params.nlines} | gzip > {params.subset} 2>> {log}
+    '''
+
+
+rule qc_porechop:
+    input:
+        fastq = subset_fastq
     output:
         info = target_info
     wildcard_constraints:
@@ -127,18 +145,13 @@ rule qc_porechop:
     conda:
         "ont-ppp-porechop"
     params:
-        flag = "-v 3",
-        nlines = int(config['porechop']['sample_reads']) * 4,
-        subset = subset_fastq,
+        flag = "",
         target = target_fastq
     log:
         logpat
     benchmark:
         bchpat
     shell:'''
-        echo "extracting {params.nlines} lines"
-        zcat {input.fastq} | head -n {params.nlines} > {params.subset} 2>> {log} || true
-        
-        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}"
-        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}
+        echo "porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {params.target} > {output.info} 2>> {log}"
+        porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {params.target} > {output.info} 2>> {log}
     '''
