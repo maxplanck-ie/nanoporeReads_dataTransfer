@@ -4,8 +4,8 @@ Adaptor trimming with porechop and summary
 
 # define source and target pattern
 source = sample_dat + ".fastq.gz"
-subset_fastq = sample_dat + "_subset.fastq.gz"
-target_fastq = sample_dat + "_porechop.fastq.gz"
+subset_fastq = sample_dat + "_subset.fastq"
+target_fastq = sample_dat + "_porechop.fastq"
 target_info  =  sample_qc + "_porechop.info"
 logpat = sample_log + "_porechop.log"
 bchpat = sample_bch + "_porechop.tsv"
@@ -128,7 +128,7 @@ rule qc_porechop:
         "ont-ppp-porechop"
     params:
         flag = "-v 3",
-        subsample = config['porechop']['sample_reads'],
+        nlines = int(config['porechop']['sample_reads']) * 4,
         subset = subset_fastq,
         target = target_fastq
     log:
@@ -137,7 +137,7 @@ rule qc_porechop:
         bchpat
     shell:'''
         echo "extractting {params.subsample} reads"
-        gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {params.subset}
+        gunzip -c {input.fastq} | head -n {params.nlines} > {params.subset}
         
         ls -lh {params.subset}
         
