@@ -17,16 +17,14 @@ transfer_dir = "transfer"
 # define project-specific paths and variable
 org  = config['info_dict']['organism']
 prot = config['info_dict']['protocol']
-genome=config['genome'].get(org, None)
-
+genome = config['genome'].get(org, None)
+analysis_name = "_".join("Analysis", org, prot)
 
 # common project-level path patterns
 project_dir = os.path.join(transfer_dir, "Project_{project}")
 data_dir = os.path.join(project_dir, "Data")
 project_qc = os.path.join(project_dir, "QC")
-analysis_dir = os.path.join(project_dir, f"Analysis_{org}_{prot}")
-
-#sample_dir = os.path.join(project_dir, "Sample_{sample_id}")
+analysis_dir = os.path.join(project_dir, analysis_name)
 
 # common sample level patterns
 # a sample has a (user-defined) name, a (parkour/samplesheet-defined) ID, and an associated project
