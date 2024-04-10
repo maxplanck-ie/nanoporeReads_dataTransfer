@@ -128,8 +128,8 @@ rule qc_porechop:
         "ont-ppp-porechop"
     params:
         flag = "",
-        subsample = config['porechop']['sample_reads']
-        subset = subset_fastq
+        subsample = config['porechop']['sample_reads'],
+        subset = subset_fastq,
         target = target_fastq
     log:
         logpat
