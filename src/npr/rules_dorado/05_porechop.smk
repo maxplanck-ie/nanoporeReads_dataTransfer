@@ -135,7 +135,7 @@ rule qc_porechop:
     shell:'''
         gunzip -c {input.fastq} | head -$(( {params.subsample} * 4 )) | gzip > {input.fastq}.subsample.fq.gz
         
-        porechop_abi {params.flag} -t {threads} -i {input.fastq}.subsample.fq.gz -o {input.fastq}.subsample.porechop.fq.gz > {output.info} 2> {log}
+        porechop_abi {params.flag} -t {threads} -i {input.fastq}.subsample.fq.gz -o {input.fastq}.subsample.porechop.fq > {output.info} 2> {log}
         
         #rm {input.fastq}.subsample.fq.gz {input.fastq}.subsample.porechop.fq.gz
     '''
