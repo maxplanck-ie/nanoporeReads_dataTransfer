@@ -124,11 +124,8 @@ rule qc_porechop:
         sample_name = r'(?!.*\.porechop\.info$).*',
     threads: 16
     conda:
-        "envs/porechop.yaml"
+        "ont-ppp-porechop"
     params:
-        # guppy returns "U" for RNA so -abi will not work
-        # -abi with too few reads -abi is also prone to failure
-        #flag="-abi" if config['info_dict']['protocol'] != 'rna' else "",
         flag = "",
         subsample = config['porechop']['sample_reads']
     log:

@@ -27,7 +27,7 @@ rule bam2modbed:
         bchpat
     threads: 10
     conda:
-        "envs/modkit.yaml"
+        "ont-ppp-modkit"
     shell:'''
         if [[ "{params.do_modbed}" == "do_modbed" ]]; then
             echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}

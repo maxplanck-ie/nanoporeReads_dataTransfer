@@ -26,7 +26,7 @@ rule fastqc:
     threads:
         10
     conda:
-        "envs/fastqc.yaml"
+        "ont-ppp-fastqc"
     log:
         logpat
     benchmark:

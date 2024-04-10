@@ -25,7 +25,7 @@ rule multiqc:
         sampleDict=os.path.join(project_qc, 'sample_names.tsv'),
         sampleSheet=os.path.join('reports', 'SampleSheet.csv')
     conda:
-        "envs/multiqc.yaml"
+        "ont-ppp-multiqc"
     log: logpat
     benchmark: bchpat
     shell:'''

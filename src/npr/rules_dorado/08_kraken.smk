@@ -24,7 +24,7 @@ rule kraken:
     threads:
         10
     conda:
-        "envs/kraken.yaml"
+        "ont-ppp-kraken"
     benchmark:
         bchpat
     shell:'''

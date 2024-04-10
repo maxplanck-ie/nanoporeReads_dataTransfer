@@ -39,7 +39,7 @@ rule align:
     threads:
         10 # same number of threads will be applied to dorado-align and samtools
     conda:
-        "envs/align.yaml"
+        "ont-ppp-align"
     shell:
         """
         echo "do_align: {params.do_align}" 2>> {log}

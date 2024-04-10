@@ -31,14 +31,10 @@ rule fastq:
     threads:
         16
     conda:
-        "envs/samtools.yaml"
+        "ont-ppp-samtools"
     shell:
         """
         # This assumes that all reads in BAM file are designated READ_OTHER 
-        # -T "*" writes flags (e.g modifications) into fastq header
-        samtools fastq -@ {threads} -T "*" {input.bam_file} -0 {output.file} 2>> {log}
-
-        #the following is more general and has better compression, but it is much slower: 
-        #samtools fastq -@ {threads} {input.bam_file} | pigz -p {threads} > {output.file} 2>> {log}
+        samtools fastq -@ {threads} {input.bam_file} -0 {output.file} 2>> {log}
         """
 

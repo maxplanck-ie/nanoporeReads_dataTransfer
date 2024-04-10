@@ -17,7 +17,7 @@ rule prepare:
     threads:
         10
     conda:
-        "envs/pod5.yaml"
+        "ont-ppp-pod5"
     log: 
         'log/00_prepare.log'
     benchmark:
