@@ -115,25 +115,6 @@ rule porechop_final:
         print_info(info, dir_name, key="best_start")
         print_info(info, dir_name, key="best_end")
 
-rule subset_fastq:
-    input:
-        fastq = source
-    output:
-        subset = subset_fastq
-    threads: 4
-    params:
-        nlines = int(config['porechop']['sample_reads']) * 4
-    conda:
-        "ont-ppp-seqkit"
-    log:
-        logpat
-    benchmark:
-        bchpat
-    shell:'''
-        echo "extracting {params.nlines} lines"
-        seqkit head -n {params.nlines} -o {params.subset} {input.fastq} 2>> {log}
-    '''
-
 
 rule qc_porechop:
     input:
@@ -143,17 +124,22 @@ rule qc_porechop:
     wildcard_constraints:
         # exclude all sample_name that end on "_porechop.info" (already chopped) 
         sample_name = r'(?!.*\.porechop\.info$).*',
-    threads: 16
+    threads: 10
     conda:
         "ont-ppp-porechop"
     params:
         flag = "",
+        nlines = int(config['porechop']['sample_reads']) * 4,
+        subset = subset_fastq,
         target = target_fastq
     log:
         logpat
     benchmark:
         bchpat
     shell:'''
-        echo "porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {params.target} > {output.info} 2>> {log}"
-        porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {params.target} > {output.info} 2>> {log}
+        echo "extracting {params.nlines} lines"
+        seqkit head -n {params.nlines} -o {params.subset} {input.fastq} 2>> {log}
+        
+        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}"
+        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}
     '''
