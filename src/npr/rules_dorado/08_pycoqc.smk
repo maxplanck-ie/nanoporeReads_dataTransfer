@@ -29,8 +29,10 @@ rule pycoqc:
     benchmark:
         bchpat
     conda:
-        "ont-ppp-align"
+        "ont-ppp-pycoqc"
     shell:'''
-        #touch {output.html}  # since pycoqc may fail
-        pycoQC --summary_file {input.seqsum} {params.par} -o {output.html} -j {output.json} >> {log} 2>&1
+        touch {output.html}  # since pycoqc may fail
+        touch {output.json}  # since pycoqc may fail
+
+        pycoQC --summary_file {input.seqsum} {params.par} -o {output.html} -j {output.json} >> {log} 2>&1 || true
     '''
