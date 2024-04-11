@@ -4,8 +4,8 @@ Adaptor trimming with porechop and summary
 
 # define source and target pattern
 source = sample_dat + ".fastq.gz"
-subset_fastq = sample_dat + "_subset.fastq.gz"
-target_fastq = sample_dat + "_porechop.fastq.gz"
+subset_fastq = sample_dat + ".subset.fastq.gz"
+target_fastq = sample_dat + ".subset_porechop.fastq.gz"
 target_info  =  sample_qc + "_porechop.info"
 logpat = sample_log + "_porechop.log"
 bchpat = sample_bch + "_porechop.tsv"
