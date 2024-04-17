@@ -101,7 +101,7 @@ mouse_genome: /path/to/genome.fa
 mouse_rRNA: /path/to/genome.fa
 
 # options to skip heavy computations
-info_dict:
+default_process:
   do_basecall: 'do_basecall'
   do_align: 'do_align'
   do_modbed: 'do_modbed'

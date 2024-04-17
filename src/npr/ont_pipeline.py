@@ -148,6 +148,11 @@ def read_flowcell_info(config, info_dict, base_path):
      - add flags for basecalling and modbed
     """
 
+    # adding default flags for basecalling, align and modbed
+    info_dict["do_basecall"] = config["default_process"]["do_basecall"]
+    info_dict["do_align"] = config["default_process"]["do_align"]
+    info_dict["do_modbed"] = config["default_process"]["do_modbed"]
+    
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
     flowcell_path = os.path.join(
