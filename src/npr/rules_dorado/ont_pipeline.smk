@@ -17,16 +17,14 @@ transfer_dir = "transfer"
 # define project-specific paths and variable
 org  = config['info_dict']['organism']
 prot = config['info_dict']['protocol']
-genome=config['genome'].get(org, None)
-
+genome = config['genome'].get(org, None)
+analysis_name = "_".join(["Analysis", org, prot])
 
 # common project-level path patterns
 project_dir = os.path.join(transfer_dir, "Project_{project}")
 data_dir = os.path.join(project_dir, "Data")
 project_qc = os.path.join(project_dir, "QC")
-analysis_dir = os.path.join(project_dir, f"Analysis_{org}_{prot}")
-
-#sample_dir = os.path.join(project_dir, "Sample_{sample_id}")
+analysis_dir = os.path.join(project_dir, analysis_name)
 
 # common sample level patterns
 # a sample has a (user-defined) name, a (parkour/samplesheet-defined) ID, and an associated project
@@ -111,19 +109,19 @@ rule finalize:
         done >> {params.bench_comb}
     '''
 
-include: f"{rule_path}/00_start.smk"
-include: f"{rule_path}/00_prepare.smk"
-include: f"{rule_path}/00_prepare_bam.smk"
-include: f"{rule_path}/01_basecall.smk"
-include: f"{rule_path}/02_demux.smk"
-include: f"{rule_path}/03_rename.smk"
-include: f"{rule_path}/04_seqsum.smk"
-include: f"{rule_path}/05_fastq.smk"
-include: f"{rule_path}/05_porechop.smk"
-include: f"{rule_path}/06_align.smk"
-include: f"{rule_path}/07_modbed.smk"
-include: f"{rule_path}/08_fastqc.smk"
-include: f"{rule_path}/08_pycoqc.smk"
-include: f"{rule_path}/08_kraken.smk"
-include: f"{rule_path}/08_multiqc.smk"
-include: f"{rule_path}/09_transfer.smk"
+include: "00_start.smk"
+include: "00_prepare.smk"
+include: "00_prepare_bam.smk"
+include: "01_basecall.smk"
+include: "02_demux.smk"
+include: "03_rename.smk"
+include: "04_seqsum.smk"
+include: "05_fastq.smk"
+include: "05_porechop.smk"
+include: "06_align.smk"
+include: "07_modbed.smk"
+include: "08_fastqc.smk"
+include: "08_pycoqc.smk"
+include: "08_kraken.smk"
+include: "08_multiqc.smk"
+include: "09_transfer.smk"

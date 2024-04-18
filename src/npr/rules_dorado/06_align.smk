@@ -38,6 +38,8 @@ rule align:
         do_align = config['info_dict']['do_align']
     threads:
         10 # same number of threads will be applied to dorado-align and samtools
+    conda:
+        "ont-ppp-align"
     shell:
         """
         echo "do_align: {params.do_align}" 2>> {log}

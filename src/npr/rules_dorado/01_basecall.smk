@@ -49,10 +49,12 @@ rule basecall:
         dir='pod5',
         bam= os.path.join(config['info_dict']['flowcell_path'],"bam/basecalls.bam"),
         do_basecall=config['info_dict']['do_basecall']
-    run: 
-        while not gpu_available():
-            print("GPU is unavailable - sleep")
-            time.sleep(60)
+    run:
+        # now we wait for the GPU only when basecalling is needed
+        if config['info_dict']['do_basecall'] == "do_basecall":
+            while not gpu_available():
+                print("GPU is unavailable - sleep")
+                time.sleep(60)
 
         shell(
         """

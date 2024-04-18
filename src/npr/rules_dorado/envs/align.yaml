@@ -1,0 +1,11 @@
+name: ont-ppp-align
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python >= 3.10
+  - pip
+  - samtools == 1.19.2
+  - pysam
+  - pip:
+    - pycoQC == 2.5.2

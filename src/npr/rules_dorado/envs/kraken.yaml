@@ -1,0 +1,6 @@
+name: ont-ppp-kraken
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - kraken2 == 2.1.3

@@ -15,20 +15,24 @@ rule pycoqc_final:
 
 rule pycoqc:
     input: 
-        seqsum=source
+        seqsum = source
     output:
-        html=target_html,
+        html = target_html,
+        json = target_json
     wildcard_constraints:
         # exclude all sample files that end on ".align.bam" (already aligned) 
         sample_name = r'(?!.*\.align_pycoqc\.json$).*',
-        sample_id="[0-9]{2}L[0-9]{6}"
-    log:
-        file=logpat,
-        json=target_json
+        sample_id = "[0-9]{2}L[0-9]{6}"
+    log: logpat
+    params:
+        par = config['pycoQc']['pycoQc_opts']
     benchmark:
         bchpat
+    conda:
+        "ont-ppp-pycoqc"
     shell:'''
         touch {output.html}  # since pycoqc may fail
-        pycoQC --summary_file {input.seqsum} \
-        {config[pycoQc][pycoQc_opts]} -o {output.html} -j {log.json} >> {log.file} 2>&1 || true
+        touch {output.json}  # since pycoqc may fail
+
+        pycoQC --summary_file {input.seqsum} {params.par} -o {output.html} -j {output.json} >> {log} 2>&1 || true
     '''

@@ -23,7 +23,10 @@ rule fastqc:
     params:
         odir = lambda wildcards: qc_dir.format(project=wildcards.project),
         memory = config['fastqc'].get('memory', 10000)
-    threads: 4
+    threads:
+        10
+    conda:
+        "ont-ppp-fastqc"
     log:
         logpat
     benchmark:

@@ -1,0 +1,6 @@
+name: ont-ppp-seqkit
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - seqkit == 2.8.1
