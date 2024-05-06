@@ -75,8 +75,8 @@ rule transfer_data:
                     )
                 )
                 f.write(
-                    'guppy version: {}\n'.format(
-                        os.path.basename(config['guppy_basecaller']['guppy_version'])
+                    'dorado version: {}\n'.format(
+                        os.path.basename(config['dorado_basecaller']['dorado_version'])
                     )
                 )
             # copy over data.

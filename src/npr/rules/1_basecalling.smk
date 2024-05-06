@@ -1,4 +1,4 @@
-from npr.snakehelper import guppy_basecalling, dorado_basecalling
+from npr.snakehelper import dorado_basecalling
 from rich import print
 import subprocess as sp
 import time
@@ -51,13 +51,6 @@ rule basecalling:
         if params.basecaller == "dorado":
             print('[yellow] run dorado [/yellow]')
             cmd = dorado_basecalling(
-                params.cfg,
-                params.cmdline,
-                log.log
-            )
-        elif params.basecaller == "guppy":
-            print('[yellow] run guppy [/yellow]')  
-            cmd = guppy_basecalling(
                 params.cfg,
                 params.cmdline,
                 log.log

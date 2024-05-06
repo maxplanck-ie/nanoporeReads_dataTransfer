@@ -49,7 +49,7 @@ parkour:
   pem: path/to/certificate
 
 
-basecaller: dorado # or guppy ()
+basecaller: dorado
 
 dorado_basecaller:
   dorado_cmd: /path/to/dorado/basecaller
@@ -59,18 +59,6 @@ dorado_basecaller:
   dorado_output: fastq # set to activate bam2fastq conversion (default for legacy)
   dorado_model: # model name to overwrite inferred name
   model_directory: /path/to/dorado/models
-
-guppy_basecaller:
-  base_calling_cmd: path/to/guppy_basecaller
-  guppy_version: '6.5.7'
-  base_calling_options: --recursive --compress_fastq --chunk_size 2000 --chunks_per_runner 420 --do_read_splitting --trim_primers --trim_adapters --detect_mid_strand_adapter --detect_adapter
-# use with care: many guppy options are not functional or unsupported
-  base_calling_barcode_options: --enable_trim_barcodes
-  base_calling_RNA_options: --reverse_sequence true --u_substitution true --trim_strategy rna
-  guppy_model: # model name to overwrite inferred name
-  model_dictionary: /path/to/guppy/model.cfg # a dictionary to convert (flowcell, kits) -> guppy_model
-  guppy_model: /path/to/guppy/model/ # overwrite inferred name
-  guppy_mod:  # specify "5mc_cg" or similar if modification call is desired
 
 #fastqc:
 #  memory: 10000

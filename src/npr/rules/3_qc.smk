@@ -15,8 +15,7 @@ rule qc_porechop:
         info="FASTQC_Project_{project}/Sample_{sample_id}/{sample_name}_porechop.info",
     threads: 8
     params:
-        # guppy returns "U" for RNA so -abi will not work
-        flag="-abi" if config['info_dict']['protocol'] != 'rna' else "",
+        flag=""
     log:
         err='log/porechop/project-{project}_id-{sample_id}_name-{sample_name}.err'
     shell:'''
