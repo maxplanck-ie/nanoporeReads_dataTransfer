@@ -90,9 +90,9 @@ mouse_rRNA: /path/to/genome.fa
 
 # options to skip heavy computations
 default_process:
-  do_basecall: 'do_basecall'
-  do_align: 'do_align'
-  do_modbed: 'do_modbed'
+  do_basecall: 'yes'
+  do_align: 'yes'
+  do_modbed: 'yes'
 
 bam_merge:
   batch_size: 500
