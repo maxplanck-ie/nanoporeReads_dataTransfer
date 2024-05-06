@@ -4,7 +4,8 @@ Adaptor trimming with porechop and summary
 
 # define source and target pattern
 source = sample_dat + ".fastq.gz"
-target_fastq = sample_dat + "_porechop.fastq.gz"
+subset_fastq = sample_dat + "_subset.fastq.gz"
+target_fastq = sample_dat + "_subset_porechop.fastq.gz"
 target_info  =  sample_qc + "_porechop.info"
 logpat = sample_log + "_porechop.log"
 bchpat = sample_bch + "_porechop.tsv"
@@ -114,25 +115,31 @@ rule porechop_final:
         print_info(info, dir_name, key="best_start")
         print_info(info, dir_name, key="best_end")
 
+
 rule qc_porechop:
     input:
-        fastq=source
+        fastq = source
     output:
-        fastq=target_fastq,
-        info=target_info,
+        info = target_info
     wildcard_constraints:
-        # exclude all sample_name that end on "_porechop.fastq.gz" (already chopped) 
-        sample_name = r'(?!.*\.porechop\.fastq\.gz$).*',
-    threads: 8
+        # exclude all sample_name that end on "_porechop.info" (already chopped) 
+        sample_name = r'(?!.*\.porechop\.info$).*',
+    threads: 10
+    conda:
+        "ont-ppp-porechop"
     params:
-        # guppy returns "U" for RNA so -abi will not work
-        # -abi with too few reads -abi is also prone to failure
-        #flag="-abi" if config['info_dict']['protocol'] != 'rna' else "",
-        flag = ""
+        flag = "",
+        nlines = int(config['porechop']['sample_reads']) * 4,
+        subset = subset_fastq,
+        target = target_fastq
     log:
         logpat
     benchmark:
         bchpat
     shell:'''
-        porechop_abi {params.flag} -t {threads} -i {input.fastq} -o {output.fastq} > {output.info} 2> {log}
+        echo "extracting {params.nlines} lines"
+        seqkit head -n {params.nlines} -o {params.subset} {input.fastq} 2>> {log}
+        
+        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}"
+        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}
     '''

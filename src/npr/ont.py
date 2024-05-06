@@ -1,26 +1,26 @@
-# CLI / pretty print.
-from rich import print, inspect
-import rich_click as click
+# ont.py
+# Main script to monitor new data and launch new jobs
+# (C) 2024 Bioinformatics Core
+# Max Plank Institute for Immunobiology and Epigenetics
+
 # default libs
-import glob
 import os
-import snakemake
 import sys
 import yaml
-# sleeper libs
-from threading import Event
-import signal
-# npr libs
-from npr.ont_pipeline import find_new_flowcell
-from npr.ont_pipeline import read_flowcell_info
-from npr.ont_pipeline import read_samplesheet
-from npr.ont_pipeline import get_periphery
-from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
-from npr.snakehelper import getfast5foot, get_seqdir, scan_multiqc, monitor_storage
-import subprocess as sp
+import glob
+import snakemake
 from importlib.metadata import version
 from pathlib import Path
-
+# CLI / pretty print.
+from rich import print
+import rich_click as click
+# sleeper libs
+import signal
+from threading import Event
+# npr libs
+from npr.ont_pipeline import find_new_flowcell, read_flowcell_info, read_samplesheet, get_periphery
+from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
+from npr.snakehelper import getfast5foot, scan_multiqc, monitor_storage
 
 # set up CLI args.
 @click.command(
@@ -34,7 +34,7 @@ from pathlib import Path
    type=click.Path(exists=True),
    required=False,
    default=os.path.expanduser('~/configs/ont_prod.yaml'),
-   help='specify a custom yaml file.',
+   help='Specify a custom yaml file.',
    show_default=True
 )
 
@@ -68,6 +68,15 @@ from pathlib import Path
     show_default=True,
     help="If known, specify protocol as --protocol"
 )
+
+@click.option(
+    "-f",
+    "--flowcell",
+    default=None,
+    show_default=True,
+    help="Target a specific flowcell"
+)
+
 # run workflow.
 def ont(**kwargs):
     # print what config is used.
@@ -89,6 +98,10 @@ def ont(**kwargs):
         config['snakemake']['dryrun'] = True
         print("Use snakemake in dryrun.")
 
+    if ( kwargs['flowcell'] is not False):
+        config['target_flowcell'] = kwargs['flowcell']
+        print("Target flowcell is [green]{}[/green].".format(config['target_flowcell']))
+    
     # add rulesPath to config['paths'] _not_ to config['snakemake']
     # since 'rulesPath' is not a snakemake option
     config['paths']['rulesPath'] = os.path.join(
@@ -123,8 +136,6 @@ def ont(**kwargs):
     main(config)
 
 
-
-
 def main(config):
     while True:
         # Set HUP
@@ -134,7 +145,6 @@ def main(config):
         def sleep():
             HUP.wait(timeout=float(60*60))
         signal.signal(signal.SIGHUP, breakSleep)
-
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
@@ -165,25 +175,11 @@ def main(config):
                 "pipeline_config.yaml"
             )
             config['info_dict']['configFile']=configFile
-            #print(config)
             with open(configFile, 'w') as f:
                 yaml.dump(config, f, default_flow_style=False)
 
             send_email("Found flowcell:", msg, config, allreceivers=False)
 
-            """
-            # This seems to be unused
-            output_directory = config['info_dict']['flowcell_path']
-            # snakemake log file
-            fnames = glob.glob(
-                os.path.join(output_directory, 'ont_run-[0-9]*.log')
-            )
-            if len(fnames) == 0:
-                n = 1  # no matching files, then this is the first run
-            else:
-                fnames.sort(key=os.path.getctime)
-                n = int(fnames[-1].split("-")[-1].split(".")[0]) + 1  # get new run number
-            """
             config['info_dict']['transfer_path'] = get_periphery(config)
 
             print("[green]Starting snakemake. [/green]")

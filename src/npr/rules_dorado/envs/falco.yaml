@@ -1,0 +1,6 @@
+name: ont-ppp-falco
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - falco == 1.2.2
