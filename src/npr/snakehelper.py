@@ -325,44 +325,6 @@ def dorado_basecalling(config, cmdlinef, logf):
         run_command(cmd, logf)
 
 
-def guppy_basecalling(config, cmdlinef, logf):
-    pod5dir = os.path.join(
-        config['info_dict']['flowcell_path'],
-        'pod5'
-    )
-    cmd = [config['guppy_basecaller']['base_calling_cmd']] +\
-        [
-        '-i',
-        pod5dir,
-        '-s',
-        pod5dir.replace('pod5', 'fastq'),
-        '-c',
-        config['info_dict']['model']
-        ] +\
-        config["guppy_basecaller"]["base_calling_options"].split(' ')
-    barcode = False if config['bc_kit'] == 'no_bc' else True
-    if barcode is True:
-        cmd = cmd +\
-            [
-            '--barcode_kits',
-            config['bc_kit']
-            ] +\
-            config["guppy_basecaller"]["base_calling_barcode_options"].split(' ')
-    else:
-        cmd = cmd +\
-            [
-            '--trim_strategy',
-            'dna'
-            ]
-    if config['info_dict']['protocol'] == 'rna':
-        cmd = cmd +\
-            config['guppy_basecaller']['base_calling_RNA_options'].split(' ')
-    with open(logf, 'a') as f:
-        f.write("#guppy-basecaller cmd:\n")
-        f.write(' '.join(cmd) + '\n')
-    print(cmd)
-    sp.check_output(cmd)
-
 def retRule(rulestr, config):
     return(
         os.path.join(

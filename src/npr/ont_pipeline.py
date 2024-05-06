@@ -69,22 +69,6 @@ def filter_flowcell(json, config):
     # flowcell does not match MPI-IE naming convention: don't filter
     return False
 
-    # be extra cautious: get fc_id and fc_dir from (large) json file
-    # this is slow, but it will only be done for a few non-standard flowcells
-    fc_yaml = yaml.safe_load(open(json))
-    fc_id  = fc_yaml['protocol_run_info']['flow_cell']['flow_cell_id']
-    fc_dir = fc_yaml['protocol_run_info']['output_path']
-    fc_dir = os.path.basename(fc_dir.rstrip('/'))  
-    if fc_dir in config['ignore']['dirs']:
-        print("ignore fc_dir {} because of config ".format(fc_dir))
-        return True
-    if fc_id in config['ignore']['flowcells']:
-        print("ignore fc_id {} because of config ".format(fc_id))
-        return True
-
-    return False
-
-
 def find_new_flowcell(config):
     """
     look for new flowcells inf offloadDir   
@@ -112,12 +96,8 @@ def find_new_flowcell(config):
 
     # Iterate over all flowcell in dir
     for flowcell in dirs:
-        print('Working with {}'.format(flowcell))
-
-        # test and continue if 'analysis.done' exists for this flowcell
-        if analysis_done(flowcell, config):
-            print(' {} has been analyzed'.format(flowcell))
-            continue
+        if not analysis_done(flowcell, config):
+            print(' {} found'.format(flowcell))
 
         # needed here to communicate flowcell with send_email
         config['info_dict']['base_path'] = flowcell
@@ -245,7 +225,7 @@ def read_flowcell_info(config, info_dict, base_path):
         model = None
         
         for par in jsondata['protocol_run_info']['args']:
-            if par.startswith('--guppy_filename='):
+            if par.startswith('--model_filename='):
                 px,model = par.split("=")
                 info_dict['model_def'] = model
                 info_dict['model'] = model
