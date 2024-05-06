@@ -96,8 +96,14 @@ def find_new_flowcell(config):
 
     # Iterate over all flowcell in dir
     for flowcell in dirs:
-        if not analysis_done(flowcell, config):
-            print(' {} found'.format(flowcell))
+        if config['options']['verbosity']:
+            print('Working with {}'.format(flowcell))
+
+        # test and continue if 'analysis.done' exists for this flowcell
+        if analysis_done(flowcell, config):
+            if config['options']['verbosity']:
+                print(' {} found'.format(flowcell))
+            continue
 
         # needed here to communicate flowcell with send_email
         config['info_dict']['base_path'] = flowcell
@@ -324,18 +330,17 @@ def read_flowcell_info(config, info_dict, base_path):
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
 
-    if info_dict["do_basecall"] == "yes":
-        elif (config['basecaller']=="dorado"):
-            if config['dorado_basecaller']['dorado_model'] is not None:
-                # record _full_ abnsolute path to model
-                info_dict['model'] = config['dorado_basecaller']['dorado_model']
-            else:
-                # default name of model derived from json (see above)
-                model_name = info_dict['model_def']
-                info_dict['model'] = os.path.join(
-                    config['dorado_basecaller']['model_directory'],
-                    model_name
-                )
+    if (info_dict["do_basecall"] == "yes") and (config['basecaller']=="dorado"):
+       if config['dorado_basecaller']['dorado_model'] is not None:
+           # record _full_ abnsolute path to model
+           info_dict['model'] = config['dorado_basecaller']['dorado_model']
+       else:
+           # default name of model derived from json (see above)
+           model_name = info_dict['model_def']
+           info_dict['model'] = os.path.join(
+               config['dorado_basecaller']['model_directory'],
+               model_name
+           )
 
     print('model = {}'.format(info_dict['model']))
 

@@ -96,11 +96,13 @@ def ont(**kwargs):
 
     if ( kwargs['dryrun'] is not False):
         config['snakemake']['dryrun'] = True
-        print("Use snakemake in dryrun.")
+        if config['options']['verbosity']:
+            print("Use snakemake in dryrun.")
 
     if ( kwargs['flowcell'] is not False):
         config['target_flowcell'] = kwargs['flowcell']
-        print("Target flowcell is [green]{}[/green].".format(config['target_flowcell']))
+        if config['options']['verbosity']:
+            print("Target flowcell is [green]{}[/green].".format(config['target_flowcell']))
     
     # add rulesPath to config['paths'] _not_ to config['snakemake']
     # since 'rulesPath' is not a snakemake option
@@ -143,7 +145,7 @@ def main(config):
         def breakSleep(signo, _frame):
             HUP.set()
         def sleep():
-            HUP.wait(timeout=float(60*60))
+            HUP.wait(timeout=float(60*60*int(config['options']['sleep_time'])))
         signal.signal(signal.SIGHUP, breakSleep)
 
         flowcell, msg, base_path = find_new_flowcell(config)

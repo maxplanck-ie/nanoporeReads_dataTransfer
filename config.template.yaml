@@ -1,5 +1,6 @@
 options:
   sleep_time: 1 #in hour
+  verbosity: false
 
 # static snakemake params that will passed
 snakemake:                                                                                                
