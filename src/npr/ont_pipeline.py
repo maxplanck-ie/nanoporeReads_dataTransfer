@@ -357,7 +357,6 @@ def read_samplesheet(config):
             'SampleSheet.csv'
         ),
         sep = ",",
-        skiprows=[0]
     )
 
     # convert: No_index? --> no_bc
