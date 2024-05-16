@@ -2,32 +2,36 @@
 
 # Tidy up Nanopore directories, it will remove subdirectories for flow cells that have been archived
 
-import os
-import glob
-import shutil
 import argparse
-import subprocess
+import glob
 import logging
+import os
+import shutil
+import subprocess
 
-parser = argparse.ArgumentParser(description='Tidy Nanopore directories that have been archived.')
-parser.add_argument('-d', '--delete',
-                    action='store_true',
-                    help='Delete the directories (otherwise, just show the ones to be removed)')
-parser.add_argument('-t', '--target-dir',
-                    help='Target directory',
-                    required=True)
-parser.add_argument('-l', '--last-run',
-                    help='Date of last run to be considered, format YYYYMMDD',
-                    required=True)
-parser.add_argument('-v', '--verbose',
-                    action='store_true',
-                    help='Verbose mode')
+parser = argparse.ArgumentParser(
+    description="Tidy Nanopore directories that have been archived."
+)
+parser.add_argument(
+    "-d",
+    "--delete",
+    action="store_true",
+    help="Delete the directories (otherwise, just show the ones to be removed)",
+)
+parser.add_argument("-t", "--target-dir", help="Target directory", required=True)
+parser.add_argument(
+    "-l",
+    "--last-run",
+    help="Date of last run to be considered, format YYYYMMDD",
+    required=True,
+)
+parser.add_argument("-v", "--verbose", action="store_true", help="Verbose mode")
 
 args = parser.parse_args()
 
-do_delete  = args.delete
+do_delete = args.delete
 target_dir = args.target_dir
-last_run   = args.last_run
+last_run = args.last_run
 
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
@@ -59,13 +63,13 @@ for d in sorted(dirs):
         continue
 
     # define large subdirectories to be removed
-    subdirs = glob.glob("{}/Project_*".format(d)) # legacy
-    subdirs.extend(glob.glob("{}/fast5*".format(d)))
-    subdirs.extend(glob.glob("{}/fastq*".format(d))) # legacy
-    subdirs.extend(glob.glob("{}/pod5*".format(d)))
-    subdirs.extend(glob.glob("{}/bam*".format(d)))
-    subdirs.extend(glob.glob("{}/transfer/Project_*/Data".format(d)))
-    subdirs.extend(glob.glob("{}/transfer/Project_*/Analysis*".format(d)))
+    subdirs = glob.glob(f"{d}/Project_*")  # legacy
+    subdirs.extend(glob.glob(f"{d}/fast5*"))
+    subdirs.extend(glob.glob(f"{d}/fastq*"))  # legacy
+    subdirs.extend(glob.glob(f"{d}/pod5*"))
+    subdirs.extend(glob.glob(f"{d}/bam*"))
+    subdirs.extend(glob.glob(f"{d}/transfer/Project_*/Data"))
+    subdirs.extend(glob.glob(f"{d}/transfer/Project_*/Analysis*"))
 
     # check if subdir is actually a directory
     for d2 in subdirs:
@@ -73,7 +77,7 @@ for d in sorted(dirs):
             subdirs.remove(d2)
 
     # define txt files to be compressed (legacy)
-    compress = glob.glob("{}/*.txt".format(d))
+    compress = glob.glob(f"{d}/*.txt")
     # check if txt file is actually a file
     for f in compress:
         if not os.path.isfile(f):
@@ -85,17 +89,17 @@ for d in sorted(dirs):
         continue
 
     if do_delete:
-        logging.info('Tidy ' + d)
+        logging.info("Tidy " + d)
         for d2 in subdirs:
-            logging.info("Removing {}".format(d2))
-            shutil.rmtree("{}".format(d2))
+            logging.info(f"Removing {d2}")
+            shutil.rmtree(f"{d2}")
         for f in compress:
-            logging.info("Compressing {}".format(f))
-            subprocess.check_call(['gzip', f])
+            logging.info(f"Compressing {f}")
+            subprocess.check_call(["gzip", f])
     else:
         for d2 in subdirs:
-            logging.info("Would removed: {}".format(d2))
+            logging.info(f"Would removed: {d2}")
         for f in compress:
-            logging.info("Would compress {}".format(f))
+            logging.info(f"Would compress {f}")
 
 logging.info("Cleaning done.")
