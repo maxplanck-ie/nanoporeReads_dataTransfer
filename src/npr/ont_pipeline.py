@@ -338,6 +338,7 @@ def read_samplesheet(config):
             config["info_dict"]["flowcell_path"], "reports", "SampleSheet.csv"
         ),
         sep=",",
+        skiprows=1, # first line is: [Data],,,,,,,,,,
     )
 
     # convert: No_index? --> no_bc
