@@ -31,7 +31,7 @@ rule bam2modbed:
     shell:'''
         echo "do_modbed: {params.do_modbed}" 2>> {log}
         do_modbed={params.do_modbed}
-        if [[ ${do_modbed^^} == "YES" ]]; then
+        if [[ ${do_modbed} == "YES" ]]; then
             echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
             modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
         else

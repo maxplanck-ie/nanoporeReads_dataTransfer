@@ -44,7 +44,7 @@ rule align:
         """
         echo "do_align: {params.do_align}" 2>> {log}
         do_align={params.do_align}
-        if [[ ${do_align^^} == "YES" ]]; then
+        if [[ ${do_align} == "YES" ]]; then
             {dorado} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
         else
             echo "Alignment step skipped" 2>> {log}
