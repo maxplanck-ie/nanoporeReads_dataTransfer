@@ -20,8 +20,7 @@ CONDA_SUBDIR=osx-64 mamba create -n ont -f env.yaml
 # Implementation
 The key functionality is achieved using snakemake workflows.
 From version 2.0.0 **two** different snakemake rule sets are supported which are centered around two different basecallers:
-- `rules`: a guppy-based workflow (legacy); In fact, this also works with dorado basecaller, but only for non-multiplexed data. These rules will not be maintained.
-- `rules_dorado`: a dorado-based workflow. This does not work with guppy.
+- `rules_dorado`: a dorado-based workflow.
 
 A wrapper python script (`ont.py`) implements 
 - the continuous screening of the source directory, 
@@ -137,6 +136,7 @@ transfer/
     └── QC
 ```
 
+<!--
 # Directory structures (with rules)
 
 This is a legacy structure for older versions of the pipeline (guppy-based)
@@ -144,7 +144,7 @@ This is a legacy structure for older versions of the pipeline (guppy-based)
 .. as above
 
 ## Example output path during processing (`outputDir`)
-```bash
+``bash
 ../path/to/flowcell
 .
 ├── analysis.done
@@ -161,10 +161,10 @@ This is a legacy structure for older versions of the pipeline (guppy-based)
 ├── sequencing_summary_barcode11.txt
 ├── sequencing_summary_unclassified.txt
 └── tmp
-```
+``
 
 ## Example output path for an end user (`groupDir`)
-```bash
+``bash
 ../user_path/to/flowcell/
 .
 ├── Analysis_projectID_user_group
@@ -205,4 +205,5 @@ This is a legacy structure for older versions of the pipeline (guppy-based)
         ├── 2901_23S004286_control.fastq.gz
         ├── pass
         └── sequencing_summary_2901_23S004286_control.txt
-```
+``
+-->

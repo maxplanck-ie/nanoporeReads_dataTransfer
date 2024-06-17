@@ -1,0 +1,6 @@
+name: ont-ppp-modkit
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - ont-modkit == 0.2.6
