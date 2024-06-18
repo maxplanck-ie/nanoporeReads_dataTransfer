@@ -29,11 +29,13 @@ rule bam2modbed:
     conda:
         "ont-ppp-modkit"
     shell:'''
-        if [[ "{params.do_modbed}" == "do_modbed" ]]; then
+        echo "do_modbed: {params.do_modbed}" 2>> {log}
+        do_modbed={params.do_modbed}
+        if [[ ${do_modbed} == "YES" ]]; then
             echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
             modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
         else
-            echo "modbed step skip" 2>> {log}
+            echo "Modbed step skipped" 2>> {log}
         fi
     '''
 

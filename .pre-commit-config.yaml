@@ -1,0 +1,42 @@
+ci:
+  autofix_commit_msg: "[pre-commit] Fixes from hooks  "
+  autofix_prs: true
+  autoupdate_branch: "develop"
+  autoupdate_commit_msg: "pre-commit hooks CI autoupdate"
+  autoupdate_schedule: quarterly
+  skip: []
+  submodules: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        types: [python]
+      - id: end-of-file-fixer
+        types: [python]
+      - id: check-merge-conflict
+        types: [python]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile, "black"]
+        exclude: ^src/npr/rules/
+  - repo: https://github.com/snakemake/snakefmt
+    rev: v0.10.2
+    hooks:
+      - id: snakefmt
+        files: ^src/npr/rules/
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.3.0
+    hooks:
+      - id: black
+        language_version: python3
+        entry: black --target-version=py311 # 3.11
+        exclude: ^src/npr/rules/
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.2
+    hooks:
+      - id: pyupgrade
+        args: [--py311-plus] # 3.11

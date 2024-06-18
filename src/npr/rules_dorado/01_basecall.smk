@@ -51,7 +51,7 @@ rule basecall:
         do_basecall=config['info_dict']['do_basecall']
     run:
         # now we wait for the GPU only when basecalling is needed
-        if config['info_dict']['do_basecall'] == "do_basecall":
+        if config['info_dict']['do_basecall'].lower() == "yes":
             while not gpu_available():
                 print("GPU is unavailable - sleep")
                 time.sleep(60)
@@ -59,11 +59,12 @@ rule basecall:
         shell(
         """
         echo "do_basecall: {params.do_basecall}" 2>> {log}
-        if [[ "{params.do_basecall}" == "do_basecall" ]]; then
+        do_basecall={params.do_basecall}
+        if [[ ${do_basecall} == "YES" ]]; then
             echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} {params.bam} 2>> {log}
             {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
         else
-            echo "Basecall step skip" 2>> {log}
+            echo "Basecall step skipped" 2>> {log}
         fi
         """
         )
