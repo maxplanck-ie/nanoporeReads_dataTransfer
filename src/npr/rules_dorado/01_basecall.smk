@@ -59,8 +59,7 @@ rule basecall:
         shell(
         """
         echo "do_basecall: {params.do_basecall}" 2>> {log}
-        do_basecall={params.do_basecall}
-        if [[ ${do_basecall} == "YES" ]]; then
+        if [[ "{params.do_basecall}" == "YES" ]]; then
             echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} {params.bam} 2>> {log}
             {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
         else
