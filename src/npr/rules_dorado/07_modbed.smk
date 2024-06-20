@@ -30,7 +30,7 @@ rule bam2modbed:
         "ont-ppp-modkit"
     shell:'''
         echo "do_modbed: {params.do_modbed}" 2>> {log}
-        if [[ "{params.do_modbed}" == "YES" ]]; then
+        if [[ "{params.do_modbed}" == "do_modbed" ]]; then
             echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
             modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
         else
