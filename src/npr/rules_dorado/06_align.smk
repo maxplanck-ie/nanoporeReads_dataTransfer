@@ -42,9 +42,8 @@ rule align:
         "ont-ppp-align"
     shell:
         """
-        mkdir -p $(dirname {target_bam})
         echo "do_align: {params.do_align}" 2>> {log}
-        if [[ "{params.do_align}" == "YES" ]]; then
+        if [[ "{params.do_align}" == "do_align" ]]; then
             {dorado} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
         else
             echo "Alignment step skipped" 2>> {log}
