@@ -313,7 +313,9 @@ def read_flowcell_info(config, info_dict, base_path):
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
 
-    if (info_dict["do_basecall"] == "yes") and (config["basecaller"] == "dorado"):
+    if (info_dict["do_basecall"] == "do_basecall") and (
+        config["basecaller"] == "dorado"
+    ):
         if config["dorado_basecaller"]["dorado_model"] is not None:
             # record _full_ abnsolute path to model
             info_dict["model"] = config["dorado_basecaller"]["dorado_model"]

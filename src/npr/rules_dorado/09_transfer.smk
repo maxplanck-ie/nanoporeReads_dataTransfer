@@ -27,7 +27,7 @@ rule transfer:
                 dest= get_dest_path(config,dir)
                 log.write(f"{ts}: mkdir {dest}; cp -r {dir} {dest}\n")
                 # copy data over
-                shell("mkdir {dest}; cp -r {dir} {dest}")
+                shell("mkdir -p {dest}; cp -r {dir} {dest}")
                 # write metadata
                 metayaml = os.path.join(dest, 'metadata.yaml') 
                 with open(metayaml, 'w') as yaml_file:

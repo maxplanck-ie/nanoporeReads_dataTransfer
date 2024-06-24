@@ -43,16 +43,17 @@ rule align:
     shell:
         """
         echo "do_align: {params.do_align}" 2>> {log}
-        do_align={params.do_align}
-        if [[ ${do_align} == "YES" ]]; then
+        if [[ "{params.do_align}" == "do_align" ]]; then
             {dorado} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
         else
             echo "Alignment step skipped" 2>> {log}
             mv {input.bam_file} {output.file}
         fi
 
+        echo "indexing bam {output.file}"
         samtools index -@ {threads} {output.file} 2>> {log}
 
+        echo "pycoQC for bam {output.file}"
         # run pycoQC including bam file (for alignment)
         # notice that pycoQC is prone to fail, especially for tests with small bam files --> 
         # enforce success (|| true) and do _not_ require presence of html and json as output of this rule
@@ -60,6 +61,7 @@ rule align:
         {config[pycoQc][pycoQc_opts]} -o {params.html} -j {params.json} >> {log} 2>&1 || true
 
         # run samtools flagstat
+        echo "samtools flagstat for bam {output.file}"
         samtools flagstat --threads {threads} {output.file} > {output.flagstat}
         """
 
