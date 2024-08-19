@@ -44,7 +44,7 @@ ignore:
 
 # credential to query parkour
 parkour:
-  url: parkour/api/url/  # leave empty to disable Parkour access
+  url: parkour.domain.tld  # leave empty to disable Parkour access
   user: account
   password: password
   pem: path/to/certificate
