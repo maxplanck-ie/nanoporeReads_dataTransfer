@@ -9,6 +9,7 @@ import os
 import re
 import subprocess as sp
 import sys
+import requests
 
 import pandas as pd
 import yaml
@@ -108,15 +109,25 @@ def find_new_flowcell(config):
         # exit if sampleSheet.csv does not exists
         ss = os.path.join(flowcell, "SampleSheet.csv")
 
-        ss2 = os.path.join(
+        flowcell_path = os.path.join(
             config["paths"]["outputDir"],
             os.path.basename(flowcell),
+        )
+
+        ss2 = os.path.join(
+            flowcell_path,
             "reports",
             "SampleSheet.csv",
         )
 
+        if not os.path.exists(flowcell_path):
+            os.mkdir(flowcell_path)
+        if not os.path.exists(os.path.join(flowcell_path,"reports")):
+            os.mkdir(os.path.join(flowcell_path,"reports"))
+
+
         if not os.path.isfile(ss):
-            if not get_samplesheet_from_parkour(flowcell, config, ss2):
+            if not get_samplesheet_from_parkour(flowcell.split("_")[-2], config, ss2):
                 if not os.path.isfile(ss2):
                     msg = "No SampleSheet.csv file.\n"
                     send_email("Error for flowcell:", msg, config)
@@ -149,13 +160,8 @@ def get_samplesheet_from_parkour(flowcell, config, output_csv_path):
                 verify=config["parkour"]["pem"],
             )
             if res.status_code == 200:
-                with open("/tmp/output_file.xls", "wb") as file:
+                with open(output_csv_path, "wb") as file:
                     file.write(res.content)
-                print(
-                    f"Samplesheet for flowcell {flowcell_id} saved successfully under /tmp."
-                )
-                df = pd.read_excel("/tmp/output_file.xls")
-                df.to_csv(output_csv_path, index=False)
                 print(
                     f"Samplesheet for flowcell {flowcell_id} available at {output_csv_path}"
                 )
