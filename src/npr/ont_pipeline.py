@@ -9,9 +9,9 @@ import os
 import re
 import subprocess as sp
 import sys
-import requests
 
 import pandas as pd
+import requests
 import yaml
 from rich import print
 
@@ -122,9 +122,8 @@ def find_new_flowcell(config):
 
         if not os.path.exists(flowcell_path):
             os.mkdir(flowcell_path)
-        if not os.path.exists(os.path.join(flowcell_path,"reports")):
-            os.mkdir(os.path.join(flowcell_path,"reports"))
-
+        if not os.path.exists(os.path.join(flowcell_path, "reports")):
+            os.mkdir(os.path.join(flowcell_path, "reports"))
 
         if not os.path.isfile(ss):
             if not get_samplesheet_from_parkour(flowcell.split("_")[-2], config, ss2):
@@ -171,7 +170,7 @@ def get_samplesheet_from_parkour(flowcell, config, output_csv_path):
         except requests.exceptions.RequestException as e:
             print(f"Request failed for flowcell {flowcell_id}: {e}")
 
-        except IOError as e:
+        except OSError as e:
             print(f"File operation failed for flowcell {flowcell_id}: {e}")
 
     # Raise an error if none of the requests were successful
