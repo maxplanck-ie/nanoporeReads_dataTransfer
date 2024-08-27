@@ -23,7 +23,7 @@ rule prepare:
     benchmark:
         "benchmarks/00_prepare.tsv"
     shell:'''
-        if [ -e "{params.idir}/pod5_pass" ] || [ -e "{params.idir}/pod5_fail" || [ -e "{params.idir}/pod5" ]; then
+        if [ -e "{params.idir}/pod5_pass" ] || [ -e "{params.idir}/pod5_fail" ] || [ -e "{params.idir}/pod5" ]; then
             # there are pod5 produced (default)
             pod5_files=`find "{params.idir}/" -name '*.pod5'`
             echo pod5 merge ${{pod5_files}} -o {output.pod5} -t {threads} 2>> {log}
