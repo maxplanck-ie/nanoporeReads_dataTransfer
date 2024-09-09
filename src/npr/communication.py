@@ -263,9 +263,13 @@ def query_parkour(config, flowcell, msg):
     sys.exit("parkour failure.")
 
 def get_organism_name(organism):
-    if "Mouse" in organism: 
-        return "Mouse"
-    elif "Human" in organism:
-        return "human"
+    if "GRCm38" in organism: 
+        return "GRCm38"
+    elif "GRCm39" in organism:
+        return "GRCm39"
+    elif "GRCh37" in organism:
+        return "GRCh37"
+    elif "GRCh38" in organism:
+        return "GRCh38"
     else:
         return organism
