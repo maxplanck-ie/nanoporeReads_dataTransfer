@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* Added GRCm39 and GRCh37
+* New function get\_organism\_name to fix the organism name from parkour
 * [pre-commit] Fixes from hooks
 * Fixed typo
 * sending email when genome is not found
