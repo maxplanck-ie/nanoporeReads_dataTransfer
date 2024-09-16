@@ -223,10 +223,9 @@ def query_parkour(config, flowcell, msg):
             first_key = list(parkour_dict.keys())[0]
             first_entry = list(parkour_dict[first_key].keys())[0]
             org = parkour_dict[first_key][first_entry][-3]
-            organism=get_organism_name(org)    
-            #organism = parkour_dict[first_key][first_entry][-3]
+            organism = get_organism_name(org)
+            # organism = parkour_dict[first_key][first_entry][-3]
             protocol = parkour_dict[first_key][first_entry][1]
-
 
             if (
                 fc == "PAK78871"
@@ -262,8 +261,9 @@ def query_parkour(config, flowcell, msg):
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")
 
+
 def get_organism_name(organism):
-    if "GRCm38" in organism: 
+    if "GRCm38" in organism:
         return "GRCm38"
     elif "GRCm39" in organism:
         return "GRCm39"
