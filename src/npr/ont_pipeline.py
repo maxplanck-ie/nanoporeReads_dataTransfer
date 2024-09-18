@@ -443,6 +443,8 @@ def get_periphery(config):
     Warning2: assumes regular group directory - not applicable to 'external' projects
     """
     group = config["data"]["projects"][0].split("_")[-1].lower()
+    group = remove_spaces(group)
+    print("Group ",group)
     groupdir = os.path.join(config["paths"]["groupDir"], group)
     # Warning: get_seqdir _creates_ directories as side effect
     groupONT = get_seqdir(groupdir, "sequencing_data")
@@ -487,3 +489,10 @@ def get_dest_path(config, dir):
         dest_path, os.path.basename(config["info_dict"]["flowcell_path"])
     )
     return dest_path
+
+def remove_spaces(input_string):
+    # Check if there are empty spaces
+    if ' ' in input_string:
+        # Remove empty spaces
+        return input_string.replace(' ', '')
+    return input_string
