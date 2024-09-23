@@ -404,6 +404,10 @@ def read_samplesheet(config):
     data["samples"] = []
     for index, row in sample_sheet.iterrows():
         assert row["Sample_ID"] not in data.keys()
+
+        # Replace spaces in "Sample_Project" with underscores
+        sample_project = row["Sample_Project"].replace(" ", "")
+
         if row["Sample_Project"] not in data["projects"]:
             data["projects"].append(row["Sample_Project"])
         if row["Sample_ID"] not in data["samples"]:
@@ -411,7 +415,8 @@ def read_samplesheet(config):
         data[row["Sample_ID"]] = dict(
             {
                 "Sample_Name": row["Sample_Name"],
-                "Sample_Project": row["Sample_Project"],
+                #"Sample_Project": row["Sample_Project"],
+                "Sample_Project": sample_project,
                 "barcode_kits": config["info_dict"]["barcode_kit"],
                 "index_id": row["I7_Index_ID"]
                 .replace("BP", "barcode")
