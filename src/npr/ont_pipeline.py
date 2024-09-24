@@ -405,11 +405,12 @@ def read_samplesheet(config):
     for index, row in sample_sheet.iterrows():
         assert row["Sample_ID"] not in data.keys()
 
-        # Replace spaces in "Sample_Project" with underscores
+        # Remove any empty space from the sample project when the PI has 2 last names
         sample_project = row["Sample_Project"].replace(" ", "")
 
         if row["Sample_Project"] not in data["projects"]:
-            data["projects"].append(row["Sample_Project"])
+            #data["projects"].append(row["Sample_Project"])
+            data["projects"].append(sample_project)
         if row["Sample_ID"] not in data["samples"]:
             data["samples"].append(row["Sample_ID"])
         data[row["Sample_ID"]] = dict(

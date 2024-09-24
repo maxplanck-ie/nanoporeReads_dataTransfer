@@ -47,7 +47,7 @@ rule rename:
         
         if ' ' in output.bam:
             # Replace empty spaces when PI has 2 last names
-            output.bam.replace(' ', '_')
+            output.bam.replace(' ', '')
         
         print(f'cp {barcode_file} {output.bam}')
         shell("cp {barcode_file} {output.bam}")
