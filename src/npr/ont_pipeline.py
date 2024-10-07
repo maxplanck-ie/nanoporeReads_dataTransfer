@@ -409,14 +409,14 @@ def read_samplesheet(config):
         sample_project = row["Sample_Project"].replace(" ", "")
 
         if row["Sample_Project"] not in data["projects"]:
-            #data["projects"].append(row["Sample_Project"])
+            # data["projects"].append(row["Sample_Project"])
             data["projects"].append(sample_project)
         if row["Sample_ID"] not in data["samples"]:
             data["samples"].append(row["Sample_ID"])
         data[row["Sample_ID"]] = dict(
             {
                 "Sample_Name": row["Sample_Name"],
-                #"Sample_Project": row["Sample_Project"],
+                # "Sample_Project": row["Sample_Project"],
                 "Sample_Project": sample_project,
                 "barcode_kits": config["info_dict"]["barcode_kit"],
                 "index_id": row["I7_Index_ID"]
@@ -450,7 +450,7 @@ def get_periphery(config):
     """
     group = config["data"]["projects"][0].split("_")[-1].lower()
     group = remove_spaces(group)
-    print("Group ",group)
+    print("Group ", group)
     groupdir = os.path.join(config["paths"]["groupDir"], group)
     # Warning: get_seqdir _creates_ directories as side effect
     groupONT = get_seqdir(groupdir, "sequencing_data")
@@ -496,9 +496,10 @@ def get_dest_path(config, dir):
     )
     return dest_path
 
+
 def remove_spaces(input_string):
     # Check if there are empty spaces
-    if ' ' in input_string:
+    if " " in input_string:
         # Remove empty spaces
-        return input_string.replace(' ', '')
+        return input_string.replace(" ", "")
     return input_string
