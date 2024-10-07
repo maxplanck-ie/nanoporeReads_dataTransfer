@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Fixed another location where the PIs 2 last names is causing problems
 * Fixing a bug with PIs 2 last name, from a different location
 * Typo fixed
 * Fixed a bug with groupdir if PI has 2 last names

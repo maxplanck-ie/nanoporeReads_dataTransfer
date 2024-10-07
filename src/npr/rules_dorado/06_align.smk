@@ -47,7 +47,9 @@ rule align:
             {dorado} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
         else
             echo "Alignment step skipped" 2>> {log}
-            mv {input.bam_file} {output.file}
+            #mv {input.bam_file} {output.file}
+            #sometimes the file is not sorted, add functionality to sort the input file first before indexing
+            samtools sort -@ 16 -m 20G -o {output.file} {input.bam_file}
         fi
 
         echo "indexing bam {output.file}"
