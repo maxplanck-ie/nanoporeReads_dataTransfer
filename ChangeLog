@@ -1,8 +1,25 @@
 CHANGES
 =======
 
+* fixed bug
+* [pre-commit] Fixes from hooks
+* Fixed a bug in 06\_align.smk where if the bam file is not sorted to sort it
+* Fixed another location where the PIs 2 last names is causing problems
+* Fixing a bug with PIs 2 last name, from a different location
+* Typo fixed
+* Fixed a bug with groupdir if PI has 2 last names
+
+v2.1.2
+------
+
+* [pre-commit] Fixes from hooks
+* Added other reference genomes
 * Added GRCm39 and GRCh37
 * New function get\_organism\_name to fix the organism name from parkour
+
+2.1.1
+-----
+
 * [pre-commit] Fixes from hooks
 * Fixed typo
 * sending email when genome is not found
@@ -10,6 +27,10 @@ CHANGES
 * fixes together with @gerikson
 * IMPORTANT: adjust config-parkour-url before running this version. api endpoints are hardcoded
 * pre-commit hooks CI autoupdate
+
+v2.1.0
+------
+
 * allowing existing target directory in final transfer
 * [pre-commit] Fixes from hooks
 * avoiding yes/no and true/false for flags as python/bash eval problems
