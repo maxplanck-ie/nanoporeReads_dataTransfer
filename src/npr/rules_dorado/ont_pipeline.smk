@@ -65,8 +65,8 @@ if genome is not None and os.path.exists(genome):
     align_done = ["flags/06_align.done","flags/07_modbed.done"]
 else:
     sys.stderr.write("No genome for organism. No alignment will be done\n")
-    msg = "No reference genome found! No alignment will be done"
-    send_email("Error No reference genome found!", msg, config)
+    #msg = "No reference genome found! No alignment will be done"
+    #send_email("Error No reference genome found!", msg, config)
     
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"

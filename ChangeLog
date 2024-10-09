@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+* fixed bug
+* [pre-commit] Fixes from hooks
+* Fixed a bug in 06\_align.smk where if the bam file is not sorted to sort it
 * Fixed another location where the PIs 2 last names is causing problems
 * Fixing a bug with PIs 2 last name, from a different location
 * Typo fixed
