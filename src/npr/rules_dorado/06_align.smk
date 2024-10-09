@@ -49,7 +49,7 @@ rule align:
             echo "Alignment step skipped" 2>> {log}
             #mv {input.bam_file} {output.file}
             #sometimes the file is not sorted, add functionality to sort the input file first before indexing
-            samtools sort -@ 16 -m 20G -o {output.file} {input.bam_file}
+            samtools sort -@ {threads} -m 20G -o {output.file} {input.bam_file}
         fi
 
         echo "indexing bam {output.file}"
