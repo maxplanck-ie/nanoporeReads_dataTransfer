@@ -224,8 +224,8 @@ def query_parkour(config, flowcell, msg):
             first_entry = list(parkour_dict[first_key].keys())[0]
             org = parkour_dict[first_key][first_entry][3][0]
             organism = org
-            print (org)
-            #organism = parkour_dict[first_key][first_entry][-3]
+            print(org)
+            # organism = parkour_dict[first_key][first_entry][-3]
             protocol = parkour_dict[first_key][first_entry][1]
 
             if (
@@ -261,4 +261,3 @@ def query_parkour(config, flowcell, msg):
         msg += f"{fq}\n"
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")
-
