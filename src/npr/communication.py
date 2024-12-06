@@ -222,10 +222,7 @@ def query_parkour(config, flowcell, msg):
             print(parkour_dict)
             first_key = list(parkour_dict.keys())[0]
             first_entry = list(parkour_dict[first_key].keys())[0]
-            org = parkour_dict[first_key][first_entry][3][0]
-            organism = org
-            print(org)
-            # organism = parkour_dict[first_key][first_entry][-3]
+            organism = parkour_dict[first_key][first_entry][3][1]
             protocol = parkour_dict[first_key][first_entry][1]
 
             if (

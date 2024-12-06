@@ -70,6 +70,7 @@ kraken:
 multiqc:
   configfile: /path/to/multiqc/config/file
 
+# organism labels, as set on Parkour
 genome:
   drosophila: /path/to/genome.fa
   mouse: /path/to/genome.fa
@@ -78,6 +79,7 @@ genome:
   human_rRNA: /path/to/genome.fa
   mouse_rRNA: /path/to/genome.fa
 
+# organism labels, as set on Parkour
 transcripts:
   drosophila:  /path/to/genes.bed
   mouse: /path/to/genes.bed
