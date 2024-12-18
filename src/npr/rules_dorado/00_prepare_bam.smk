@@ -30,36 +30,34 @@ rule prepare_bam:
             mkdir "{params.baseout}" 2>> {log}
         fi
 
-        if [ -e "{params.idir}/bam_pass" ]; then
-            # there are BAM produced
-        
-            # get list of BAMs to merge
-            echo find "{params.idir}/bam_pass" -name '*.bam' "{params.baseout}/bam_list.txt" 2>> {log}
-            find "{params.idir}/bam_pass" -name '*.bam' > "{params.baseout}/bam_list.txt"
+        if [ -e "{params.idir}/bam_pass" ] || [ -e "{params.idir}/bam_fail" ]; then
+            # BAM files are present in bam_pass and/or bam_fail
 
-            # merge BAMs in batches
+            # Get bam list from both dirs
+            echo find "{params.idir}/bam_pass" "{params.idir}/bam_fail" -name '*.bam' -type f > "{params.baseout}/bam_list.txt" 2>> {log}
+            find "{params.idir}/bam_pass" "{params.idir}/bam_fail" -name '*.bam' -type f > "{params.baseout}/bam_list.txt" 2>> {log}
+
+            # split the list
             echo split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
             split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
+            
+            #and merge the bams
             if [[ $(ls "{params.baseout}"/bam_list_b* | wc -l) -eq "1" ]]; then
-                # only one batch is created, creating final ouput
+                
                 echo samtools merge {params.opt} -@ {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
                 samtools merge {params.opt} -@ {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
-            
             else
-                # merge in batches, one by one to avoid opened files limit
+                # Merge in batches, one by one to avoid opened files limit
                 for BATCH in "{params.baseout}"/bam_list_b*; do
                     echo samtools merge {params.opt} -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
                     samtools merge {params.opt} -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
                 done
-                # final merge
+                # Final merge
                 echo samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
                 samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
             fi
-
-            # clean up
-            echo rm "{params.baseout}"/bam_list* 2>> {log}
-            rm "{params.baseout}"/bam_list* 2>> {log}
         else
-            echo "No BAM data found in {params.idir}" 2>> {log}
+            echo "No BAM files found in {params.idir}/bam_pass or {params.idir}/bam_fail" >> {log}
         fi
+        rm -f "{params.baseout}"/bam_list*
         '''
