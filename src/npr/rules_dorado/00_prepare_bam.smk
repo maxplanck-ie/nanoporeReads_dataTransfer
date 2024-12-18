@@ -55,9 +55,9 @@ rule prepare_bam:
                 # Final merge
                 echo samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
                 samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
-		rm -f "{params.baseout}"/bam_list_b*
             fi
         else
             echo "No BAM files found in {params.idir}/bam_pass or {params.idir}/bam_fail" >> {log}
         fi
+        rm -f "{params.baseout}"/bam_list*
         '''
