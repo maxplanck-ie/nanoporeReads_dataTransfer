@@ -404,14 +404,20 @@ def read_samplesheet(config):
     data["samples"] = []
     for index, row in sample_sheet.iterrows():
         assert row["Sample_ID"] not in data.keys()
+
+        # Remove any empty space from the sample project when the PI has 2 last names
+        sample_project = row["Sample_Project"].replace(" ", "")
+
         if row["Sample_Project"] not in data["projects"]:
-            data["projects"].append(row["Sample_Project"])
+            # data["projects"].append(row["Sample_Project"])
+            data["projects"].append(sample_project)
         if row["Sample_ID"] not in data["samples"]:
             data["samples"].append(row["Sample_ID"])
         data[row["Sample_ID"]] = dict(
             {
                 "Sample_Name": row["Sample_Name"],
-                "Sample_Project": row["Sample_Project"],
+                # "Sample_Project": row["Sample_Project"],
+                "Sample_Project": sample_project,
                 "barcode_kits": config["info_dict"]["barcode_kit"],
                 "index_id": row["I7_Index_ID"]
                 .replace("BP", "barcode")
@@ -443,6 +449,8 @@ def get_periphery(config):
     Warning2: assumes regular group directory - not applicable to 'external' projects
     """
     group = config["data"]["projects"][0].split("_")[-1].lower()
+    group = remove_spaces(group)
+    print("Group ", group)
     groupdir = os.path.join(config["paths"]["groupDir"], group)
     # Warning: get_seqdir _creates_ directories as side effect
     groupONT = get_seqdir(groupdir, "sequencing_data")
@@ -487,3 +495,11 @@ def get_dest_path(config, dir):
         dest_path, os.path.basename(config["info_dict"]["flowcell_path"])
     )
     return dest_path
+
+
+def remove_spaces(input_string):
+    # Check if there are empty spaces
+    if " " in input_string:
+        # Remove empty spaces
+        return input_string.replace(" ", "")
+    return input_string

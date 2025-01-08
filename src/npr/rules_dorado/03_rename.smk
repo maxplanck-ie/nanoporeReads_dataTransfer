@@ -44,6 +44,10 @@ rule rename:
         if not os.path.exists(barcode_file):
             print(f'[red] barcode_file does not exist: {barcode_file}. For sample: {wildcards.sample_id} {wildcards.sample_name}[/red]')
             exit(1)
-
+        
+        if ' ' in output.bam:
+            # Replace empty spaces when PI has 2 last names
+            output.bam.replace(' ', '')
+        
         print(f'cp {barcode_file} {output.bam}')
         shell("cp {barcode_file} {output.bam}")

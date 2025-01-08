@@ -14,11 +14,11 @@ rule dag:
     params:
         sfile=config['snakemake']['snakefile'],
         cfile=config['info_dict']['configFile']  
-    shell:'''
-    
+    shell:
+        """
         echo snakemake --snakefile {params.sfile} --configfile {params.cfile} -c1 --use-conda >> {log}
         snakemake --snakefile {params.sfile} --configfile {params.cfile}  -n --dag --rulegraph | dot -Tjpg -o {output.jpg}
-    '''
+        """
 
 rule check_disk_space:
     output:

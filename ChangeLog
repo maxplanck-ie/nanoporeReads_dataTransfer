@@ -1,25 +1,330 @@
 CHANGES
 =======
 
-<<<<<<< HEAD
+* fixed bug
+* [pre-commit] Fixes from hooks
+* Fixed a bug in 06\_align.smk where if the bam file is not sorted to sort it
+* Fixed another location where the PIs 2 last names is causing problems
+* Fixing a bug with PIs 2 last name, from a different location
+* Typo fixed
+* Fixed a bug with groupdir if PI has 2 last names
+
+v2.1.2
+------
+
+* [pre-commit] Fixes from hooks
+* Added other reference genomes
+* Added GRCm39 and GRCh37
+* New function get\_organism\_name to fix the organism name from parkour
+
+2.1.1
+-----
+
+* [pre-commit] Fixes from hooks
+* Fixed typo
+* sending email when genome is not found
+* fix typo, together with @gerikson
+* fixes together with @gerikson
+* IMPORTANT: adjust config-parkour-url before running this version. api endpoints are hardcoded
+* pre-commit hooks CI autoupdate
+
+v2.1.0
+------
+
+* allowing existing target directory in final transfer
+* [pre-commit] Fixes from hooks
+* avoiding yes/no and true/false for flags as python/bash eval problems
+* creating the transfer/proj/Analysis dir if needed
+* fix for bash variable context
+* black fmt. 2 spaces for comment
+* fixing error in variable comparison for Bash command
+* error parsing SampleSheet.csv, fixing file reading
+* precommit config has snakefmt now
+* pre-commit Rdy
+* avoid syntax warning
+* in-line snakemake param interpolation go into bash to use syntactical sugars .lower (,,) or .upper (^^)
+* hotfix after change on parkour
+* smallfix
+* ah, this was missing
+* clean dead code
+* drop deprecated guppy basecaller
+* guppy final deprecation
+* clean dead code
+* drop deprecated guppy basecaller
+* drop deprecated guppy basecaller
+* small adjustments (#162)
+* Upcoming version 1.1.0 (#149)
+* adding flowcell/pod5 as another pod dir
+* script to clean up backups
+* skip SampleSheet in dont\_touch
+* passing default process values for each flowcell
+* waiting for GPU only when basecalling
+* renaming subset files
+* renaming subset files
+* using seqkit to subset fastq
+* using pycoQC conda env
+* using seqkit to subset reads
+* conda env for pycoQC
+* conda env for seqkit
+* separating subset fastq for porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* debugging errors in porechop
+* setting temp dir as /tmp for porechop
+* fix for analysis name
+* fix for analysis name
+* debug error in porechop
+* script to generate conda envs
+* using individual conda envs
+* renaming env for each bioinfo tool
+* pysam for pycoQC install
+* pysam for pycoQC install
+* pycoQC for pip install
+* pycoQC for pip install
+* rename pycoQC for pip install
+* using fastQC after Falco fails
+* updating to v 1.21
+* using pip to install pycoQC (v2.5.2)
+* rolling back pycoQC version
+* updating pycoQC
+* missing pysam dep
+* missing dep for pycoqc
+* error space
+* error space
+* removing env yamls
+* error in conda env name
+* adding conda env yaml
+* removing full path to modules
+* removing old tools configs, missing kraken db
+* using conda envs
+* removing bionfo tools as they will be in their own conda envs
+* creating modular conda envs for bioinformatic tools
+* keeping subsampled files for debug
+* multithreading for pod5
+* updating pod5 tooling
+* missing comma for porechop subset params
+* missing comma for bam params
+* missing comma for bam params
+* extending old\_outputDirs
+* adding new setting options: basecall, align, modbase, and extending old\_outputDirs
+* adding option to target a specific flowcell
+* changes for parameters and some suggestions from PR#149
+* subsetting fastq for porechop (as it is slow)
+* using batch\_size from config
+* adding new parameters
+* freezing package versions
+* using conda for installing programs and deps
+* setting undefined model from json metadata
+* bug fix for reporting the species in termination email
+* adding html parsing for metadata
+* config basecall model when needed
+* adding html parsing for metadata
+* adding logical steps for basecall, align and modbed
+* missing comma
+* separating BAM merge
+* separating BAM merge
+* code cleaning
+* adding changes after review
+* removed unused functions
+* clean up and adding back transfer step
+* adding optional align step
+* swapping BAM to Fastq for dorado align
+* debug for bam export
+* updating python and snakemake
+* updating python and snakemake
+* updating python and snakemake
+* updating python and snakemake
+* updating python and snakemake
+* exporting bam in prepare\_bam
+* exporting bam in prepare\_bam
+* exporting bam in prepare\_bam
+* rules for merging
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional basecall and modbed
+* conditional align
+* conditional align
+* simple software version capture, adding dorado
+* align skiping
+* align skiping
+* conditional flag
+* conditional flag
+* conditional flag
+* conditional flag
+* conditional flag
+* conditional flag
+* final bam name
+* changing modbam2bed to modkit
+* bam expansion rule
+* bam expansion rule
+* adding clean-up and fixing baseout
+* activating BAM merging step
+* turn-off final data transfer for debugging
+* turn-off final data transfer for debugging
+* code clean up, removing parkour creds
+* code clean up, removing parkour creds
+* adding step to merge BAM files
+* code clean up
+* code clean-up
+* code cleaning, adding model and software capture
+* code cleaning and formatting
+* 10G check on dorado rule as well
+* GPU check > 10GB, not 20 to accomodate V100s
+
+v2.0.4
+------
+
+* add cautionary sleep to communication.py
+* fix ship\_qcreports
+
+v2.0.3
+------
+
+* 07\_modbed: silence modbam2bed and send stderr to log file
+* 06\_align: make bai explicit target to avoid warnings with older index files
+* fastqc: make memory requirements a config parameter
+
+v2.0.2
+------
+
+* legacy fix: allow flexible replacement in samplesheet of NaN or NoIndex with no\_bc
+
+v2.0.1
+------
+
+* improved readability of gpu\_available()
+* add version to metadata.yml and fix wrong reporting of median length in QC report
+
+v2.0.0
+------
+
+* address PR comments
+* add empty postfix '' to parkour query - to account for legacy naming of flowcells
+* wipe config['info\_dict'] after process - avoid errorneous information transfer (e.g. bc\_kits) between flowcells
+* add helper scripts for downsampling flowcell folders and pod5 (for testing)
+* update communication and basic inference of dorado model
+* update old rules/ to work with new config (for now)
+* define new set of rules and output structure
+
+v1.2.0
+------
+
+* disable final multqc for now
+* add GPU test before basecalling
+* WIP: add final multiqc rule
+* add option to call modifications to guppy
+* add conda env to config['paths']
+* make parkour\_query() and send\_email() more robust
+* correct reporting of transfer
+* fix df -BG
+* fix filter\_flowcell bug
+* update QC metrics and storage report
+* Manke (#105)
+* 3\_qc.smk: swallow kraken output (#104)
+* Manke (#103)
+* uncomment parkour-query hack
+* refactor find\_new\_flowcell and permit aribtrary folder as cli. wgetDir and baseDir unused
+* porechop: add flexible choice for -abi flag
+* updated porechop rule and included multiqc
+* add porechop for adapter detection
+
+v1.1.1
+------
+
+* fix bug in parkour\_query and recursive merging of pod5
+
+v1.1.0
+------
+
+* updated installation instructions
+* Separated data preparation from basecalling. Defined new rule: 0\_prepare.smk
+* fixed calculation of footprint and ratio
+* removed project\_id from message. config[data] not yet defined
+* moved pycoqc to pip - for version 2.5.2
+* added try/except to "getfast5foot()" function
+* fixed pod5 merging and footprint
+*  improved 'prepare\_pod5' rule and changed the getfast5foot() function to output NA if fast5 dir doesn't exist
+* replaced rule 'fast5\_to\_pod5' with rule 'prepare\_pod5' to accomodate the input change (from fast5 to multiple pod5)
+* modif rule fast5\_to\_pod5
+* test\_merge\_pod5
+* add project ID to e-mail body
+* added memory allocation to fastqc of 4Gb
+* omit pod5 copy until further notice
+* define dirs bugfix
+* env typo
+* work with 2 output directories (seq\_data volumes) + implement ignores
+* ignore update template
+* include common primers/adapters/bcs
+* change seqfac subfolders
+* cutadapt dep
+* --dir instead of -d as newer fqc cant handle it
+* genmodels finalize
+* scps into the samba world
+* attempt to fix prom - sup models
+* imports & syntax
+* include samba shipping over ssh
+* extra escapes + minor changes to samplesheet missing checks
+* re-use index
+* parkour queries incorp flowcell re-usage
+* yaml wo for user
+* more escapes
+* init meta config for end user
+* more hardcoded escapes until protocol is finalised. trigger for ext data + offload = html
+* escape to dna-mouse for no parkour entry
+* escape to dna-mouse for no parkour entry
+* fix env yaml
+* dev rebase
+* fix env conflict
+* include offload & wget dirs but keep them optional
+* syntax, missing colon
+* strip vers in env, force python, juggle channels
+* attempt to cap versions + purge fastqc wrapper
+* pod converion arg change
+* fix env yaml
+* fix env yaml
+* include offload & wget dirs but keep them optional
+* dev rebase
+* fix env conflict
+* include offload & wget dirs but keep them optional
+* syntax, missing colon
+* Wd (#56)
+* strip vers in env, force python, juggle channels
+* Wd (#55)
+* attempt to cap versions + purge fastqc wrapper
+* Wd (#51)
+* pod converion arg change
+* some workrounds for older flow cells. Rename rules for a pretty dag. (#50)
+* some workrounds for older flow cells. Rename rules for a pretty dag
+* simplify triggermail + smkopts
+* proper naming BC samples
+* initiate cmd log with basecall cmds to include for end user
+* exist checks 4 fs issues ?
+* merge develop
+* split pass fail
+* hardcode flowcell escape (parkour screwup), no-bc field bugfix, comm enhancements
 * strip authors
 * trigger email
 * grab barcoding / barcoding kit information from guppy line
 * strip authors
+* Wd (#35) (#37)
+* successful debug - runs on test case
+* some refactoring and add fastqc
 * Wd (#35)
 * A to Z for barcoded samples as well
 * A to Z for non-barcoded, DNA mouse sample
 *  - executable / configs  - genmodel  - pod5 implementation  - smk API
-=======
-* some refactoring and add fastqc
-* apivsp
-* ignore build
-* ignore egginfo
-*  - change into pbr install + conda env  - set entrypoints as executables + define testcase  - organise smk under rules + libs under npr  - smk not properly called at for now
-* update ignore with the eyes on pip buildable
-* add full cmd guppy
-* Wd (#35)
->>>>>>> fd75d246769086e39d1e2f8a1a4cf0d79f294706
 * add longreads header to subj
 * typo print
 * add env in readme
