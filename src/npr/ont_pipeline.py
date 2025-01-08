@@ -92,7 +92,7 @@ def find_new_flowcell(config):
     if config["target_flowcell"]:
         dirs = [d for d in dirs if config["target_flowcell"] in d]
         if not dirs and config["force_processing"]:
-            pattern = os.path.join(offload_path, '*')
+            pattern = os.path.join(offload_path, "*")
             # I guess we can skip filtering here ?
             dirs = [d for d in glob.glob(pattern) if config["target_flowcell"] in d]
 
