@@ -1,7 +1,28 @@
 CHANGES
 =======
 
+* [pre-commit] Fixes from hooks
+* Force a directory to be ran as a flow cell
+* pre-commit hooks CI autoupdate
+
+v2.1.4
+------
+
+* removed intermediate bamlist txt files
+* intermediate bam file removal
+* merge bam pass and fail into a single bam file
+* using org.label
+* [pre-commit] Fixes from hooks
+* Deprecated 'get\_organism\_name' function and changed the way to get organism name
+
+v2.1.3
+------
+
+* used {threads} instead of hardcodding
+* another bug fixed
 * fixed bug
+* [pre-commit] Fixes from hooks
+* pre-commit hooks CI autoupdate
 * [pre-commit] Fixes from hooks
 * Fixed a bug in 06\_align.smk where if the bam file is not sorted to sort it
 * Fixed another location where the PIs 2 last names is causing problems
