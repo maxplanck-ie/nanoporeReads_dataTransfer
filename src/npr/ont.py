@@ -77,11 +77,23 @@ from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc
     "--flowcell",
     default=None,
     show_default=True,
-    help="Target a specific flowcell",
+    help="Target a specific flowcell. Can be a substring of the directory to look for in the offload directory (config, or via --directory).",
+)
+@click.option(
+    "--force",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="If a flowcell is specified, force it to run (even if the appropriate flag is not set in that folder).",
 )
 
 # run workflow.
 def ont(**kwargs):
+    # Crash of force and no flowcell.
+    if kwargs["force"] and not kwargs["flowcell"]:
+        print("Force flag set without specifying a flowcell. Exiting.")
+        sys.exit(1)
+
     # print what config is used.
     print(
         "Starting pipeline with config: [green]{}[/green]".format(kwargs["configfile"])
@@ -102,6 +114,7 @@ def ont(**kwargs):
 
     if kwargs["flowcell"] is not False:
         config["target_flowcell"] = kwargs["flowcell"]
+        config["force_processing"] = kwargs["force"]
         if config["options"]["verbosity"]:
             print(
                 "Target flowcell is [green]{}[/green].".format(

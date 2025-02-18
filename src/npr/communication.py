@@ -129,6 +129,7 @@ def standard_text(config):
         + "Storage Footprint \n"
         + "\n".join([f"{key}: {value}" for key, value in SM.items()])
         + frame
+        + "Please keep in mind that the original pod5 files, needed e.g. to call modified bases, will only be available for the next 6 months and will be permanently deleted afterwards.\n"
         + "Please let me know if something is unclear or if you have any further questions.\n\nKind regards.\n"
     )
     return msg
@@ -176,6 +177,7 @@ def query_parkour(config, flowcell, msg):
     """
     query parkour to update info_dict (protocol and organism)
     """
+
     if not config["parkour"]["url"]:
         msg += "Parkour URL not specified."
         return msg
@@ -256,5 +258,6 @@ def query_parkour(config, flowcell, msg):
     msg += "Parkour queries tried:\n"
     for fq in flowcellqueries:
         msg += f"{fq}\n"
+
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")

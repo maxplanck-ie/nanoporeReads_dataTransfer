@@ -29,6 +29,29 @@ def gpu_available():
     print("[yellow]GPU is busy. {} [/yellow]".format(res))
     # consider GPU as not available
     return False
+
+def get_model(prot_type):    
+    model = (
+        config['info_dict']['model']
+        if 'dna' in prot_type 
+        else '/localenv/pipegrp/dorado-0.9.1-linux-x64/model/rna004_130bps_hac@v5.0.0'
+        if 'rna' in prot_type 
+        else None
+    )
+
+    return model
+
+def get_mod(prot_type):
+    mod = (
+        config['dorado_basecaller'].get("dorado_dna_modifications", "")
+        if "dna" in prot_type 
+        else config['dorado_basecaller'].get("dorado_rna_modifications", "")
+        if "rna" in prot_type 
+        else ""
+    )
+    
+    return mod
+
         
 rule basecall:
     input:
@@ -41,14 +64,14 @@ rule basecall:
         "benchmarks/01_basecall.tsv"
     params:
         cmd=config['dorado_basecaller']['dorado_cmd'],
-        model=config['info_dict']['model'],
+        prot_type=config['info_dict']['protocol'],
+        model = get_model(config['info_dict']['protocol']),  # FIX: removed extra comma
+        mod = get_mod(config['info_dict']['protocol']),
         options=config['dorado_basecaller']['dorado_options'],
-        # modification do not yet work with RNA
-        mod=config['dorado_basecaller']['dorado_modifications'] \
-            if not config['info_dict']['model_def'].startswith("rna") else "",
         dir='pod5',
-        bam= os.path.join(config['info_dict']['flowcell_path'],"bam/basecalls.bam"),
+        bam=os.path.join(config['info_dict']['flowcell_path'], "bam/basecalls.bam"),
         do_basecall=config['info_dict']['do_basecall']
+
     run:
         # now we wait for the GPU only when basecalling is needed
         if config['info_dict']['do_basecall'] == "do_basecall":
@@ -60,8 +83,15 @@ rule basecall:
         """
         echo "do_basecall: {params.do_basecall}" 2>> {log}
         if [[ "{params.do_basecall}" == "do_basecall" ]]; then
-            echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} {params.bam} 2>> {log}
-            {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
+            if [[ "{params.prot_type}" == "rna" ]]; then
+                echo "Processing RNA modification" 2>> {log}
+                echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
+                {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
+            else
+                echo "Processing DNA modification" 2>> {log}
+                echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} {params.bam} 2>> {log}
+                {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
+            fi
         else
             echo "Basecall step skipped" 2>> {log}
         fi

@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+<<<<<<< HEAD
+=======
+* [pre-commit] Fixes from hooks
+* Force a directory to be ran as a flow cell
+* pre-commit hooks CI autoupdate
+
+>>>>>>> 585ebfc8aa2b01c4d280e8e3c1c1c0c314adf2ad
 v2.1.4
 ------
 
@@ -17,6 +24,8 @@ v2.1.3
 * used {threads} instead of hardcodding
 * another bug fixed
 * fixed bug
+* [pre-commit] Fixes from hooks
+* pre-commit hooks CI autoupdate
 * [pre-commit] Fixes from hooks
 * Fixed a bug in 06\_align.smk where if the bam file is not sorted to sort it
 * Fixed another location where the PIs 2 last names is causing problems
