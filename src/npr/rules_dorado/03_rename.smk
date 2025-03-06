@@ -1,3 +1,4 @@
+import glob
 # define target pattern
 target = sample_dat + ".bam"  # "transfer/Project_{project}/Sample_{sample_id}/{sample_name}.bam"
 logpat = sample_log + "_rename.log"
@@ -38,7 +39,7 @@ rule rename:
 
             barcode_file = os.path.join(
                 params.dir, 
-                config['bc_kit'] + "_" + barcode + ".bam"
+                glob.glob("*_" + config['bc_kit'] + "_" + barcode + ".bam")
             )
             
         if not os.path.exists(barcode_file):

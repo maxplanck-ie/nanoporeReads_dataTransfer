@@ -2,10 +2,13 @@ CHANGES
 =======
 
 * [pre-commit] Fixes from hooks
+* RNA modification: Mode active
+* pod5 email
+* [pre-commit] Fixes from hooks
 * Force a directory to be ran as a flow cell
 * pre-commit hooks CI autoupdate
 
-v2.1.4
+v2.1.5
 ------
 
 * removed intermediate bamlist txt files
