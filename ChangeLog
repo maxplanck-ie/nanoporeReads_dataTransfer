@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+
+v2.2.0
+------
+
 * [pre-commit] Fixes from hooks
 * RNA modification: Mode active
 * pod5 email
