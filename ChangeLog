@@ -1,10 +1,11 @@
 CHANGES
 =======
 
-
-v2.2.0
+v2.2.1
 ------
 
+* ChangeLog
+* rename glob
 * [pre-commit] Fixes from hooks
 * RNA modification: Mode active
 * pod5 email

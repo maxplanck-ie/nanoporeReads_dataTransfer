@@ -37,10 +37,8 @@ rule rename:
                 print(f'[red] Barcode could not be found for sample_id: {wildcards.sample_id}[/red]')
                 exit(1)
 
-            barcode_file = os.path.join(
-                params.dir, 
-                glob.glob("*_" + config['bc_kit'] + "_" + barcode + ".bam")
-            )
+            barcode_file = glob.glob(os.path.join(params.dir,"*_" + config['bc_kit'] + "_" + barcode + ".bam"))[0]
+
             
         if not os.path.exists(barcode_file):
             print(f'[red] barcode_file does not exist: {barcode_file}. For sample: {wildcards.sample_id} {wildcards.sample_name}[/red]')
