@@ -42,6 +42,7 @@ metadata = dict(config["data"])
 del metadata["projects"]
 del metadata["samples"]
 metadata = pd.DataFrame(metadata).T
+sample_names = metadata['Sample_Name'].tolist()
 
 # wildcard mapping from wildcard name -> metadata column
 wc_mapping = {
@@ -67,7 +68,19 @@ else:
     sys.stderr.write("No genome for organism. No alignment will be done\n")
     #msg = "No reference genome found! No alignment will be done"
     #send_email("Error No reference genome found!", msg, config)
-    
+ 
+#make demultiplexing conditional on barcoding set to true and demultixplexed folders existing on dont_touch_this
+barcoding = config['info_dict']['barcoding']
+demux_done_by_deepseq = False
+if barcoding:
+    #get list of all expected demuxed bam folders on dont_touch_this
+    check_dirs = [os.path.join(config["info_dict"]["base_path"], "bam_pass" ,x) for x in metadata['index_id'].tolist()]
+    if all([os.path.exists(x for x in check_dirs)]):
+        demux_done_by_deepseq = True
+    else:
+        sys.stderr.write("Barcoding set to true but no matching directories found on dont_touch_this.\n")
+        exit(1)
+   
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
 wildcard_constraints:
