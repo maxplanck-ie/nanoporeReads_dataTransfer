@@ -177,6 +177,7 @@ def query_parkour(config, flowcell, msg):
     """
     query parkour to update info_dict (protocol and organism)
     """
+
     if not config["parkour"]["url"]:
         msg += "Parkour URL not specified."
         return msg
@@ -257,5 +258,6 @@ def query_parkour(config, flowcell, msg):
     msg += "Parkour queries tried:\n"
     for fq in flowcellqueries:
         msg += f"{fq}\n"
+
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")
