@@ -114,3 +114,8 @@ rule merge_final_bam:
         """
         samtools merge {params.opt} -@ {threads} -o {output.bam} {input} 2>> {log}
         """
+
+
+rule prepare_bam_flag:
+    input: expand("bam/{sample}_basecalls.bam",sample=sample_names)
+    output: touch("flags/00_prepare_bam.done")
