@@ -101,8 +101,10 @@ rule merge_final_bam:
     input:
         collect_batch_bams
     output:
-        bam = "bam/{sample}_basecalls.bam",
-        flag = touch("flags/{sample}_00_prepare_bam.done")
+        "bam/{sample}_basecalls.bam"
+    params:
+        opt=config['bam_merge']['opt'],
+        count=lambda wildcards,input: len(input)
     threads: 10
     conda:
         "ont-ppp-samtools"
@@ -112,7 +114,11 @@ rule merge_final_bam:
         "benchmarks/{sample}_00_merge_final_bam.tsv"
     shell:
         """
-        samtools merge {params.opt} -@ {threads} -o {output.bam} {input} 2>> {log}
+        if (( {params.count} >1 ));then
+            samtools merge {params.opt} -@ {threads} -o {output} {input} 2>> {log};
+        else
+            rsync -av {input} {output};
+        fi
         """
 
 
