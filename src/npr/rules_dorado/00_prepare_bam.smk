@@ -4,60 +4,124 @@ As the new ONT machine can provide basecalls using dorado + genome
 This part checks if we have the BAM files and merge
 '''
 
-rule prepare_bam:
+import os
+import re
+
+idir=config["info_dict"]["base_path"]
+baseout=os.path.join(config['info_dict']['flowcell_path'], "bam")
+
+def get_sample_barcode(sample):
+    barcode = metadata.loc[metadata['Sample_Name'] == sample, 'index_id'].item()
+    return barcode
+
+
+rule prepare_bam_list:
     input: 
-        "flags/00_prepare.done"
+        "flags/00_prepare.done",
+        bams_pass = lambda wildcards: os.path.join(idir,"bam_pass") if not demux_done_by_deepseq else os.path.join(idir,"bam_pass", get_sample_barcode(wildcards.sample)),
+        bams_fail = lambda wildcards: os.path.join(idir,"bam_fail") if not demux_done_by_deepseq else os.path.join(idir,"bam_fail", get_sample_barcode(wildcards.sample))
     output:
-        flag=touch("flags/00_prepare_bam.done"),
+        bamlist = temp("bam/{sample}_bam_list.txt"), #temp
+    log: 
+        'log/{sample}_00_prepare_bam_list.log'
+    benchmark:
+        "benchmarks/{sample}_00_prepare_bam_list.tsv"
+    shell:'''
+            # Get bam list from both dirs
+            find "{input.bams_pass}" "{input.bams_fail}" -name '*.bam' -type f > "{output.bamlist}" 2>> {log}
+
+        '''
+
+
+checkpoint split_bam_list:
+    input:
+        bamlist = "bam/{sample}_bam_list.txt"
+    output:
+        chunkdir = temp(directory("bam/{sample}_bam_chunks")),
     params:
-        idir=config["info_dict"]["base_path"],
-        baseout=os.path.join(config['info_dict']['flowcell_path'], "bam"),
-        batch_size=config['bam_merge']['batch_size'],
+        batch_size=config['bam_merge']['batch_size']
+    log:
+        'log/{sample}_00_split_bam_list.log'
+#    benchmark:
+#        "benchmarks/{sample}_00_split_bam_list.tsv"
+    shell:'''
+            mkdir -p {output.chunkdir}
+            # split the list
+            split -l "{params.batch_size}" "{input.bamlist}" "{output.chunkdir}/bam_list_b" 2>> {log}
+        '''
+
+
+def get_batches(wildcards):
+    # Get checkpoint output (bam_chunks directory)
+    checkpoint_output = glob_wildcards(os.path.join(checkpoint_output, "bam_list_{batch}")).batch
+
+    # Extract all batch names (based on chunked files)
+    return glob_wildcards(f"{checkpoint_output}/bam_list_*").batch
+
+
+
+rule merge_bams_in_batches:
+    input:
+        lambda wildcards: re.sub(r"\s+", "",f"bam/{wildcards.sample}_bam_chunks/bam_list_{wildcards.batch}")
+    output:
+        batch_bam = temp("bam/{sample}_bam_chunks/{batch}.bam") #temp
+    params:
         opt=config['bam_merge']['opt']
-    threads:
-        10
+    threads: 10
     conda:
         "ont-ppp-samtools"
-    log: 
-        'log/00_prepare_bam.log'
+    log:
+        'log/{sample}_00_merge_bams_in_batches_{batch}.log'
     benchmark:
-        "benchmarks/00_prepare_bam.tsv"
-    shell:'''
-        if [ -e "{params.baseout}" ]; then
-            echo "{params.baseout} exists, any BAM file will be overwritten" 2>> {log}
+        "benchmarks/{sample}_00_merge_bams_in_batches_{batch}.tsv"
+    shell:
+        """
+        samtools merge {params.opt} -@ {threads} -b {input} -o {output.batch_bam} 2>> {log}
+        """
+
+
+def collect_batch_bams(wildcards):
+    checkpoint_data = checkpoints.split_bam_list.get(**wildcards)
+    print(f"Checkpoint output: {checkpoint_data.output}",file=sys.stderr, flush=True)
+
+    checkpoint_output = checkpoint_data.output[0]
+    print(f"Using checkpoint output: {checkpoint_output}",file=sys.stderr, flush=True)
+
+    batches = glob_wildcards(os.path.join(checkpoint_output, "bam_list_{batch}")).batch
+    print(f"Found batches: {batches}",file=sys.stderr, flush=True)
+
+    primary_output = expand("bam/{sample}_bam_chunks/{batch}.bam", batch=batches, sample=wildcards.sample)
+    #for some reason, snakemake prepends wilcards with whitespaces and results in nonexisting file names
+    sanitized_output = [re.sub(r"\s+", "", file) for file in primary_output]
+    print(f"Sanitized output: {sanitized_output}",file=sys.stderr, flush=True)
+    return sanitized_output
+
+
+rule merge_final_bam:
+    input:
+        collect_batch_bams
+    output:
+        "bam/{sample}_basecalls.bam"
+    params:
+        opt=config['bam_merge']['opt'],
+        count=lambda wildcards,input: len(input)
+    threads: 10
+    conda:
+        "ont-ppp-samtools"
+    log:
+        "log/{sample}_00_merge_final_bam.log"
+    benchmark:
+        "benchmarks/{sample}_00_merge_final_bam.tsv"
+    shell:
+        """
+        if (( {params.count} >1 ));then
+            samtools merge {params.opt} -@ {threads} -o {output} {input} 2>> {log};
         else
-            echo mkdir "{params.baseout}" 2>> {log}
-            mkdir "{params.baseout}" 2>> {log}
+            rsync -av {input} {output};
         fi
+        """
 
-        if [ -e "{params.idir}/bam_pass" ] || [ -e "{params.idir}/bam_fail" ]; then
-            # BAM files are present in bam_pass and/or bam_fail
 
-            # Get bam list from both dirs
-            echo find "{params.idir}/bam_pass" "{params.idir}/bam_fail" -name '*.bam' -type f > "{params.baseout}/bam_list.txt" 2>> {log}
-            find "{params.idir}/bam_pass" "{params.idir}/bam_fail" -name '*.bam' -type f > "{params.baseout}/bam_list.txt" 2>> {log}
-
-            # split the list
-            echo split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
-            split -l {params.batch_size} "{params.baseout}/bam_list.txt" "{params.baseout}/bam_list_b" 2>> {log}
-            
-            #and merge the bams
-            if [[ $(ls "{params.baseout}"/bam_list_b* | wc -l) -eq "1" ]]; then
-                
-                echo samtools merge {params.opt} -@ {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
-                samtools merge {params.opt} -@ {threads} -b "{params.baseout}/bam_list_baa" -o "{params.baseout}/basecalls.bam" 2>> {log}
-            else
-                # Merge in batches, one by one to avoid opened files limit
-                for BATCH in "{params.baseout}"/bam_list_b*; do
-                    echo samtools merge {params.opt} -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
-                    samtools merge {params.opt} -@ {threads} -b $BATCH -o $BATCH.bam 2>> {log}
-                done
-                # Final merge
-                echo samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
-                samtools merge {params.opt} -@ {threads} -o "{params.baseout}/basecalls.bam" "{params.baseout}"/bam_list_b*.bam 2>> {log}
-            fi
-        else
-            echo "No BAM files found in {params.idir}/bam_pass or {params.idir}/bam_fail" >> {log}
-        fi
-        rm -f "{params.baseout}"/bam_list*
-        '''
+rule prepare_bam_flag:
+    input: expand("bam/{sample}_basecalls.bam",sample=sample_names)
+    output: touch("flags/00_prepare_bam.done")
