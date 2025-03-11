@@ -1,10 +1,14 @@
 CHANGES
 =======
 
+* rule all
+* first sample wildcard implementation
+* Changelog
+
 v2.2.2
 ------
 
-* renaming demuxed files working
+* renaming working
 
 v2.2.1
 ------

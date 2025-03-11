@@ -75,7 +75,7 @@ demux_done_by_deepseq = False
 if barcoding:
     #get list of all expected demuxed bam folders on dont_touch_this
     check_dirs = [os.path.join(config["info_dict"]["base_path"], "bam_pass" ,x) for x in metadata['index_id'].tolist()]
-    if all([os.path.exists(x for x in check_dirs)]):
+    if all([os.path.exists(x) for x in check_dirs]):
         demux_done_by_deepseq = True
     else:
         sys.stderr.write("Barcoding set to true but no matching directories found on dont_touch_this.\n")
@@ -90,19 +90,19 @@ rule finalize:
     input:
         "flags/00_start.done",
         "flags/00_prepare.done",
-        "flags/00_prepare_bam.done", expand(os.path.join(baseout,"{sample}_basecalls.bam"),sample=sample_names)
-        "flags/01_basecall.done",
-        "flags/02_demux.done",
-        "flags/03_rename.done",
-        "flags/04_seqsum.done",
-        "flags/05_fastq.done",
-        "flags/05_porechop.done",
-        align_done,
-        "flags/08_fastqc.done",
-        "flags/08_pycoqc.done",
-        "flags/08_kraken.done",
-        "flags/08_multiqc.done",
-        "flags/09_transfer.done",
+        expand("flags/{sample}_00_prepare_bam.done",sample=sample_names), expand("bam/{sample}_basecalls.bam",sample=sample_names),
+        #"flags/01_basecall.done",
+        #"flags/02_demux.done",
+        #"flags/03_rename.done",
+        #"flags/04_seqsum.done",
+        #"flags/05_fastq.done",
+        #"flags/05_porechop.done",
+        #align_done,
+        #"flags/08_fastqc.done",
+        #"flags/08_pycoqc.done",
+        #"flags/08_kraken.done",
+        #"flags/08_multiqc.done",
+        #"flags/09_transfer.done",
     output:    
         touch("flags/XX_snakemake.done")
     benchmark:
