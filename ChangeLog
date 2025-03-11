@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+v3.0.0-beta
+-----------
+
 * one flag
 * prepare bam working
 * rule all
