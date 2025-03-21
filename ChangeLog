@@ -1,10 +1,19 @@
 CHANGES
 =======
 
+v3.0.0-beta
+-----------
+
+* one flag
+* prepare bam working
+* rule all
+* first sample wildcard implementation
+* Changelog
+
 v2.2.2
 ------
 
-* renaming demuxed files working
+* renaming working
 
 v2.2.1
 ------

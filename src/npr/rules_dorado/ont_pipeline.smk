@@ -4,7 +4,7 @@ import glob
 import re
 import shutil
 import pandas as pd
-from rich import print
+from rich import print 
 from npr.communication import  send_email
 
 dorado=config['dorado_basecaller']['dorado_cmd']
@@ -43,6 +43,10 @@ del metadata["projects"]
 del metadata["samples"]
 metadata = pd.DataFrame(metadata).T
 
+sample_ids = metadata['Sample_ID'].tolist()
+sample_names = metadata['Sample_Name'].tolist()
+sample_projects = metadata['Sample_Project'].tolist()
+Project_id = sample_projects[0] ## to be used in the fastqc
 # wildcard mapping from wildcard name -> metadata column
 wc_mapping = {
     "project" : "Sample_Project",
@@ -67,31 +71,70 @@ else:
     sys.stderr.write("No genome for organism. No alignment will be done\n")
     #msg = "No reference genome found! No alignment will be done"
     #send_email("Error No reference genome found!", msg, config)
-    
+ 
+#make demultiplexing conditional on barcoding set to true and demultixplexed folders existing on dont_touch_this
+barcoding = config['info_dict']['barcoding']
+demux_done_by_deepseq = False
+if barcoding:
+    #get list of all expected demuxed bam folders on dont_touch_this
+    check_dirs = [os.path.join(config["info_dict"]["base_path"], "bam_pass" ,x) for x in metadata['index_id'].tolist()]
+    if all([os.path.exists(x) for x in check_dirs]):
+        demux_done_by_deepseq = True
+    else:
+        sys.stderr.write("Barcoding set to true but no matching directories found on dont_touch_this.\n")
+        exit(1)
+   
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
 wildcard_constraints:
         sample_id="[0-9]{2}L[0-9]{6}"
 
+
 rule finalize:
     input:
         "flags/00_start.done",
         "flags/00_prepare.done",
-        "flags/00_prepare_bam.done",
-        "flags/01_basecall.done",
-        "flags/02_demux.done",
-        "flags/03_rename.done",
-        "flags/04_seqsum.done",
-        "flags/05_fastq.done",
-        "flags/05_porechop.done",
-        align_done,
+
+        "flags/00_prepare_bam.done", 
+        expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names),
+        
+        "flags/04_seqsum.done", 
+        expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        
+        "flags/05_fastq.done", 
+        expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        
+        "flags/05_porechop.done", 
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        
+        "flags/06_align.done",
+        expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        
+        expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bed.gz",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+
         "flags/08_fastqc.done",
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
+    
         "flags/08_pycoqc.done",
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.html",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.json",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        
         "flags/08_kraken.done",
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_kraken.report",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+
         "flags/08_multiqc.done",
+        "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html",
+
         "flags/09_transfer.done",
+
+        ###"flags/01_basecall.done", 
+        ###"flags/02_demux.done",
+        ###"flags/03_rename.done",
+    
+
+        
     output:    
-        touch("flags/XX_snakemake.done")
+        # touch("flags/XX_snakemake.done")
     benchmark:
         "benchmarks/ont_pipeline.tsv"
     log:
@@ -115,9 +158,6 @@ rule finalize:
 include: "00_start.smk"
 include: "00_prepare.smk"
 include: "00_prepare_bam.smk"
-include: "01_basecall.smk"
-include: "02_demux.smk"
-include: "03_rename.smk"
 include: "04_seqsum.smk"
 include: "05_fastq.smk"
 include: "05_porechop.smk"
@@ -128,3 +168,10 @@ include: "08_pycoqc.smk"
 include: "08_kraken.smk"
 include: "08_multiqc.smk"
 include: "09_transfer.smk"
+
+#include: "01_basecall.smk"
+#include: "02_demux.smk"
+#include: "03_rename.smk"
+
+
+

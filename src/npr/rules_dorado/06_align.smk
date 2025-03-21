@@ -3,38 +3,36 @@ Align reads usign dorado aligner (minimap2)
 '''
 # define source and target pattern
 source_bam = sample_dat + ".bam"
-source_fq = sample_dat + ".fastq.gz"
+# source_fq = sample_dat + ".fastq.gz"
 source_seqsum = sample_dat + ".seqsum"
-target_bam  = sample_ana + ".align.bam"
-target_bai  = sample_ana + ".align.bam.bai"
-target_html = sample_qc + ".align_pycoqc.html"
-target_json = sample_qc + ".align_pycoqc.json"
-target_flagstat = sample_qc + ".align.flagstat"
-logpat = sample_log + "_align.log"
-bchpat = sample_bch + "_align.tsv"
+# target_bam  = sample_ana + ".align.bam"
+# target_bai  = sample_ana + ".align.bam.bai"
+# target_html = sample_qc + ".align_pycoqc.html"
+# target_json = sample_qc + ".align_pycoqc.json"
+# target_flagstat = sample_qc + ".align.flagstat"
+# logpat = sample_log + "_align.log"
+# bchpat = sample_bch + "_align.tsv"
 
-rule align_final:
-    input: expand_project_path(target_bam)
-    output: touch("flags/06_align.done")
     
 rule align:
     input:
-        bam_file = source_bam,
-        fq_file = source_fq,
-        seqsum = source_seqsum
+        bam_file = "bam/{sample_id}_{sample_name}.bam",
+        fq_file = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz",
+        seqsum = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum"
     output:
-        file = target_bam,
-        bai = target_bai,
-        flagstat = target_flagstat
+        file = "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam",
+        #file = "transfer/Project_{sample_project}/Samples/{sample_id}_{sample_name}.align.bam",
+        #bai = "transfer/Project_{sample_project}/{analysis_name}/Samples/{sample_id}_{sample_name}.align.bam.bai",
+        flagstat = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align.flagstat"
     log:
-        logpat
+        "log/{sample_project}_{sample_id}_{sample_name}_align.log",
     benchmark:
-        bchpat
+        "benchmarks/{sample_project}_{sample_id}_{sample_name}_align.tsv",
     params:
         cmd=config['dorado_basecaller']['dorado_cmd'],
         genome =  config['genome'].get(org, None),
-        json = target_json,
-        html = target_html,
+        json = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.json",
+        html = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.html",
         do_align = config['info_dict']['do_align']
     threads:
         10 # same number of threads will be applied to dorado-align and samtools
@@ -65,5 +63,10 @@ rule align:
         # run samtools flagstat
         echo "samtools flagstat for bam {output.file}"
         samtools flagstat --threads {threads} {output.file} > {output.flagstat}
+        
         """
 
+rule align_final:
+    input: expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+    #input: expand("transfer/Project_{sample_project}/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+    output: touch("flags/06_align.done") 
