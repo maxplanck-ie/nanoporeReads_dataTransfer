@@ -403,7 +403,7 @@ def read_samplesheet(config):
         "No_index.*", "no_bc", regex=True
     )
 
-    data = dict()
+    data = dict() 
     data["projects"] = []
     data["samples"] = []
     for index, row in sample_sheet.iterrows():
@@ -473,15 +473,16 @@ def get_dest_path(config, dir):
 
     # default pi_name if it cannot be determined from basename(dir)
     pi_name = "unknown"
-
     # try to get pi_name from basename(dir)
-    match = re.match(r"^(Project_\d+)_(\w+)_(\w+)", os.path.basename(dir))
+    match = re.match(r"(Project_\d+)_([A-Za-z-]+)_([A-Za-z]+)", os.path.basename(dir))
+    
     if match:
         p_id, username, pi_name = match.groups()
         pi_name = pi_name.lower()
 
     # assume PI has directories all set up
     groupdir = os.path.join(config["paths"]["groupDir"], pi_name)
+    
     if not os.path.exists(groupdir):
         # group pi_name has no volumne so transfer somewhere else (external runs)
         dest_path = os.path.join(
@@ -494,6 +495,7 @@ def get_dest_path(config, dir):
     else:
         # get the most recent destination path: e.g. "{groupdir}/sequencing_data6/OxfordNanopore"
         dest_path = get_seqdir(groupdir, "sequencing_data")
+        
 
     dest_path = os.path.join(
         dest_path, os.path.basename(config["info_dict"]["flowcell_path"])

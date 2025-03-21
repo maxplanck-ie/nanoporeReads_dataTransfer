@@ -2,13 +2,13 @@
 Adaptor trimming with porechop and summary
 '''
 
-# define source and target pattern
-source = sample_dat + ".fastq.gz"
-subset_fastq = sample_dat + "_subset.fastq.gz"
-target_fastq = sample_dat + "_subset_porechop.fastq.gz"
-target_info  =  sample_qc + "_porechop.info"
-logpat = sample_log + "_porechop.log"
-bchpat = sample_bch + "_porechop.tsv"
+# # define source and target pattern
+# source = sample_dat + ".fastq.gz"
+# subset_fastq = sample_dat + "_subset.fastq.gz"
+# target_fastq = sample_dat + "_subset_porechop.fastq.gz"
+# target_info  =  sample_qc + "_porechop.info"
+# logpat = sample_log + "_porechop.log"
+# bchpat = sample_bch + "_porechop.tsv"
 
 # Below are some functions to extract more information from the porechop.info file (requires -v 1 (default))
 # Notice that Porechop output is rather unstructured
@@ -90,7 +90,7 @@ def print_info(info, dir_name, key='trimmed'):
 
 
 rule porechop_final:
-    input: expand_project_path(target_info)
+    input: expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects)
     output: touch("flags/05_porechop.done")
     run:
         # initialize dictionary
@@ -114,28 +114,29 @@ rule porechop_final:
         print_info(info, dir_name, key='trimmed')
         print_info(info, dir_name, key="best_start")
         print_info(info, dir_name, key="best_end")
-
+        
 
 rule qc_porechop:
     input:
-        fastq = source
+        # flag="flags/05_fastq.done",
+        fastq = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz"
     output:
-        info = target_info
+        info = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info"
     wildcard_constraints:
         # exclude all sample_name that end on "_porechop.info" (already chopped) 
-        sample_name = r'(?!.*\.porechop\.info$).*',
+        sample_name = r'(?!.*\.porechop\.info$).*'
     threads: 10
     conda:
         "ont-ppp-porechop"
     params:
         flag = "",
         nlines = int(config['porechop']['sample_reads']) * 4,
-        subset = subset_fastq,
-        target = target_fastq
+        subset = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset.fastq.gz",
+        target = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset_porechop.fastq.gz"
     log:
-        logpat
+        "log/{sample_project}_{sample_id}_{sample_name}_porechop.log"
     benchmark:
-        bchpat
+        "benchmarks/{sample_project}_{sample_id}_{sample_name}_porechop.tsv"
     shell:'''
         echo "extracting {params.nlines} lines"
         seqkit head -n {params.nlines} -o {params.subset} {input.fastq} 2>> {log}
@@ -143,3 +144,4 @@ rule qc_porechop:
         echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}"
         porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}
     '''
+

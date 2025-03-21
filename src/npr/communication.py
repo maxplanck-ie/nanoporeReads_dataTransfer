@@ -1,4 +1,4 @@
-import glob
+import glob 
 import os
 import shutil
 import smtplib
@@ -73,7 +73,7 @@ def ship_qcreports(config, flowcell):
         os.path.join(config["info_dict"]["base_path"], "reports", "*.html")
     )
     for report in reports:
-        print(f"copy {report}")
+        print(f"copying... {report}")
         shutil.copy(report, bioinfo_target)
         try:
             scp.put(report, samba_target)
