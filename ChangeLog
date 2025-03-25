@@ -1,15 +1,16 @@
 CHANGES
 =======
 
-v3.0.1
+v3.0.2
 ------
 
-* break modbed into two rules
-
-
-v3.0.0-beta
------------
-
+* cleanup modkit env
+* modbed into 2 rules
+* tabix missing in modkit env
+* [pre-commit] Fixes from hooks
+* barcode enabled pipeline
+* Changelog
+* rsync better than mv
 * one flag
 * prepare bam working
 * rule all

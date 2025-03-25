@@ -87,7 +87,7 @@ if barcoding:
 #if protocol is cdna, don't call modifications
 do_modbed = config['info_dict']['do_modbed'],
 protocol = config['info_dict']['protocol']
-if protol == "cdna":
+if protocol == "cdna":
     do_modbed = False
     config['info_dict']['do_modbed'] = False
    

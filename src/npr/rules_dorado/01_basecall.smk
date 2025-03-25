@@ -60,8 +60,6 @@ rule basecall:
         flag=touch("flags/01_basecall.done")
     log:
         "log/01_basecall.log"
-    benchmark:
-        "benchmarks/01_basecall.tsv"
     params:
         cmd=config['dorado_basecaller']['dorado_cmd'],
         prot_type=config['info_dict']['protocol'],

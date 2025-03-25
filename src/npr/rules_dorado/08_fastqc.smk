@@ -27,8 +27,6 @@ rule fastqc:
         "ont-ppp-fastqc"
     log:
         "log/{sample_project}_{sample_id}_{sample_name}_fastqc.log"
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}_fastqc.tsv"
     shell:''' 
         fastqc --memory={params.memory} -t {threads} -o {params.odir} --dir {params.odir} {input} 2> {log}
     '''

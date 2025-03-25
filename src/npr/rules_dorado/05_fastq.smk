@@ -23,8 +23,6 @@ rule fastq:
         sample_name = r'(?!.*\.align\.bam$).*',
     log:
         "log/{sample_project}_{sample_id}_{sample_name}.fastq.log"
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}.fastq.tsv"
     threads:
         16
     conda:

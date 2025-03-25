@@ -14,8 +14,6 @@ rule seqsum:
         cmd=config['dorado_basecaller']['dorado_cmd']
     log:
         "log/{sample_project}_{sample_id}_{sample_name}.seqsum.log"
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}.seqsum.tsv"
     shell:
         """
         {params.cmd} summary {input.bam_file}  > {output.seqsum} 2>> {log}

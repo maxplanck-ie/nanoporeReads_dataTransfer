@@ -20,8 +20,6 @@ rule bam2modbed:
         "log/{sample_project}_{sample_id}_{sample_name}_modbed.log"
     params:
         do_modbed = do_modbed
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}_modbed.tsv"
     threads: 10
     conda:
         "ont-ppp-modkit"
@@ -43,7 +41,8 @@ rule tabix:
     output: "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed.gz",
             "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi"
     log: "log/{sample_project}_{sample_id}_{sample_name}_tabix.log"
-    do_modbed = do_modbed
+    params:
+        do_modbed = do_modbed
     conda: "ont-ppp-samtools"
     shell: """
         if [[ "{params.do_modbed}" == "do_modbed" ]]; then
