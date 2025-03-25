@@ -83,6 +83,13 @@ if barcoding:
     else:
         sys.stderr.write("Barcoding set to true but no matching directories found on dont_touch_this.\n")
         exit(1)
+
+#if protocol is cdna, don't call modifications
+do_modbed = config['info_dict']['do_modbed'],
+protocol = config['info_dict']['protocol']
+if protol == "cdna":
+    do_modbed = False
+    config['info_dict']['do_modbed'] = False
    
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
