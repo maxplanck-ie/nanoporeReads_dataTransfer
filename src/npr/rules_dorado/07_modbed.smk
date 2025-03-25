@@ -15,7 +15,7 @@ rule bam2modbed:
         flag = "flags/06_align.done",
         bam = "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam",
     output:
-        bedgz = "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed"
+        bed = temp("transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed")
     log:
         "log/{sample_project}_{sample_id}_{sample_name}_modbed.log"
     params:
@@ -30,12 +30,10 @@ rule bam2modbed:
         if [[ "{params.do_modbed}" == "do_modbed" ]]; then
             echo modkit pileup -t {threads} {input.bam} {params.bed} 2>> {log}
             modkit pileup -t 100 {input.bam} {params.bed} 2>> {log}
-            bgzip {params.bed}
-            tabix {output.bedgz}
         else
             echo "Modbed step skipped" 2>> {log}
-            touch {output.bedgz}
-            echo "No modifications observed" >> {output.bedgz}
+            touch {output.bedg}
+            echo "No modifications observed" >> {output.bed}
             
         fi
     '''
