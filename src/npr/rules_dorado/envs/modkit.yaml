@@ -5,3 +5,4 @@ channels:
 dependencies:
   - ont-modkit
   - samtools == 1.19.2
+  - tabix
