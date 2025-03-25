@@ -51,7 +51,7 @@ rule tabix:
         else
             echo "Modbed step skipped" 2>> {log}
             touch {output}[1]
-            echo "No modifications observed" >> {output.bedgz}
+            echo "No modifications observed" >> {output}[0]
 
         fi
         """
