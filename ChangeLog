@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+* fix tabix
+* rm all benchmarks
+
 v3.0.2
 ------
 
