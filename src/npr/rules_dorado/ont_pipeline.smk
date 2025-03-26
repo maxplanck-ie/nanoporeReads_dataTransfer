@@ -83,6 +83,13 @@ if barcoding:
     else:
         sys.stderr.write("Barcoding set to true but no matching directories found on dont_touch_this.\n")
         exit(1)
+
+#if protocol is cdna, don't call modifications
+do_modbed = config['info_dict']['do_modbed'],
+protocol = config['info_dict']['protocol']
+if protocol == "cdna":
+    do_modbed = False
+    config['info_dict']['do_modbed'] = False
    
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
@@ -110,7 +117,8 @@ rule finalize:
         "flags/06_align.done",
         expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-        expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bed.gz",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        "flags/07_modbed.done",
+        expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
 
         "flags/08_fastqc.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),

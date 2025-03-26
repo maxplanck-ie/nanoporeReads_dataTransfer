@@ -1,9 +1,19 @@
 CHANGES
 =======
 
-v3.0.0-beta
------------
+* fix tabix
+* rm all benchmarks
 
+v3.0.2
+------
+
+* cleanup modkit env
+* modbed into 2 rules
+* tabix missing in modkit env
+* [pre-commit] Fixes from hooks
+* barcode enabled pipeline
+* Changelog
+* rsync better than mv
 * one flag
 * prepare bam working
 * rule all

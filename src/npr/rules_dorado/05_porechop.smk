@@ -135,8 +135,6 @@ rule qc_porechop:
         target = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset_porechop.fastq.gz"
     log:
         "log/{sample_project}_{sample_id}_{sample_name}_porechop.log"
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}_porechop.tsv"
     shell:'''
         echo "extracting {params.nlines} lines"
         seqkit head -n {params.nlines} -o {params.subset} {input.fastq} 2>> {log}

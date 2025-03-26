@@ -26,8 +26,6 @@ rule align:
         flagstat = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align.flagstat"
     log:
         "log/{sample_project}_{sample_id}_{sample_name}_align.log",
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}_align.tsv",
     params:
         cmd=config['dorado_basecaller']['dorado_cmd'],
         genome =  config['genome'].get(org, None),

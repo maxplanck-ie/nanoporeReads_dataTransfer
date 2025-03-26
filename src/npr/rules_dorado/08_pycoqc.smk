@@ -23,8 +23,6 @@ rule pycoqc:
         "log/{sample_project}_{sample_id}_{sample_name}_pycoqc.log"
     params:
         par = config['pycoQc']['pycoQc_opts']
-    benchmark:
-        "benchmarks/{sample_project}_{sample_id}_{sample_name}_pycoqc.tsv"
     conda:
         "ont-ppp-pycoqc"
     shell:'''

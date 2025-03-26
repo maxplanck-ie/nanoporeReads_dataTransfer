@@ -20,8 +20,6 @@ rule rename:
         dir=demux_dir
     log:
         logpat 
-    benchmark:
-        bchpat
     run:
         # default file if no barcoding
         barcode_file = output_bam 
