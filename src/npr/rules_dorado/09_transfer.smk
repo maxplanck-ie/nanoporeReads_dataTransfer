@@ -9,8 +9,6 @@ rule transfer:
         touch("flags/09_transfer.done"),
     log:
         file="log/09_transfer.log"
-    benchmark:
-        "benchmarks/09_transfer.tsv"
     run:
         dirs = glob.glob(os.path.join(transfer_dir, 'Project*'))
         with open(log.file, "a") as log:

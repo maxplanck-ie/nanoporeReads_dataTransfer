@@ -24,8 +24,6 @@ rule prepare_bam_list:
         bamlist = temp("bam/{sample_name}_bam_list.txt"), #temp
     log: 
         'log/{sample_name}_00_prepare_bam_list.log'
-    benchmark:
-        "benchmarks/{sample_name}_00_prepare_bam_list.tsv"
     shell:'''
             # Get bam list from both dirs
             find "{input.bams_pass}" "{input.bams_fail}" -name '*.bam' -type f > "{output.bamlist}" 2>> {log}
@@ -41,8 +39,6 @@ checkpoint split_bam_list:
         batch_size=config['bam_merge']['batch_size']
     log:
         'log/{sample_name}_00_split_bam_list.log'
-    benchmark:
-        "benchmarks/{sample_name}_00_split_bam_list.tsv"
     shell:'''
             mkdir -p {output.chunkdir}
             # split the list
@@ -109,8 +105,6 @@ rule merge_final_bam:
         "ont-ppp-samtools"
     log:
         "log/{sample_id}_{sample_name}_00_merge_final_bam.log"
-    benchmark:
-        "benchmarks/{sample_id}_{sample_name}_00_merge_final_bam.tsv"
     shell:
         """
         #if (( {params.count} >1 ));then

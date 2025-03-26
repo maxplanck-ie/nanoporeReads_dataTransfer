@@ -26,7 +26,6 @@ rule multiqc:
     conda:
         "ont-ppp-multiqc"
     log: "log/"+ Project_id+ "_multiqc.log"
-    benchmark: "benchmarks/" + Project_id + "_multiqc.tsv"
     shell:'''
         # convert SampleSheet to sampleDict for multiqc convenience
         awk 'BEGIN{{FS=",";OFS="\t"}} !/Data/ {{print $2"_"$3, $2, $3}}' {params.sampleSheet} > {params.sampleDict}
