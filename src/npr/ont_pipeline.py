@@ -194,7 +194,7 @@ def read_flowcell_info(config, info_dict, base_path):
     # adding default flags for basecalling, align and modbed
     info_dict["do_basecall"] = config["default_process"]["do_basecall"]
     info_dict["do_align"] = config["default_process"]["do_align"]
-    info_dict["do_modbed"] = config["default_process"]["do_modbed"]
+    info_dict["do_modbed"] = config["default_process"]["do_modbed"] #set to False!
 
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
@@ -282,10 +282,12 @@ def read_flowcell_info(config, info_dict, base_path):
             info_dict["model"] = info_dict["model_def"]
 
         if "modbases" in info_dict["model_def"]:
-            info_dict["do_modbed"] = "do_modbed"
+            info_dict["do_modbed"] = True
             print(
-                f"  [green]Found modified bases was used, BED will be genered[/green]"
+                f"  [green]Found modified bases was used, BED will be generated[/green]"
             )
+        else:
+            print("Modified bases not found in model definition. No BED file will be generated.")
 
         # double check args. This needs a cleaner solution.
         for rg in jsondata["protocol_run_info"]["args"]:
