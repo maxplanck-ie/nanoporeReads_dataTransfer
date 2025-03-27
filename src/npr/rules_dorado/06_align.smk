@@ -5,6 +5,14 @@ Align reads usign dorado aligner (minimap2)
 source_bam = sample_dat + ".bam"
 source_seqsum = sample_dat + ".seqsum"
 
+def is_sorted(sortOrderFile):
+    with open(sortOrderFile,'r') as f:
+        if "unsorted" in f.readline():
+            return False
+        else:
+            return True
+
+
 if do_align:   
     rule align:
         input:
@@ -26,12 +34,27 @@ if do_align:
         """
 
 else:
-    rule copy_aligned_bam:
+    rule grep_sort_order:
         input: "bam/{sample_id}_{sample_name}.bam"
-        output: "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam"
-        log: "log/{sample_project}_{sample_id}_{sample_name}_rsync.log"
+        output: temp("bam/{sample_id}_{sample_name}.sort_order.txt")
+        log: "log/{sample_project}_{sample_id}_{sample_name}_sortOrder.log"
+        conda: "ont-ppp-samtools"
         shell: """
-              rsync -av {input} {output} 2>{log}
+            samtools view -H {input} | grep SO > {output} 2>{log}
+            """
+
+    rule copy_or_sort_aligned_bam:
+        input: 
+            bam = "bam/{sample_id}_{sample_name}.bam",
+            sortorder = "bam/{sample_id}_{sample_name}.sort_order.txt"
+        output: "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam"
+        log: "log/{sample_project}_{sample_id}_{sample_name}_copyOrSort.log"
+        params:
+            shell = lambda wildcards,input: "rsync -av {input} {output} 2>{log}" if is_sorted(input.sortorder) else "samtools sort -@ {threads} -m 20G {input.bam} > {output} 2>{log}"
+        threads: 10
+        conda: "ont-ppp-samtools"
+        shell: """
+              {params.shell}
               """
 
 

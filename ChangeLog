@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+v3.1.0
+------
+
+* cleanup
+* make transfer wait for modbed
+* do\_modbed boolean
+* final fixes modbed
 * fix tabix
 * rm all benchmarks
 
