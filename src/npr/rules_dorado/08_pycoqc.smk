@@ -2,34 +2,26 @@
 pycoqc
 '''
 
-# # define source and target pattern
-# source = sample_dat + ".seqsum"
-# target_html = sample_qc + "_pycoqc.html"
-# target_json = sample_qc + "_pycoqc.json"
-# logpat = sample_log + "_pycoqc.log"
-# bchpat = sample_bch + "_pycoqc.tsv"
 
-rule pycoqc:
-    input: 
+rule pycoQC:
+    input:
+        aligned_bam = "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam",
         seqsum = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum"
     output:
-        html = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.html",
-        json = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.json",
-    wildcard_constraints:
-        # exclude all sample files that end on ".align.bam" (already aligned) 
-        sample_name = r'(?!.*\.align_pycoqc\.json$).*',
-        sample_id = "[0-9]{2}L[0-9]{6}"
-    log:
-        "log/{sample_project}_{sample_id}_{sample_name}_pycoqc.log"
+        json = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.json",
+        html = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.html"
+    log: "log/{sample_project}_{sample_id}_{sample_name}_pycoqc.log"
     params:
         par = config['pycoQc']['pycoQc_opts']
-    conda:
-        "ont-ppp-pycoqc"
-    shell:'''
-        touch {output.html}  # since pycoqc may fail
-        touch {output.json}  # since pycoqc may fail
-        pycoQC --summary_file {input.seqsum} {params.par} -o {output.html} -j {output.json} >> {log} 2>&1 || true
-    '''
+    wildcard_constraints:
+        sample_id = "[0-9]{2}L[0-9]{6}"
+    conda: "ont-ppp-pycoqc"
+    shell: """
+            # notice that pycoQC is prone to fail, especially for tests with small bam files --> 
+            # enforce success (|| true)
+            pycoQC --summary_file {input.seqsum} --bam_file {input.aligned_bam} \
+            {params.par} -o {output.html} -j {output.json} >> {log} 2>&1 || true
+            """
 
 rule pycoqc_final:
     input:

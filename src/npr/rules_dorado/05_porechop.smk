@@ -2,14 +2,6 @@
 Adaptor trimming with porechop and summary
 '''
 
-# # define source and target pattern
-# source = sample_dat + ".fastq.gz"
-# subset_fastq = sample_dat + "_subset.fastq.gz"
-# target_fastq = sample_dat + "_subset_porechop.fastq.gz"
-# target_info  =  sample_qc + "_porechop.info"
-# logpat = sample_log + "_porechop.log"
-# bchpat = sample_bch + "_porechop.tsv"
-
 # Below are some functions to extract more information from the porechop.info file (requires -v 1 (default))
 # Notice that Porechop output is rather unstructured
 # The function below create files that are compatabile with multiqc (see: multiqc_config.yaml)

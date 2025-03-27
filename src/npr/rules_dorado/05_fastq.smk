@@ -5,13 +5,6 @@ While this can be brute forced into the FASTQ header (-T "*")
 the header will be useless after read chopping, splitting etc
 '''
 
-# # define source and target pattern
-# source = sample_dat + ".bam" # 
-# target = sample_dat + ".fastq.gz" # 
-# logpat = sample_log + "_fastq.log"
-# bchpat = sample_bch + "_fastq.tsv"
-
-    
 rule fastq:
     input:
         flag="flags/04_seqsum.done",

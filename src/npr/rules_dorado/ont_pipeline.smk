@@ -64,14 +64,9 @@ def expand_project_path(path, metadata=metadata, wc_mapping=wc_mapping):
 
 
 # make alignment conditional on genome being defined and available
-align_done = []
-if genome is not None and os.path.exists(genome):
-    align_done = ["flags/06_align.done","flags/07_modbed.done"]
-else:
-    sys.stderr.write("No genome for organism. No alignment will be done\n")
-    #msg = "No reference genome found! No alignment will be done"
-    #send_email("Error No reference genome found!", msg, config)
- 
+do_align = config['info_dict']['do_align']
+do_sort = config['info_dict']['do_sort']
+
 #make demultiplexing conditional on barcoding set to true and demultixplexed folders existing on dont_touch_this
 barcoding = config['info_dict']['barcoding']
 demux_done_by_deepseq = False
@@ -145,26 +140,9 @@ rule finalize:
 
         
     output:    
-        # touch("flags/XX_snakemake.done")
-    benchmark:
-        "benchmarks/ont_pipeline.tsv"
+         touch("flags/XX_snakemake.done")
     log:
         log="log/ont_pipeline.log",
- 
-    params:
-        bench_comb = "benchmarks_combined.tsv"
-    shell:'''
-        # combine all benchmark files
-        print_header=true
-        for file in benchmarks/*.tsv; do
-            filename=$(basename "$file")
-            if [ "$print_header" = true ] ; then
-                head -n 1 "$file" | sed "s/^/filename\\t/"
-                print_header=false
-            fi
-            tail -n +2 "$file" | awk -v filename="$filename" 'BEGIN {{OFS="\\t"}} {{print filename, $_}}' >> {params.bench_comb}
-        done >> {params.bench_comb}
-    '''
 
 include: "00_start.smk"
 include: "00_prepare.smk"
