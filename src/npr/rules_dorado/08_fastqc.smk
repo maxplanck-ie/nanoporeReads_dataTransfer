@@ -4,11 +4,6 @@ Notice that this runs for all samples in a project (*bam and/or *align.bam)
 not sample-by-sample
 '''
 
-# # define source and target patterns
-# source = sample_dat + ".bam"
-# target = sample_qc + "_fastqc.html"
-# logpat = sample_log + "_fastqc.log"
-# bchpat = sample_bch + "_fastqc.tsv"
 qc_dir = os.path.join(project_dir, "QC", "Samples") 
 
 rule fastqc: 

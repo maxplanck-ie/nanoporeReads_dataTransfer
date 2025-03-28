@@ -2,9 +2,6 @@
 Conduct various QC-tests
 '''
 source = ["flags/08_fastqc.done",  "flags/08_kraken.done", "flags/08_pycoqc.done", "flags/05_porechop.done"]
-# target = os.path.join(project_qc, "multiqc", "multiqc_report.html")
-# logpat = "log/{project}_multiqc.log"
-# bchpat = "benchmarks/{project}_multiqc.tsv"
 
 rule multiqc_final:
     input: expand("transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html")

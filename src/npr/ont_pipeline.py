@@ -194,7 +194,9 @@ def read_flowcell_info(config, info_dict, base_path):
     # adding default flags for basecalling, align and modbed
     info_dict["do_basecall"] = config["default_process"]["do_basecall"]
     info_dict["do_align"] = config["default_process"]["do_align"]
-    info_dict["do_modbed"] = config["default_process"]["do_modbed"]
+    info_dict["do_sort"] = config["default_process"]["do_sort"]
+    info_dict["do_demux"] = config["default_process"]["do_demux"]
+    info_dict["do_modbed"] = config["default_process"]["do_modbed"]  # set to False!
 
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
@@ -266,11 +268,14 @@ def read_flowcell_info(config, info_dict, base_path):
                 info_dict["model"] = model
                 print(f"  [green]Found model as {model}[/green]")
             elif par == "--base_calling=on":
-                info_dict["do_basecall"] = "no_basecall"
+                info_dict["do_basecall"] = False  # default
                 print(f"  [green]Found basecalling is already done[/green]")
             elif par == "--alignment":
-                info_dict["do_align"] = "no_align"
-                print(f"  [green]Found alignment is already done[/green]")
+                info_dict["do_align"] = False  # overrides default
+                info_dict["do_sort"] = False  # overrides default
+                print(
+                    f"  [green]Found alignment is already done. Assuming sorted bam.[/green]"
+                )
 
         if not model:
             print(
@@ -282,9 +287,13 @@ def read_flowcell_info(config, info_dict, base_path):
             info_dict["model"] = info_dict["model_def"]
 
         if "modbases" in info_dict["model_def"]:
-            info_dict["do_modbed"] = "do_modbed"
+            info_dict["do_modbed"] = True
             print(
-                f"  [green]Found modified bases was used, BED will be genered[/green]"
+                f"  [green]Found modified bases was used, BED will be generated[/green]"
+            )
+        else:
+            print(
+                "Modified bases not found in model definition. No BED file will be generated."
             )
 
         # double check args. This needs a cleaner solution.
@@ -363,9 +372,7 @@ def read_flowcell_info(config, info_dict, base_path):
     print("flowcell = {}".format(info_dict["flowcell"]))
     print("kit = {}".format(info_dict["kit"]))
 
-    if (info_dict["do_basecall"] == "do_basecall") and (
-        config["basecaller"] == "dorado"
-    ):
+    if (info_dict["do_basecall"]) and (config["basecaller"] == "dorado"):
         if config["dorado_basecaller"]["dorado_model"] is not None:
             # record _full_ abnsolute path to model
             info_dict["model"] = config["dorado_basecaller"]["dorado_model"]
