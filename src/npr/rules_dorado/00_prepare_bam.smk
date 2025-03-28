@@ -98,8 +98,7 @@ rule merge_final_bam:
     output:
         "bam/{sample_id}_{sample_name}.bam"
     params:
-        opt=config['bam_merge']['opt'],
-        #count=lambda wildcards,input: len(input)
+        opt=config['bam_merge']['opt']
     threads: 10
     conda:
         "ont-ppp-samtools"
@@ -107,12 +106,7 @@ rule merge_final_bam:
         "log/{sample_id}_{sample_name}_00_merge_final_bam.log"
     shell:
         """
-        #if (( {params.count} >1 ));then
-        #samtools merge {params.opt} -@ {threads} -o {output} {input} 2>> {log};
         samtools merge {params.opt} -@ 100  -o {output} {input} 2>> {log};
-        #else
-        #    rsync -av {input} {output};
-        #fi
         """
 
 

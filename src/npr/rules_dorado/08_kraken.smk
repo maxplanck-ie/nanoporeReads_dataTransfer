@@ -1,11 +1,6 @@
 '''
 Kraken2 contamination test
 '''
-# define source and target pattern
-# source = sample_dat + ".fastq.gz"
-# target = sample_qc + "_kraken.report"
-# logpat = sample_log + "_kraken.log"
-# bchpat = sample_bch + "_kraken.tsv"
 
 rule kraken_final:
     input: expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_kraken.report",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),

@@ -1,9 +1,3 @@
-# define source and target pattern
-#source = sample_dat + ".bam"
-#target = sample_dat + ".seqsum" 
-#logpat = sample_log + "_seqsum.log"
-#bchpat = sample_bch + "_seqsum.tsv"
-
 rule seqsum:
     input:
         flag="flags/00_prepare_bam.done",

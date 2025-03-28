@@ -64,14 +64,9 @@ def expand_project_path(path, metadata=metadata, wc_mapping=wc_mapping):
 
 
 # make alignment conditional on genome being defined and available
-align_done = []
-if genome is not None and os.path.exists(genome):
-    align_done = ["flags/06_align.done","flags/07_modbed.done"]
-else:
-    sys.stderr.write("No genome for organism. No alignment will be done\n")
-    #msg = "No reference genome found! No alignment will be done"
-    #send_email("Error No reference genome found!", msg, config)
- 
+do_align = config['info_dict']['do_align']
+do_sort = config['info_dict']['do_sort']
+
 #make demultiplexing conditional on barcoding set to true and demultixplexed folders existing on dont_touch_this
 barcoding = config['info_dict']['barcoding']
 demux_done_by_deepseq = False
@@ -85,11 +80,15 @@ if barcoding:
         exit(1)
 
 #if protocol is cdna, don't call modifications
-do_modbed = config['info_dict']['do_modbed'],
+do_modbed = config['info_dict']['do_modbed']
 protocol = config['info_dict']['protocol']
 if protocol == "cdna":
     do_modbed = False
     config['info_dict']['do_modbed'] = False
+if do_modbed:
+    do_modbed_output = expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects).append("flags/07_modbed.done")
+else:
+    do_modbed_output=[]
    
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
@@ -117,15 +116,14 @@ rule finalize:
         "flags/06_align.done",
         expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-        "flags/07_modbed.done",
-        expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        do_modbed_output,
 
         "flags/08_fastqc.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
     
         "flags/08_pycoqc.done",
-        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.html",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
-        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.json",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.html",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.json",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
         "flags/08_kraken.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_kraken.report",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
@@ -142,26 +140,9 @@ rule finalize:
 
         
     output:    
-        # touch("flags/XX_snakemake.done")
-    benchmark:
-        "benchmarks/ont_pipeline.tsv"
+         touch("flags/XX_snakemake.done")
     log:
         log="log/ont_pipeline.log",
- 
-    params:
-        bench_comb = "benchmarks_combined.tsv"
-    shell:'''
-        # combine all benchmark files
-        print_header=true
-        for file in benchmarks/*.tsv; do
-            filename=$(basename "$file")
-            if [ "$print_header" = true ] ; then
-                head -n 1 "$file" | sed "s/^/filename\\t/"
-                print_header=false
-            fi
-            tail -n +2 "$file" | awk -v filename="$filename" 'BEGIN {{OFS="\\t"}} {{print filename, $_}}' >> {params.bench_comb}
-        done >> {params.bench_comb}
-    '''
 
 include: "00_start.smk"
 include: "00_prepare.smk"

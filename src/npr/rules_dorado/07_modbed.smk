@@ -3,12 +3,6 @@ Extract modification calls after alignment using ONT "modkit"
 https://github.com/nanoporetech/modkit
 '''
 
-# define source and target pattern
-# source = sample_ana + ".align.bam"
-# target = sample_ana + ".align.bed.gz"
-# logpat = sample_log + "_modbed.log"
-# bchpat = sample_bch + "_modbed.tsv"
-    
     
 rule bam2modbed:
     input:
@@ -25,15 +19,8 @@ rule bam2modbed:
         "ont-ppp-modkit"
     shell:'''
         echo "do_modbed: {params.do_modbed}" 2>> {log}
-        if [[ "{params.do_modbed}" == "do_modbed" ]]; then
-            echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
-            modkit pileup -t 100 {input.bam} {output.bed} 2>> {log}
-        else
-            echo "Modbed step skipped" 2>> {log}
-            touch {output.bed}
-            echo "No modifications observed" >> {output.bed}
-            
-        fi
+        echo modkit pileup -t {threads} {input.bam} {output.bed} 2>> {log}
+        modkit pileup -t 100 {input.bam} {output.bed} 2>> {log}
     '''
 
 rule tabix:
@@ -45,15 +32,8 @@ rule tabix:
         do_modbed = do_modbed
     conda: "ont-ppp-samtools"
     shell: """
-        if [[ "{params.do_modbed}" == "do_modbed" ]]; then
             bgzip {input}
             tabix {output[0]}
-        else
-            echo "Modbed step skipped" 2>> {log}
-            touch {output[1]}
-            echo "No modifications observed" >> {output[0]}
-
-        fi
         """
 
 
