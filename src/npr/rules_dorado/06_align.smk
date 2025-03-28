@@ -37,7 +37,7 @@ else:
     rule grep_sort_order:
         input: "bam/{sample_id}_{sample_name}.bam"
         output: temp("bam/{sample_id}_{sample_name}.sort_order.txt")
-        log: "log/{sample_project}_{sample_id}_{sample_name}_sortOrder.log"
+        log: "log/{sample_id}_{sample_name}_sortOrder.log"
         conda: "ont-ppp-samtools"
         shell: """
             samtools view -H {input} | grep SO > {output} 2>{log}

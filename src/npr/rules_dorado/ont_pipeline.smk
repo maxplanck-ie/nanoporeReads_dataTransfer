@@ -122,8 +122,8 @@ rule finalize:
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
     
         "flags/08_pycoqc.done",
-        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.html",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
-        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_pycoqc.json",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.html",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.json",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
         "flags/08_kraken.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_kraken.report",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
