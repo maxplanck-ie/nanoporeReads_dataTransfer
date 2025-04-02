@@ -10,10 +10,8 @@ rule fastqc:
     input: 
         "bam/{sample_id}_{sample_name}.bam"
     output: 
-        #"transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html"
         "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html"
     params:
-        #odir = lambda wildcards: qc_dir.format(project=wildcards.project),
         odir= "transfer/Project_{sample_project}/QC/Samples/",
         memory = config['fastqc'].get('memory', 10000)
     threads:

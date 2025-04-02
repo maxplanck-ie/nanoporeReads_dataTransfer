@@ -23,20 +23,22 @@ if do_align:
             "log/{sample_project}_{sample_id}_{sample_name}_align.log",
         params:
             cmd=config['dorado_basecaller']['dorado_cmd'],
-            genome =  config['genome'].get(org, None)
+            genome =  config['genome'].get(org, None),
+            dir = lambda wildcards: "transfer/Project_" + wildcards.sample_project  + "/" + analysis_name + "/Samples"
         threads:
             10 # same number of threads will be applied to dorado-align and samtools
         conda:
             "ont-ppp-align"
         shell:
             """
+            mkdir -p {params.dir};
             {params.cmd} aligner -t {threads} {params.genome} {input.fq_file} | samtools sort -@ {threads} -m 20G - > {output.file} 2>> {log}
         """
 
 else:
     rule grep_sort_order:
         input: "bam/{sample_id}_{sample_name}.bam"
-        output: temp("bam/{sample_id}_{sample_name}.sort_order.txt")
+        output: "bam/{sample_id}_{sample_name}.sort_order.txt"
         log: "log/{sample_id}_{sample_name}_sortOrder.log"
         conda: "ont-ppp-samtools"
         shell: """
@@ -47,14 +49,22 @@ else:
         input: 
             bam = "bam/{sample_id}_{sample_name}.bam",
             sortorder = "bam/{sample_id}_{sample_name}.sort_order.txt"
-        output: "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam"
+        output: 
+            file = "transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bam"
         log: "log/{sample_project}_{sample_id}_{sample_name}_copyOrSort.log"
         params:
-            shell = lambda wildcards,input: "rsync -av {input} {output} 2>{log}" if is_sorted(input.sortorder) else "samtools sort -@ {threads} -m 20G {input.bam} > {output} 2>{log}"
+            dir = lambda wildcards: "transfer/Project_" + wildcards.sample_project  + "/" + analysis_name + "/Samples"
         threads: 10
         conda: "ont-ppp-samtools"
         shell: """
-              {params.shell}
+              set -euxo pipefail &&
+              gso=$(grep -c -P 'unsorted|unknown' {input.sortorder} || echo "grep failed with exit code $?")
+              echo "grep output: $gso" &&
+              #touch {output.file} 2>{log} &&
+              if (( $gso > 0 ));then
+                samtools sort -@ {threads} -m 20G {input.bam} > {output.file} 2>>{log}
+              else rsync -av {input.bam} {output.file} 2>>{log}
+              fi
               """
 
 
