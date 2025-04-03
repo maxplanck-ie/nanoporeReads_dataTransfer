@@ -1,7 +1,10 @@
 CHANGES
 =======
 
-v3.1.1
+* [pre-commit] Fixes from hooks
+* pycoqc
+
+v3.1.2
 ------
 
 * check sort order
