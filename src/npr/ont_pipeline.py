@@ -284,7 +284,6 @@ def read_flowcell_info(config, info_dict, base_path):
                     info_dict["model_def"] = model
                     info_dict["model"] = model
 
-
         if not model:
             print(
                 "Model was not found in command parameters, capturing the default value"
