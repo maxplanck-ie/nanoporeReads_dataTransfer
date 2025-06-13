@@ -277,14 +277,12 @@ def read_flowcell_info(config, info_dict, base_path):
                     f"  [green]Found alignment is already done. Assuming sorted bam.[/green]"
                 )
             else:
-                args = jsondata["protocol_run_info"]["args"]
-                for arg in args:
-                    match = re.match(r'simplex_model="?([^"]+)"?', arg)
-                    if match:
-                        print("Simplex model extracted!")
-                        model = match.group(1)
-                        info_dict["model_def"] = model
-                        info_dict["model"] = model
+                match = re.match(r'simplex_model="?([^"]+)"?', par)
+                if match:
+                    print("Simplex model extracted!")
+                    model = match.group(1)
+                    info_dict["model_def"] = model
+                    info_dict["model"] = model
 
 
         if not model:
