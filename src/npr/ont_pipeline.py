@@ -277,7 +277,7 @@ def read_flowcell_info(config, info_dict, base_path):
                     f"  [green]Found alignment is already done. Assuming sorted bam.[/green]"
                 )
             else:
-                args = data["protocol_run_info"]["args"]
+                args = jsondata["protocol_run_info"]["args"]
                 for arg in args:
                     match = re.match(r'simplex_model="?([^"]+)"?', arg)
                     if match:
