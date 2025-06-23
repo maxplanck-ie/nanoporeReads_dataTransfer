@@ -57,13 +57,13 @@ else:
         threads: 10
         conda: "ont-ppp-samtools"
         shell: """
-              set -euxo pipefail &&
-              gso=$(grep -c -P 'unsorted|unknown' {input.sortorder} || echo "grep failed with exit code $?")
-              echo "grep output: $gso" &&
-              #touch {output.file} 2>{log} &&
-              if (( $gso > 0 ));then
+              gso=$(grep -c -P 'unsorted|unknown' {input.sortorder})
+              if (( $gso > 0 ))
+              then
+                echo "sorting BAM {input.sortorder}"
                 samtools sort -@ {threads} -m 20G {input.bam} > {output.file} 2>>{log}
-              else rsync -av {input.bam} {output.file} 2>>{log}
+              else
+                rsync -av {input.bam} {output.file} 2>>{log}
               fi
               """
 
