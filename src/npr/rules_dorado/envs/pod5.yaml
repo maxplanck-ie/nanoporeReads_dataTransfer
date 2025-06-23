@@ -3,7 +3,9 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  - cxx-compiler
+  - cython
   - python >= 3.10
   - pip
   - pip:
-    - pod5 == 0.3.10
+    - pod5 == 0.3.27
