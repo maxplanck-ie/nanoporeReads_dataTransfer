@@ -57,13 +57,13 @@ else:
         threads: 10
         conda: "ont-ppp-samtools"
         shell: """
-              gso=$(grep -c -P 'unsorted|unknown' {input.sortorder})
-              if (( $gso > 0 ))
+              gso=$(perl -lane 'print $1 if /SO:(.+)/' {input.sortorder} | head -1)
+              if [[ $gso == coordinate ]]
               then
+                rsync -av {input.bam} {output.file} 2>>{log}
+              else
                 echo "sorting BAM {input.sortorder}"
                 samtools sort -@ {threads} -m 20G {input.bam} > {output.file} 2>>{log}
-              else
-                rsync -av {input.bam} {output.file} 2>>{log}
               fi
               """
 
