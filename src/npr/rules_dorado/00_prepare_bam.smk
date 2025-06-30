@@ -93,7 +93,7 @@ rule merge_final_bam:
     input:
         collect_batch_bams
     output:
-        expand("bam/{sample_id}_{sample_name}.bam", zip, sample_id=sample_ids, sample_name=sample_names)
+        expand("bam/{sample_id}_{sample_name}.bam", sample_id=wildcards.sample_id, sample_name=wildcards.sample_name)
     params:
         opt=config['bam_merge']['opt']
     threads: 10
