@@ -77,18 +77,15 @@ rule merge_bams_in_batches:
 
 def collect_batch_bams(wildcards):
     checkpoint_data = checkpoints.split_bam_list.get(**wildcards)
-    #print(f"Checkpoint output: {checkpoint_data.output}",file=sys.stderr, flush=True)
-
+    
     checkpoint_output = checkpoint_data.output[0]
-    #print(f"Using checkpoint output: {checkpoint_output}",file=sys.stderr, flush=True)
-
+    
     batches = glob_wildcards(os.path.join(checkpoint_output, "bam_list_{batch}")).batch
-    #print(f"Found batches: {batches}",file=sys.stderr, flush=True)
-
+    
     primary_output = expand("bam/{sample_name}_bam_chunks/{batch}.bam", batch=batches, sample_name=wildcards.sample_name)
     #for some reason, snakemake prepends wilcards with whitespaces and results in nonexisting file names
     sanitized_output = [re.sub(r"\s+", "", file) for file in primary_output]
-    #print(f"Sanitized output: {sanitized_output}",file=sys.stderr, flush=True)
+    
     return sanitized_output
 
 
@@ -96,7 +93,7 @@ rule merge_final_bam:
     input:
         collect_batch_bams
     output:
-        "bam/{sample_id}_{sample_name}.bam"
+        expand("bam/{sample_id}_{sample_name}.bam", zip, sample_id=sample_ids, sample_name=sample_names)
     params:
         opt=config['bam_merge']['opt']
     threads: 10
@@ -111,5 +108,5 @@ rule merge_final_bam:
 
 
 rule prepare_bam_flag:
-    input: expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names)
+    input: expand("bam/{sample_id}_{sample_name}.bam", zip, sample_id=sample_ids, sample_name=sample_names)
     output: touch("flags/00_prepare_bam.done")
