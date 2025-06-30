@@ -94,6 +94,7 @@ else:
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
 wildcard_constraints:
         sample_id="[0-9]{2}L[0-9]{6}"
+        sample_name="[a-zA-Z0-9_]+"
 
 
 rule finalize:
@@ -132,10 +133,6 @@ rule finalize:
         "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html",
 
         "flags/09_transfer.done",
-
-        ###"flags/01_basecall.done", 
-        ###"flags/02_demux.done",
-        ###"flags/03_rename.done",
     
 
         
@@ -157,10 +154,4 @@ include: "08_pycoqc.smk"
 include: "08_kraken.smk"
 include: "08_multiqc.smk"
 include: "09_transfer.smk"
-
-#include: "01_basecall.smk"
-#include: "02_demux.smk"
-#include: "03_rename.smk"
-
-
 

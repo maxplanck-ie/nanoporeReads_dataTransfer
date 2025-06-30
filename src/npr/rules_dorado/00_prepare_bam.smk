@@ -12,7 +12,6 @@ baseout=os.path.join(config['info_dict']['flowcell_path'], "bam")
 
 def get_sample_barcode(sample):
     barcode = metadata.loc[metadata['Sample_Name'] == sample, 'index_id'].item()
-    #print (barcode)
     return barcode
 
 rule prepare_bam_list:
@@ -61,7 +60,7 @@ rule merge_bams_in_batches:
         batch_bam = temp("bam/{sample_name}_bam_chunks/{batch}.bam") #temp
     params:
         opt=config['bam_merge']['opt']
-    threads: 10
+    threads: 100
     conda:
         "ont-ppp-samtools"
     log:
@@ -70,8 +69,7 @@ rule merge_bams_in_batches:
         "benchmarks/{sample_name}_00_merge_bams_in_batches_{batch}.tsv"
     shell:
         """
-        #samtools merge {params.opt} -@ {threads} -b {input} -o {output.batch_bam} 2>> {log}
-        samtools merge {params.opt} -@ 100 -b {input} -o {output.batch_bam} 2>> {log}
+        samtools merge {params.opt} -@ {threads} -b {input} -o {output.batch_bam} 2>> {log}
         """
 
 
@@ -93,7 +91,7 @@ rule merge_final_bam:
     input:
         collect_batch_bams
     output:
-        expand("bam/{sample_id}_{sample_name}.bam", sample_id=wildcards.sample_id, sample_name=wildcards.sample_name)
+        "bam/{sample_id}_{sample_name}.bam"
     params:
         opt=config['bam_merge']['opt']
     threads: 10
