@@ -93,7 +93,7 @@ else:
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
 wildcard_constraints:
-        sample_id="[0-9]{2}L[0-9]{6}"
+        sample_id="[0-9]{2}L[0-9]{6}",
         sample_name="[a-zA-Z0-9_]+"
 
 
