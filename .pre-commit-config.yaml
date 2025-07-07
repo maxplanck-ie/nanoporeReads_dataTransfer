@@ -36,7 +36,7 @@ repos:
         entry: black --target-version=py311 # 3.11
         exclude: ^src/npr/rules/
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: [--py311-plus] # 3.11
