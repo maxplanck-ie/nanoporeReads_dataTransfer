@@ -215,13 +215,13 @@ def query_parkour(config, flowcell, msg):
         #)
 
         res = requests.get(
-        config['parkour']['URL'] + '/api/analysis_list/analysis_list/',
-        auth=(
+            config['parkour']['url'] + '/api/analysis_list/analysis_list/',
+            auth=(
             config['parkour']['user'],
             config['parkour']['password']
-        ),
-        params=d,
-        verify=config['parkour']['cert']
+            ),
+            params=d,
+            verify=config['parkour']['cert']
         )
         if res.status_code == 200:
             info_dict = {}
