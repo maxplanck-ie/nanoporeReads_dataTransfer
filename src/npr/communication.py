@@ -206,11 +206,22 @@ def query_parkour(config, flowcell, msg):
     for pf in postfixes:
         d = {"flowcell_id": fc + pf}
         flowcellqueries.append(fc + pf)
+        cert="/home/pipegrp/cert-parkour2-dev.pem"
+        #res = requests.get(
+        #    config["parkour"]["url"] + "/api/analysis_list/analysis_list/",
+        #    auth=(config["parkour"]["user"], config["parkour"]["password"]),
+        #    params=d,
+        #    verify=config["parkour"]["pem"],
+        #)
+
         res = requests.get(
-            config["parkour"]["url"] + "/api/analysis_list/analysis_list/",
-            auth=(config["parkour"]["user"], config["parkour"]["password"]),
-            params=d,
-            verify=config["parkour"]["pem"],
+        config['parkour']['URL'] + '/api/analysis_list/analysis_list/',
+        auth=(
+            config['parkour']['user'],
+            config['parkour']['password']
+        ),
+        params=d,
+        verify=config['parkour']['cert']
         )
         if res.status_code == 200:
             info_dict = {}
