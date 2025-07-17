@@ -225,7 +225,7 @@ def query_parkour(config, flowcell, msg):
             first_key = list(parkour_dict.keys())[0]
             first_entry = list(parkour_dict[first_key].keys())[0]
             organism = parkour_dict[first_key][first_entry][3][1]
-            protocol = parkour_dict[first_key][first_entry][1]
+            protocol = parkour_dict[first_key][first_entry][2]
 
             if (
                 fc == "PAK78871"
