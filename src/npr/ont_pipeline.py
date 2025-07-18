@@ -299,12 +299,14 @@ def read_flowcell_info(config, info_dict, base_path):
                 f"  [green]Found modified bases was used, BED will be generated[/green]"
             )
         else:
-            #modbases is not captured in the new definition, extracting it directly from modified json file
+            # modbases is not captured in the new definition, extracting it directly from modified json file
             for par in jsondata["protocol_run_info"]["args"]:
                 match = re.search(r'modified_models=("(?:\[.*?\])")', par)
                 if match:
-                    modified_models_str = match.group(1)  # This is the JSON string of the list
-                    #Parse the JSON list string to Python list
+                    modified_models_str = match.group(
+                        1
+                    )  # This is the JSON string of the list
+                    # Parse the JSON list string to Python list
                     modified_models_list = json.loads(modified_models_str)
                     print(modified_models_list)
                     info_dict["do_modbed"] = True
