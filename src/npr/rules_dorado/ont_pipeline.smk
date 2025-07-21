@@ -117,7 +117,9 @@ rule finalize:
         "flags/06_align.done",
         expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-        do_modbed_output,
+        # Conditionally include 07_modbed.done and its expand
+        *(["flags/07_modbed.done"] if protocol != "cdna" and do_align else []),
+        *(expand("transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi", zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects) if protocol != "cdna" and do_align else []),
 
         "flags/08_fastqc.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
@@ -148,7 +150,9 @@ include: "04_seqsum.smk"
 include: "05_fastq.smk"
 include: "05_porechop.smk"
 include: "06_align.smk"
-include: "07_modbed.smk"
+# Conditionally include 07_modbed.smk
+if protocol != "cdna" and do_align:
+    include: "07_modbed.smk"
 include: "08_fastqc.smk"
 include: "08_pycoqc.smk"
 include: "08_kraken.smk"
