@@ -5,7 +5,7 @@ from npr.ont_pipeline import get_dest_path
 rule transfer:
     input:
         flag_mulitqc="flags/08_multiqc.done",
-        flag_modbed=lambda wildcards: "flags/07_modbed.done" if do_modbed else []
+        flag_modbed=lambda wildcards: "flags/07_modbed.done" if do_modbed and do_align else []
     output:
         touch("flags/09_transfer.done"),
     log:

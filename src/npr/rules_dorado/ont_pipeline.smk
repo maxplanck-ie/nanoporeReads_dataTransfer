@@ -93,7 +93,8 @@ else:
 # global wildcard constraints: ensure that sample_id adheres to certain constraints: 23L000001
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
 wildcard_constraints:
-        sample_id="[0-9]{2}L[0-9]{6}"
+        sample_id="[0-9]{2}L[0-9]{6}",
+        sample_name="[a-zA-Z0-9_]+"
 
 
 rule finalize:
@@ -116,7 +117,9 @@ rule finalize:
         "flags/06_align.done",
         expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-        do_modbed_output,
+        # Conditionally include 07_modbed.done and its expand
+        *(["flags/07_modbed.done"] if protocol != "cdna" and do_align else []),
+        *(expand("transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi", zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects) if protocol != "cdna" and do_align else []),
 
         "flags/08_fastqc.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
@@ -132,10 +135,6 @@ rule finalize:
         "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html",
 
         "flags/09_transfer.done",
-
-        ###"flags/01_basecall.done", 
-        ###"flags/02_demux.done",
-        ###"flags/03_rename.done",
     
 
         
@@ -151,16 +150,12 @@ include: "04_seqsum.smk"
 include: "05_fastq.smk"
 include: "05_porechop.smk"
 include: "06_align.smk"
-include: "07_modbed.smk"
+# Conditionally include 07_modbed.smk
+if protocol != "cdna" and do_align:
+    include: "07_modbed.smk"
 include: "08_fastqc.smk"
 include: "08_pycoqc.smk"
 include: "08_kraken.smk"
 include: "08_multiqc.smk"
 include: "09_transfer.smk"
-
-#include: "01_basecall.smk"
-#include: "02_demux.smk"
-#include: "03_rename.smk"
-
-
 
