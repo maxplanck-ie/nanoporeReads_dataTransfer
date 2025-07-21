@@ -9,8 +9,6 @@ rule demux:
         kit=config['bc_kit'],
         dir=directory(demux_dir),
         inp=output_bam
-    benchmark:
-        "benchmarks/02_demux.tsv"
     shell:
         """
         if [ {params.kit} == "no_bc" ]; then

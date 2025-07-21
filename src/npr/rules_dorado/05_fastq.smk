@@ -5,29 +5,17 @@ While this can be brute forced into the FASTQ header (-T "*")
 the header will be useless after read chopping, splitting etc
 '''
 
-# define source and target pattern
-source = sample_dat + ".bam" # "transfer/Project_{project}/Sample_{sample_id}/{sample_name}.bam"
-target = sample_dat + ".fastq.gz" # "transfer/Project_{project}/Sample_{sample_id}/{sample_name}.fastq.gz"
-logpat = sample_log + "_fastq.log"
-bchpat = sample_bch + "_fastq.tsv"
-
-rule fastq_final:
-    input: expand_project_path(target)
-    output: touch("flags/05_fastq.done")
-    
 rule fastq:
     input:
-        flag="flags/03_rename.done",
-        bam_file = source
+        flag="flags/04_seqsum.done",
+        bam_file = "bam/{sample_id}_{sample_name}.bam"
     output:
-        file = target
+        file = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz"
     wildcard_constraints:
         # exclude all sample files that end on ".align.bam" (already aligned) 
         sample_name = r'(?!.*\.align\.bam$).*',
     log:
-        logpat
-    benchmark:
-        bchpat
+        "log/{sample_project}_{sample_id}_{sample_name}.fastq.log"
     threads:
         16
     conda:
@@ -38,3 +26,6 @@ rule fastq:
         samtools fastq -@ {threads} {input.bam_file} -0 {output.file} 2>> {log}
         """
 
+rule fastq_final:
+    input: expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
+    output: touch("flags/05_fastq.done")

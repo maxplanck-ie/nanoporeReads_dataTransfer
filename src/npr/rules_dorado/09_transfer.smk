@@ -4,13 +4,12 @@ from npr.ont_pipeline import get_dest_path
 
 rule transfer:
     input:
-        flag="flags/08_multiqc.done"
+        flag_mulitqc="flags/08_multiqc.done",
+        flag_modbed=lambda wildcards: "flags/07_modbed.done" if do_modbed else []
     output:
         touch("flags/09_transfer.done"),
     log:
         file="log/09_transfer.log"
-    benchmark:
-        "benchmarks/09_transfer.tsv"
     run:
         dirs = glob.glob(os.path.join(transfer_dir, 'Project*'))
         with open(log.file, "a") as log:

@@ -20,8 +20,6 @@ rule prepare:
         "ont-ppp-pod5"
     log: 
         'log/00_prepare.log'
-    benchmark:
-        "benchmarks/00_prepare.tsv"
     shell:'''
         if [ -e "{params.idir}/pod5_pass" ] || [ -e "{params.idir}/pod5_fail" ] || [ -e "{params.idir}/pod5" ]; then
             # there are pod5 produced (default)

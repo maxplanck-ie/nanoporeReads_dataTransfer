@@ -1,14 +1,58 @@
 CHANGES
 =======
 
-<<<<<<< HEAD
-=======
+* [pre-commit] Fixes from hooks
+* pycoqc
+
+v3.1.2
+------
+
+* check sort order
+
+v3.1.0
+------
+
+* cleanup
+* make transfer wait for modbed
+* do\_modbed boolean
+* final fixes modbed
+* fix tabix
+* rm all benchmarks
+
+v3.0.2
+------
+
+* cleanup modkit env
+* modbed into 2 rules
+* tabix missing in modkit env
+* [pre-commit] Fixes from hooks
+* barcode enabled pipeline
+* Changelog
+* rsync better than mv
+* one flag
+* prepare bam working
+* rule all
+* first sample wildcard implementation
+* Changelog
+
+v2.2.2
+------
+
+* renaming working
+
+v2.2.1
+------
+
+* ChangeLog
+* rename glob
+* [pre-commit] Fixes from hooks
+* RNA modification: Mode active
+* pod5 email
 * [pre-commit] Fixes from hooks
 * Force a directory to be ran as a flow cell
 * pre-commit hooks CI autoupdate
 
->>>>>>> 585ebfc8aa2b01c4d280e8e3c1c1c0c314adf2ad
-v2.1.4
+v2.1.5
 ------
 
 * removed intermediate bamlist txt files
