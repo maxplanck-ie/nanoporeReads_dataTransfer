@@ -127,7 +127,11 @@ rule finalize:
         expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
         # Conditionally include 07_modbed.done and its expand
+<<<<<<< HEAD
         *(["flags/07_modbed.done"] if protocol != "cdna" else []),
+=======
+        *(["flags/07_modbed.done"] if protocol != "cdna" and do_align else []),
+>>>>>>> aa1b60b939acf8ac5a85862ee358e5dbeee3fe6a
         *(expand("transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi", zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects) if protocol != "cdna" and do_align else []),
 
         "flags/08_fastqc.done",
