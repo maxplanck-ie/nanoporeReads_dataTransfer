@@ -7,6 +7,8 @@ import pandas as pd
 from rich import print 
 from npr.communication import  send_email
 
+#ruleorder: basecall > merge_final_bam
+
 dorado=config['dorado_basecaller']['dorado_cmd']
 
 # define flowcell-wide paths
@@ -67,6 +69,9 @@ def expand_project_path(path, metadata=metadata, wc_mapping=wc_mapping):
 do_align = config['info_dict']['do_align']
 do_sort = config['info_dict']['do_sort']
 
+#make basecalling conditional on the do_basecall: True
+do_basecall = config['info_dict']['do_basecall']
+
 #make demultiplexing conditional on barcoding set to true and demultixplexed folders existing on dont_touch_this
 barcoding = config['info_dict']['barcoding']
 demux_done_by_deepseq = False
@@ -102,8 +107,12 @@ rule finalize:
         "flags/00_start.done",
         "flags/00_prepare.done",
 
-        "flags/00_prepare_bam.done", 
-        expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names),
+        # Conditionally include basecalling and its expand
+        *(["flags/00_basecall.done"] if do_basecall else []),
+        *(expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names) if do_basecall else []),
+        
+        *(["flags/00_prepare_bam.done"] if not do_basecall else []),
+        *(expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names) if not do_basecall else []),
         
         "flags/04_seqsum.done", 
         expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
@@ -118,7 +127,7 @@ rule finalize:
         expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
         # Conditionally include 07_modbed.done and its expand
-        *(["flags/07_modbed.done"] if protocol != "cdna" and do_align else []),
+        *(["flags/07_modbed.done"] if protocol != "cdna" else []),
         *(expand("transfer/Project_{sample_project}/" + analysis_name + "/Samples/{sample_id}_{sample_name}.align.bed.gz.tbi", zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects) if protocol != "cdna" and do_align else []),
 
         "flags/08_fastqc.done",
@@ -145,13 +154,16 @@ rule finalize:
 
 include: "00_start.smk"
 include: "00_prepare.smk"
-include: "00_prepare_bam.smk"
+if do_basecall:
+    include: "00_basecall.smk"
+else:
+    include: "00_prepare_bam.smk"
 include: "04_seqsum.smk"
 include: "05_fastq.smk"
 include: "05_porechop.smk"
 include: "06_align.smk"
 # Conditionally include 07_modbed.smk
-if protocol != "cdna" and do_align:
+if protocol != "cdna":
     include: "07_modbed.smk"
 include: "08_fastqc.smk"
 include: "08_pycoqc.smk"
