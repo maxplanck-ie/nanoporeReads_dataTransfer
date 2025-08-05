@@ -1,37 +1,18 @@
-# ont.py
-# Main script to monitor new data and launch new jobs
-# (C) 2024 Bioinformatics Core
-# Max Plank Institute for Immunobiology and Epigenetics
-
 import glob
-
-# default libs
 import os
-
-# sleeper libs
 import signal
 import sys
 from importlib.metadata import version
 from pathlib import Path
+import subprocess as sp
 from threading import Event
-
 import rich_click as click
 import snakemake
 import yaml
-
-# CLI / pretty print.
 from rich import print
-
 from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
-
-# npr libs
-from npr.ont_pipeline import (
-    find_new_flowcell,
-    get_periphery,
-    read_flowcell_info,
-    read_samplesheet,
-)
-from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc
+from npr.ont_pipeline import find_new_flowcell, get_periphery, read_flowcell_info, read_samplesheet
+from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc, config_to_smkcmd
 
 
 # set up CLI args.
@@ -212,13 +193,20 @@ def main(config):
 
             # static parameters are defined in dict config['snakemake']
             # flowcell specific parameters are taken from config['info_dict']
-            snak_stat = snakemake.snakemake(
-                **config["snakemake"],
-                configfiles=[config["info_dict"]["configFile"]],
-                workdir=config["info_dict"]["flowcell_path"],
+            _smk_cmd = config_to_smkcmd(config["snakemake"])
+            _smk_cmd.extend(
+                [
+                    '--configfile', config["info_dict"]["configFile"],
+                    '-d', config["info_dict"]["flowcell_path"],
+                ]
             )
-            if not snak_stat:
-                msg += f"snake crashed with {snak_stat}"
+            _smk_cmd.insert(0, 'snakemake')
+            print(_smk_cmd)
+            rg = sp.Popen(_smk_cmd, stdout=sp.PIPE, stderr=sp.PIPE, text=True)
+            stdout, stderr = rg.communicate()  # Wait for process to complete
+            if rg.returncode != 0:
+                msg += f"Snakemake errorcode {rg.returncode}\n"
+                msg += stderr
                 send_email("Snakemake failed for flowcell:", msg, config)
                 sys.exit(1)
 

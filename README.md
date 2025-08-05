@@ -7,15 +7,11 @@ A pipeline to process Nanopore reads and transfer the results to the end users.
 ```bash
 git clone git@github.com:maxplanck-ie/nanoporeReads_dataTransfer.git
 cd nanoporeReads_dataTransfer
-mamba env create -n ont -f env.yaml 
-mamba activate ont
 pip install .
 ```
-For Apple M1/M2 (arm64) many conda packages are not yet available. Use instead:
 
-```bash
-CONDA_SUBDIR=osx-64 mamba create -n ont -f env.yaml
-```
+Note that the workflow requires conda to function, as some rules run in their own conda environments.
+
 
 # Implementation
 The key functionality is achieved using snakemake workflows.

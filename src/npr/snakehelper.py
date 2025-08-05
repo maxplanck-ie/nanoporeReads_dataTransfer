@@ -10,6 +10,39 @@ import yaml
 from rich import print
 
 
+def config_to_smkcmd(snakemake_config):
+    args = []
+    
+    # Bool flags and their corresponding CLI options.
+    bool_flags = {
+        'dryrun': '--dryrun',
+        'verbose': '--verbose', 
+        'printshellcmds': '--printshellcmds',
+        'use_conda': '--use-conda',
+        'printdag': '--printdag',
+        'debug': '--debug'
+    }
+    
+    value_options = {
+        'cores': '-c',
+        'conda_prefix': '--conda-prefix',
+        'max_jobs_per_second': '--max-jobs-per-second'
+    }
+    
+    for key, value in snakemake_config.items():
+        if key == 'snakefile':
+            args.extend(['-s', value])
+        elif key in bool_flags and value:
+            args.append(bool_flags[key])
+        elif key in value_options:
+            args.extend([value_options[key], str(value)])
+        elif key == 'rerun_triggers' and isinstance(value, list):
+            for trigger in value:
+                args.extend(['--rerun-triggers', trigger])
+    
+    return args
+
+
 def monitor_storage(config):
     """
     collect information on added storage in transfered directory
