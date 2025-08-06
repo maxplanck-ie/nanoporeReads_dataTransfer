@@ -1,6 +1,5 @@
-rule seqsum:
+rule seqsum_03:
     input:
-        flag="flags/00_prepare_bam.done",
         bam_file= "bam/{sample_id}_{sample_name}.bam"
     output:
         seqsum = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum"
@@ -14,8 +13,9 @@ rule seqsum:
         
         """ 
 
-rule seqsum_final:
+rule seqsum_final_03:
     input:
-        expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects)
+        expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        "flags/02_basecall.done" if do_basecall else "flags/02_prepare_bam.done"
     output:
-        touch("flags/04_seqsum.done")
+        touch("flags/03_seqsum.done")

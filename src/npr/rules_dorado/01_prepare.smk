@@ -1,25 +1,17 @@
-'''
-Prepare pod5 file
-Starting point of every workflow should be a single pod5 file: pod5/output.pod5
-The latter can be merged from all pod5 files at origin = input directory "idir"
-1. from pod5: pod5 merge ... (specify output file explicitly)
-2. from fast5: pod5-convert-from-fast5 ... (specify output directory )
-'''
-
-rule prepare:
+rule prepare_01:
     input: 
         "flags/00_start.done"
     output:
         pod5="pod5/output.pod5", 
-        flag=touch("flags/00_prepare.done")
+        flag=touch("flags/01_prepare.done")
     params:
         idir = config["info_dict"]["base_path"]
     threads:
         10
     conda:
-        "ont-ppp-pod5"
+        "envs/align.yaml"
     log: 
-        'log/00_prepare.log'
+        'log/01_prepare.log'
     shell:'''
         if [ -e "{params.idir}/pod5_pass" ] || [ -e "{params.idir}/pod5_fail" ] || [ -e "{params.idir}/pod5" ]; then
             # there are pod5 produced (default)
@@ -35,5 +27,3 @@ rule prepare:
             echo "No raw data found in {params.idir}, hopefully you got BAMs" 2>> {log}
         fi
         '''
-
-

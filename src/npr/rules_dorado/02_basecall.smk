@@ -34,7 +34,7 @@ def get_model(prot_type):
     model = (
         config['info_dict']['model']
         if 'dna' in prot_type 
-        else '/localenv/pipegrp/dorado-0.9.1-linux-x64/model/rna004_130bps_hac@v5.0.0'
+        else '/localenv/pipegrp/dorado-1.0.2-linux-x64/model/rna004_130bps_hac@v5.0.0'
         if 'rna' in prot_type 
         else None
     )
@@ -52,14 +52,20 @@ def get_mod(prot_type):
     
     return mod
 
+def get_genome():
+    org=config['info_dict']['organism']
+    ref=config['genome'][org]
+
+    return ref
         
-rule basecall:
+
+rule basecall_02:
     input:
-        flag="flags/00_prepare_bam.done",
+        flag="flags/01_prepare.done",
     output:
-        flag=touch("flags/01_basecall.done")
+        "bam/{sample_id}_{sample_name}.bam"
     log:
-        "log/01_basecall.log"
+        "log/{sample_id}_{sample_name}_00_merge_final_bam.log"
     params:
         cmd=config['dorado_basecaller']['dorado_cmd'],
         prot_type=config['info_dict']['protocol'],
@@ -67,7 +73,9 @@ rule basecall:
         mod = get_mod(config['info_dict']['protocol']),
         options=config['dorado_basecaller']['dorado_options'],
         dir='pod5',
-        bam=os.path.join(config['info_dict']['flowcell_path'], "bam/basecalls.bam"),
+        bam=os.path.join(config['info_dict']['flowcell_path'], "bam/{sample_id}_{sample_name}.bam"),
+        bam_dir=os.path.join(config['info_dict']['flowcell_path'],"bam"),
+        reference=get_genome(),
         do_basecall=config['info_dict']['do_basecall']
 
     run:
@@ -80,18 +88,30 @@ rule basecall:
         shell(
         """
         echo "do_basecall: {params.do_basecall}" 2>> {log}
-        if [[ "{params.do_basecall}" == "do_basecall" ]]; then
-            if [[ "{params.prot_type}" == "rna" ]]; then
-                echo "Processing RNA modification" 2>> {log}
-                echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
-                {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
-            else
-                echo "Processing DNA modification" 2>> {log}
-                echo {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} {params.bam} 2>> {log}
-                {params.cmd} basecaller {params.model} {params.dir} {params.options} {params.mod} > {params.bam} 2>> {log}
-            fi
+        if [[ "{params.prot_type}" == "rna" ]]; then
+            echo "Processing RNA modification" 2>> {log}
+            echo {params.cmd} basecaller sup {params.dir} {params.options} {params.mod} --reference {params.reference}  > {params.bam} 2>> {log}
+            {params.cmd} basecaller sup {params.dir} {params.options} {params.mod} --reference {params.reference} > {params.bam} 2>> {log}
         else
-            echo "Basecall step skipped" 2>> {log}
+            echo "Processing DNA modification" 2>> {log}
+            echo {params.cmd} basecaller sup {params.dir} {params.options} {params.mod} --reference {params.reference}  > {params.bam} 2>> {log}
+            {params.cmd} basecaller sup {params.dir} {params.options} {params.mod} --reference {params.reference} > {params.bam} 2>> {log}
         fi
+
         """
         )
+
+# rule prepare_bam:
+#     output:
+#         touch("flags/00_prepare_bam.done")
+#     input:
+#         # Add any required input files here
+#     shell:
+#         """
+#         # Commands to prepare the BAM file
+#         touch {output}
+#         """
+
+rule basecall_flag_02:
+    input: expand("bam/{sample_id}_{sample_name}.bam", zip, sample_id=sample_ids, sample_name=sample_names)
+    output: touch("flags/02_basecall.done")

@@ -105,21 +105,19 @@ wildcard_constraints:
 rule finalize:
     input:
         "flags/00_start.done",
-        "flags/00_prepare.done",
+        "flags/01_prepare.done",
 
-        # Conditionally include basecalling and its expand
-        *(["flags/00_basecall.done"] if do_basecall else []),
-        *(expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names) if do_basecall else []),
-        
-        *(["flags/00_prepare_bam.done"] if not do_basecall else []),
-        *(expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names) if not do_basecall else []),
-        
-        "flags/04_seqsum.done", 
+        # Either basecalling, or prepare bam files.
+        "flags/02_basecall.done" if do_basecall else "flags/02_prepare_bam.done",
+        expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names),
+
+        "flags/03_seqsum.done",  # Unnecessary.
         expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-        "flags/05_fastq.done", 
+        "flags/04_fastq.done",  # Unnecessary.
         expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
+
         "flags/05_porechop.done", 
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
@@ -133,41 +131,38 @@ rule finalize:
         "flags/08_fastqc.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
     
-        "flags/08_pycoqc.done",
+        "flags/09_pycoqc.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.html",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}.align_pycoqc.json",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-        "flags/08_kraken.done",
+        "flags/10_kraken.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_kraken.report",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
 
-        "flags/08_multiqc.done",
+        "flags/11_multiqc.done",
         "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html",
 
-        "flags/09_transfer.done",
-    
-
-        
+        "flags/12_transfer.done",
     output:    
          touch("flags/XX_snakemake.done")
     log:
         log="log/ont_pipeline.log",
 
 include: "00_start.smk"
-include: "00_prepare.smk"
+include: "01_prepare.smk"
 if do_basecall:
-    include: "00_basecall.smk"
+    include: "02_basecall.smk"
 else:
-    include: "00_prepare_bam.smk"
-include: "04_seqsum.smk"
-include: "05_fastq.smk"
+    include: "02_prepare_bam.smk"
+include: "03_seqsum.smk"
+include: "04_fastq.smk"
 include: "05_porechop.smk"
 include: "06_align.smk"
 # Conditionally include 07_modbed.smk
 if protocol != "cdna":
     include: "07_modbed.smk"
 include: "08_fastqc.smk"
-include: "08_pycoqc.smk"
-include: "08_kraken.smk"
-include: "08_multiqc.smk"
-include: "09_transfer.smk"
+include: "09_pycoqc.smk"
+include: "10_kraken.smk"
+include: "11_multiqc.smk"
+include: "12_transfer.smk"
 

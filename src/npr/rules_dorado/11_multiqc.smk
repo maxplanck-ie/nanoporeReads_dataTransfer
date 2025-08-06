@@ -1,16 +1,16 @@
 '''
 Conduct various QC-tests
 '''
-source = ["flags/08_fastqc.done",  "flags/08_kraken.done", "flags/08_pycoqc.done", "flags/05_porechop.done"]
+source = ["flags/08_fastqc.done",  "flags/10_kraken.done", "flags/09_pycoqc.done", "flags/05_porechop.done"]
 
-rule multiqc_final:
+rule multiqc_final_11:
     input: expand("transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html")
-    output: touch("flags/08_multiqc.done")
+    output: touch("flags/11_multiqc.done")
     shell:'''
         echo "multiqc output: " {input}
     '''
 
-rule multiqc: 
+rule multiqc_11: 
     input: source
     output:
         "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html"
@@ -20,8 +20,7 @@ rule multiqc:
         cfg=config['multiqc']['configfile'],
         sampleDict="transfer/Project_" + Project_id + "/QC/sample_names.tsv",
         sampleSheet="reports/SampleSheet.csv"
-    conda:
-        "ont-ppp-multiqc"
+    conda: "envs/align.yaml"
     log: "log/"+ Project_id+ "_multiqc.log"
     shell:'''
         # convert SampleSheet to sampleDict for multiqc convenience

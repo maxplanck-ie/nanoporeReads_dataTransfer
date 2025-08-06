@@ -7,5 +7,12 @@ dependencies:
   - pip
   - samtools == 1.19.2
   - pysam
+  - fastqc
+  - kraken2
+  - ont-modkit
+  - multiqc
+  - porechop_abi
+  - seqkit
   - pip:
     - pycoQC == 2.5.2
+    - pod5

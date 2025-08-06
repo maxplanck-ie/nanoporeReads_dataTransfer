@@ -2,14 +2,14 @@ import time
 import yaml
 from npr.ont_pipeline import get_dest_path
 
-rule transfer:
+rule transfer_12:
     input:
-        flag_mulitqc="flags/08_multiqc.done",
-        flag_modbed=lambda wildcards: "flags/07_modbed.done" if do_modbed and do_align else []
+        flag_multiqc="flags/11_multiqc.done",
+        flag_modbed="flags/07_modbed.done" if do_modbed and do_align else []
     output:
-        touch("flags/09_transfer.done"),
+        touch("flags/12_transfer.done"),
     log:
-        file="log/09_transfer.log"
+        file="log/12_transfer.log"
     run:
         dirs = glob.glob(os.path.join(transfer_dir, 'Project*'))
         with open(log.file, "a") as log:

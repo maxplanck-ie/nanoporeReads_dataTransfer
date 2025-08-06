@@ -1,13 +1,5 @@
-'''
-Convert BAM files to fastq. Mostly for further use with porechop
-Notice that the BAM files may contain modification information
-While this can be brute forced into the FASTQ header (-T "*") 
-the header will be useless after read chopping, splitting etc
-'''
-
-rule fastq:
+rule fastq_04:
     input:
-        flag="flags/04_seqsum.done",
         bam_file = "bam/{sample_id}_{sample_name}.bam"
     output:
         file = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz"
@@ -18,14 +10,13 @@ rule fastq:
         "log/{sample_project}_{sample_id}_{sample_name}.fastq.log"
     threads:
         16
-    conda:
-        "ont-ppp-samtools"
+    conda: "envs/align.yaml"
     shell:
         """
         # This assumes that all reads in BAM file are designated READ_OTHER 
         samtools fastq -@ {threads} {input.bam_file} -0 {output.file} 2>> {log}
         """
 
-rule fastq_final:
+rule fastq_final_04:
     input: expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
-    output: touch("flags/05_fastq.done")
+    output: touch("flags/04_fastq.done")
