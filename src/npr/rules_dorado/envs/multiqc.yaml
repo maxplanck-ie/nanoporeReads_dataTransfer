@@ -1,6 +1,0 @@
-name: ont-ppp-multiqc
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - multiqc == 1.21
