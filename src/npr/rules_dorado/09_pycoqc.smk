@@ -11,7 +11,7 @@ rule pycoQC_09:
         par = config['pycoQc']['pycoQc_opts']
     wildcard_constraints:
         sample_id = "[0-9]{2}L[0-9]{6}"
-    conda: "envs/align.yaml"
+    conda: "envs/pycoqc.yaml"
     shell: """
     pycoQC --summary_file {input.seqsum} --bam_file {input.aligned_bam} \
     {params.par} -o {output.html} -j {output.json} 2>&1 | tee -a {log}

@@ -1,18 +1,17 @@
-name: ont-ppp-align
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - python >= 3.10
   - pip
-  - samtools == 1.19.2
+  - samtools
   - pysam
   - fastqc
   - kraken2
-  - ont-modkit
+  - ont-modkit >= 0.5.0
   - multiqc
   - porechop_abi
   - seqkit
+  - plotly >= 5.17
   - pip:
-    - pycoQC == 2.5.2
     - pod5
