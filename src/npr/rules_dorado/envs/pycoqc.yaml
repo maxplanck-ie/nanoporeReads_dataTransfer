@@ -1,10 +1,8 @@
-name: ont-ppp-pycoqc
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python >= 3.10
+  - setuptools
   - pip
-  - pysam
   - pip:
     - pycoQC == 2.5.2

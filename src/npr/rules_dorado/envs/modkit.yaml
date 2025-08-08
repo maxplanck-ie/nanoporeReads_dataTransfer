@@ -1,7 +1,0 @@
-name: ont-ppp-modkit
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - ont-modkit
-  - samtools == 1.19.2

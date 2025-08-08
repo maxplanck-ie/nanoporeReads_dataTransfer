@@ -1,10 +1,3 @@
-'''
-Adaptor trimming with porechop and summary
-'''
-
-# Below are some functions to extract more information from the porechop.info file (requires -v 1 (default))
-# Notice that Porechop output is rather unstructured
-# The function below create files that are compatabile with multiqc (see: multiqc_config.yaml)
 def get_trimmed(filename,info):
     '''
     get the list of trimmed barcodes, adaptors and their associated sequence
@@ -81,9 +74,9 @@ def print_info(info, dir_name, key='trimmed'):
             file.write(s + '\t' + '\t'.join(sv) + '\n')
 
 
-rule porechop_final:
-    input: expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects)
-    output: touch("flags/05_porechop.done")
+rule porechop_final_05:
+    input: expand("transfer/Project_{sample_project}/QC/{sample_id}_{sample_name}_porechop.info",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects)
+    output: touch("flags/porechop.done")
     run:
         # initialize dictionary
         info={}
@@ -108,30 +101,21 @@ rule porechop_final:
         print_info(info, dir_name, key="best_end")
         
 
-rule qc_porechop:
+rule qc_porechop_05:
     input:
-        # flag="flags/05_fastq.done",
         fastq = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.fastq.gz"
     output:
-        info = "transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info"
-    wildcard_constraints:
-        # exclude all sample_name that end on "_porechop.info" (already chopped) 
-        sample_name = r'(?!.*\.porechop\.info$).*'
+        info = "transfer/Project_{sample_project}/QC/{sample_id}_{sample_name}_porechop.info",
+        subset = temp("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset.fastq.gz"),
+        target = temp("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset_porechop.fastq.gz"),
     threads: 10
-    conda:
-        "ont-ppp-porechop"
+    conda: "envs/align.yaml"
     params:
-        flag = "",
-        nlines = int(config['porechop']['sample_reads']) * 4,
-        subset = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset.fastq.gz",
-        target = "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}_subset_porechop.fastq.gz"
+        nlines = int(config['porechop']['sample_reads']) * 4
     log:
-        "log/{sample_project}_{sample_id}_{sample_name}_porechop.log"
+        "log/05_{sample_project}_{sample_id}_{sample_name}_porechop.log"
     shell:'''
-        echo "extracting {params.nlines} lines"
-        seqkit head -n {params.nlines} -o {params.subset} {input.fastq} 2>> {log}
-        
-        echo "porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}"
-        porechop_abi {params.flag} -t {threads} -i {params.subset} -o {params.target} > {output.info} 2>> {log}
+    echo "extracting {params.nlines} lines"
+    seqkit head -n {params.nlines} -o {output.subset} {input.fastq} 2>&1 | tee {log}
+    porechop_abi -t {threads} -i {output.subset} -o {output.target} > {output.info} 2> >(tee -a {log} >&2)
     '''
-

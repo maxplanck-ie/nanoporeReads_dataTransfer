@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools >= 61.0", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "npr"
+description = "processing ONT data"
+readme = "README.md"
+dynamic = ["version"]
+keywords = ["ONT", "demultiplexing", "basecalling"]
+authors = [
+  {name = "Bioinfo-Core MPI-IE"}
+]
+requires-python = ">=3.10"
+dependencies = [
+  "rich-click",
+  "snakemake >= 9",
+  "pandas >= 2"
+]
+
+[project.scripts]
+ont = "npr.ont:ont"
+genmodel = "npr.models:main"
+
+[tool.setuptools.package-data]
+"ont" = ["*.smk", "*.yaml"]
+[tool.setuptools_scm]
+[tool.ruff]
+lint.select = ["F"]
