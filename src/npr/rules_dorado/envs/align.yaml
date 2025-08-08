@@ -6,7 +6,7 @@ dependencies:
   - pip
   - samtools
   - pysam
-  - fastqc
+  - falco
   - kraken2
   - ont-modkit >= 0.5.0
   - multiqc

@@ -1,12 +1,6 @@
-rule start:
-    input:
-        "summary/disk_space_start.txt" 
-    output: 
-        touch("flags/00_start.done")
-
 rule check_disk_space:
     output:
-        "summary/disk_space_start.txt"
+        "summary/00_disk_space_start.txt"
     params:
         # required disk space in Megabytes
         required_space=100_000
