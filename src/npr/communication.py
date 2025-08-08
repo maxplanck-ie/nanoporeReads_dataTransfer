@@ -7,12 +7,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
 from time import sleep
-
-import paramiko
 import requests
 from rich import print
-from scp import SCPClient
-
+from pathlib import Path
 
 def ship_qcreports(config, flowcell):
     """
@@ -21,49 +18,15 @@ def ship_qcreports(config, flowcell):
      1. NGS team can only reads via SAMBA share
      2. bioinfo may not be able to open html on analysis server
     """
-
-    # make shipping dependent on whether sambahost is defined - simplify testing
-    # also disables shipping to bioinfocore
-    if config["sambahost"]["host"] is None:
-        return
-
-    # login info.
-    _pkey = paramiko.RSAKey.from_private_key_file(config["sambahost"]["pkey"])
-    _user = config["sambahost"]["user"]
-    _host = config["sambahost"]["host"]
-
-    # set client.
-    client = paramiko.SSHClient()
-    policy = paramiko.AutoAddPolicy()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-    client.connect(_host, username=_user, pkey=_pkey)
     # Create flowcell folder if it doesn't exist.
     yrstr = flowcell[:4]
-    samba_fdir = os.path.join(
-        config["paths"]["deepseq_qc"],
-        f"Sequence_Quality_{yrstr}",
-        f"ONT_{yrstr}",
-    )
-    # I think latency causes scp to fail so include sleep (legacy from Leily?)
-    _cmd = f"mkdir -p {samba_fdir}"
-    _stdin, _stdout, _stderr = client.exec_command(_cmd)
+    sambadir = Path(config['paths']['deepseq_qc'], f"Sequence_Quality_{yrstr}", f"ONT_{yrstr}")
+    sambadir.mkdir(parents=True, exist_ok=True)
 
-    #    print('stdin:')
-    #    print(_stdin)
-    #    print('stdout:')
-    #    print(_stdout)
-    print("stderr:")
-    print(_stderr)
-    sleep(30)
+    fc_dir = Path(config["info_dict"]["flowcell_path"])
 
-    # copy run_reports & pycoQC
-    scp = SCPClient(client.get_transport())
-    fc_dir = config["info_dict"]["flowcell_path"]
-    fc_name = os.path.basename(fc_dir)
-    samba_target = os.path.join(samba_fdir, fc_name)
-    bioinfo_target = os.path.join(config["paths"]["bioinfocoredir"], fc_name)
-
+    samba_target = sambadir / fc_dir.name
+    bioinfo_target =Path(config["paths"]["bioinfocoredir"], fc_dir.name)
     print("[green]Copy QC reports[/green]")
     print(f"... to bioinfo: {bioinfo_target}")
     print(f"... to sambahost: {samba_target}")
@@ -75,35 +38,19 @@ def ship_qcreports(config, flowcell):
     for report in reports:
         print(f"copying... {report}")
         shutil.copy(report, bioinfo_target)
-        try:
-            scp.put(report, samba_target)
-        except (paramiko.SSHException, OSError) as e:
-            print(f"Error during transfer to sambahost: {str(e)}")
+        shutil.copy(report, samba_target)
 
     # copy QC directories: transfer/Project*/QC
     for local_dir in glob.glob(f"{fc_dir}/transfer/Project*/QC/"):
         p_dir = os.path.dirname(os.path.dirname(local_dir))
         p_name = os.path.basename(p_dir)
-        target_dir = os.path.join(fc_name, p_name, "QC")
+        target_dir = os.path.join(fc_dir.name, p_name, "QC")
 
         # copy to bioinfo
         bioinfo_target = os.path.join(config["paths"]["bioinfocoredir"], target_dir)
         print(f"copy {local_dir}")
         shutil.copytree(local_dir, bioinfo_target, dirs_exist_ok=True)
-
-        # copy to sambahost
-        samba_target = os.path.join(samba_fdir, target_dir)
-        stdin, stdout, stderr = client.exec_command(f"mkdir -p {samba_target}")
-        sleep(30)
-        if stderr.read():
-            print(f"Error creating remote directory {samba_target}. Error: {stderr}")
-        try:
-            scp.put(local_dir, recursive=True, remote_path=samba_target)
-        except (paramiko.SSHException, OSError) as e:
-            print(f"Error during transfer of {local_dir} to sambahost: {str(e)}")
-
-    scp.close()
-    client.close()
+        shutil.copytree(local_dir, samba_target, dirs_exist_ok=True)
 
 
 def standard_text(config):
@@ -112,30 +59,20 @@ def standard_text(config):
     Include also QC metrics obtained from multiqc report
     """
     QC, SM = config["QC"], config["SM"]
+
     samples = QC.pop("samples")
-    frame = "\n-------\n"
     msg = (
-        "Dear <...>\n"
-        + "The sequencing and first analysis for Project {} is finished\n".format(
-            config["data"]["projects"]
-        )
-        + "\n"
-        + "Ouput Folder: {}".format(config["info_dict"]["transfer_path"])
-        + frame
-        + "Quality Metrics (from mulitQC) \n"
-        + f"Samples: {samples}\n"
-        + "\n".join([f"{key}: {value}" for key, value in QC.items()])
-        + frame
-        + "Storage Footprint \n"
-        + "\n".join([f"{key}: {value}" for key, value in SM.items()])
-        + frame
-        + "Please keep in mind that the original pod5 files, needed e.g. to call modified bases, will only be available for the next 6 months and will be permanently deleted afterwards.\n"
-        + "Please let me know if something is unclear or if you have any further questions.\n\nKind regards.\n"
+        f"Project: {config["data"]["projects"]}\n" +
+        f"Output Folder: {config["info_dict"]["transfer_path"]}" +
+        f"Samples: {samples}\n" +
+        "\n".join([f"{key}: {value}" for key, value in QC.items()]) +
+        "Storage: \n" +
+        "\n".join([f"{key}: {value}" for key, value in SM.items()])
     )
     return msg
 
 
-def send_email(subject, body, config, allreceivers=True):
+def send_email(subject, body, config, failure=False):
     """
     Send email including key information about the run
     Also print message to stdout
@@ -161,7 +98,7 @@ def send_email(subject, body, config, allreceivers=True):
     body = body + frame + info + frame
 
     mailer["From"] = config["email"]["from"]
-    to_email = "to" if allreceivers else "trigger"
+    to_email = "to" if failure else "failure"
     mailer["To"] = config["email"][to_email]
     tomailers = config["email"]["to"].split(",")
     print(f"Email trigger, sending to {tomailers}")
@@ -170,7 +107,6 @@ def send_email(subject, body, config, allreceivers=True):
     if config["email"]["host"] is not None:
         s = smtplib.SMTP(config["email"]["host"])
         s.sendmail(config["email"]["from"], tomailers, mailer.as_string())
-    print("[green]Subject: {}\n{}[/green]".format(mailer["Subject"], body))
 
 
 def query_parkour(config, flowcell, msg):
@@ -213,7 +149,6 @@ def query_parkour(config, flowcell, msg):
             verify=config["parkour"]["pem"],
         )
         if res.status_code == 200:
-            info_dict = {}
             msg += f"Parkour query 200 for fid {fc} with re-use index {pf}.\n"
             msg += "\n"
             msg += "Parkour queried with:\n"
@@ -224,9 +159,22 @@ def query_parkour(config, flowcell, msg):
             print(parkour_dict)
             first_key = list(parkour_dict.keys())[0]
             first_entry = list(parkour_dict[first_key].keys())[0]
-            organism = parkour_dict[first_key][first_entry][3][1]
+            # Parkour pulls give back a list containing [name, label, yaml]
+            # In the config the name: [fna, bed] is encoded.
+            organism_tupe = parkour_dict[first_key][first_entry][3]
             protocol = parkour_dict[first_key][first_entry][2]
 
+            if protocol not in config['dorado_basecaller']['protocol_models']:
+                print(f"[red]Protocol {protocol} not found in config. Setting default {config['dorado_basecaller']['default_model']}[/red]")
+                config["info_dict"]["model"] = config['dorado_basecaller']['default_model']
+            else:
+                print(f"Setting model to {config['dorado_basecaller']['protocol_models'][protocol]}")
+                config["info_dict"]["model"] = config['dorado_basecaller']['protocol_models'][protocol]
+            config['info_dict']['parkour_protocol'] = protocol
+            # Note that at this stage it's simple to extract if we have modification calls or not:
+            # Modifications will have a ',' in the 'model' field.
+            config["info_dict"]["modifications"] = ("," in config["info_dict"]["model"])
+            
             if (
                 fc == "PAK78871"
                 or fc == "PAK79330"
@@ -250,9 +198,21 @@ def query_parkour(config, flowcell, msg):
 
             # update config['info_dict']
             config["info_dict"]["protocol"] = protocol
-            if organism not in config["genome"].keys():
-                organism = "other"
-            config["info_dict"]["organism"] = str(organism)
+            
+            print(f"Parkour organism received = {organism_tupe}")
+
+            if organism_tupe[0] not in config["genome"].keys():
+                config["info_dict"]["organism"] = "other"
+                config["info_dict"]["organism_genome"] = None
+                config["info_dict"]["organism_genes"] = None
+                config["info_dict"]["organism_label"] = None
+            else:
+                _org = organism_tupe[0]
+                config["info_dict"]["organism"] = _org
+                # encoded in config as list of [genome.fa, genes.bed]
+                config["info_dict"]["organism_genome"] = config["genome"][_org][0]
+                config["info_dict"]["organism_genes"] = config["genome"][_org][1]
+                config["info_dict"]["organism_label"] = organism_tupe[1]
             return msg
 
     msg += f"Parkour query failed for {fc}.\n"

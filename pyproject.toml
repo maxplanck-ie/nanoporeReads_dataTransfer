@@ -15,9 +15,7 @@ requires-python = ">=3.10"
 dependencies = [
   "rich-click",
   "snakemake >= 9",
-  "pandas >= 2",
-  "paramiko",
-  "scp"
+  "pandas >= 2"
 ]
 
 [project.scripts]
@@ -26,3 +24,6 @@ genmodel = "npr.models:main"
 
 [tool.setuptools.package-data]
 "ont" = ["*.smk", "*.yaml"]
+[tool.setuptools_scm]
+[tool.ruff]
+lint.select = ["F"]

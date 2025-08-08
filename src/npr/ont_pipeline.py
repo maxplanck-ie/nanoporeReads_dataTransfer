@@ -1,22 +1,15 @@
-# ont_pipeline.py
-# Helper funtions for the ONT pipeline
-# (C) 2024 Bioinformatics Core
-# Max Plank Institute for Immunobiology and Epigenetics
-
 import glob
 import json
 import os
 import re
-import subprocess as sp
 import sys
 
 import pandas as pd
 import requests
-import yaml
 from rich import print
 
 from npr.communication import send_email
-from npr.snakehelper import get_seqdir, glob2reports, guppy2dorado
+from npr.snakehelper import get_seqdir, glob2reports
 
 
 def analysis_done(flowcell, config):
@@ -110,7 +103,6 @@ def find_new_flowcell(config):
         # needed here to communicate flowcell with send_email
         config["info_dict"]["base_path"] = flowcell
 
-        # exit if sampleSheet.csv does not exists
         ss = os.path.join(flowcell, "SampleSheet.csv")
 
         flowcell_path = os.path.join(
@@ -186,17 +178,8 @@ def read_flowcell_info(config, info_dict, base_path):
     """
     - set paths
     - copy json, summaries & samplesheet
-    - parse json for flowcell, kit & barcoding
-    - infer model from flowcell + kit
-    - add flags for basecalling and modbed
+    - parse HTML and json file for flowcell, kit & barcoding
     """
-
-    # adding default flags for basecalling, align and modbed
-    info_dict["do_basecall"] = config["default_process"]["do_basecall"]
-    info_dict["do_align"] = config["default_process"]["do_align"]
-    info_dict["do_sort"] = config["default_process"]["do_sort"]
-    info_dict["do_demux"] = config["default_process"]["do_demux"]
-    info_dict["do_modbed"] = config["default_process"]["do_modbed"]  # set to False!
 
     flowcell = config["input"]["name"]
     info_dict["base_path"] = base_path
@@ -242,11 +225,11 @@ def read_flowcell_info(config, info_dict, base_path):
         with open(json_file[0]) as f:  # assume only 1 file
             jsondata = json.load(f)
 
-        if not "flowcell" in info_dict:
+        if "flowcell" not in info_dict:
             info_dict["flowcell"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
                 "flow cell"
             ]["string_value"]
-        if not "kit" in info_dict:
+        if "kit" not in info_dict:
             info_dict["kit"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
                 "kit"
             ]["string_value"]
@@ -257,61 +240,6 @@ def read_flowcell_info(config, info_dict, base_path):
             ]
         )
 
-        # check run parameters to capture model, check base calling and alignment
-        # model is better defined in json, in html is badly reported
-        model = None
-
-        for par in jsondata["protocol_run_info"]["args"]:
-            if par.startswith("--model_filename="):
-                px, model = par.split("=")
-                info_dict["model_def"] = model
-                info_dict["model"] = model
-                print(f"  [green]Found model as {model}[/green]")
-            elif par == "--base_calling=on":
-                info_dict["do_basecall"] = False  # default
-                print(f"  [green]Found basecalling is already done[/green]")
-            elif par == "--alignment":
-                info_dict["do_align"] = False  # overrides default
-                info_dict["do_sort"] = False  # overrides default
-                print(
-                    f"  [green]Found alignment is already done. Assuming sorted bam.[/green]"
-                )
-            else:
-                match = re.match(r'simplex_model="?([^"]+)"?', par)
-                if match:
-                    print("Simplex model extracted!")
-                    model = match.group(1)
-                    info_dict["model_def"] = model
-                    info_dict["model"] = model
-
-        if not model:
-            print(
-                "Model was not found in command parameters, capturing the default value"
-            )
-            info_dict["model_def"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
-                "default basecall model"
-            ]["string_value"]
-            info_dict["model"] = info_dict["model_def"]
-
-        if "modbases" in info_dict["model_def"]:
-            info_dict["do_modbed"] = True
-            print(
-                f"  [green]Found modified bases was used, BED will be generated[/green]"
-            )
-        else:
-            # modbases is not captured in the new definition, extracting it directly from modified json file
-            for par in jsondata["protocol_run_info"]["args"]:
-                match = re.search(r'modified_models=("(?:\[.*?\])")', par)
-                if match:
-                    modified_models_str = match.group(
-                        1
-                    )  # This is the JSON string of the list
-                    # Parse the JSON list string to Python list
-                    modified_models_list = json.loads(modified_models_str)
-                    print(modified_models_list)
-                    info_dict["do_modbed"] = True
-
-        # double check args. This needs a cleaner solution.
         for rg in jsondata["protocol_run_info"]["args"]:
             if rg == "--barcoding" and not info_dict["barcoding"]:
                 print("Json bool for barcoding wrong ! Override !")
@@ -329,77 +257,9 @@ def read_flowcell_info(config, info_dict, base_path):
             else:
                 info_dict["barcode_kit"] = "no_bc"
 
-        # getting software and versions unless already defined by the html
-        if not "software" in info_dict:
-            if "software_versions" in jsondata["protocol_run_info"]:
-                info_dict["software"] = jsondata["protocol_run_info"][
-                    "software_versions"
-                ]
-                if "guppy_connected_version" in info_dict["software"]:
-                    info_dict["software"]["Dorado"] = info_dict["software"][
-                        "guppy_connected_version"
-                    ]
-
-    else:
-        # try to get txt file.
-        print(f"base path == {base_path}")
-        finsum = glob.glob(os.path.join(base_path, "final_summary*txt"))[0]
-        if finsum:
-            for line in open(finsum):
-                if line.strip().startswith("protocol="):
-                    info_dict["flowcell"] = line.strip().split(":")[-2]
-                    info_dict["kit"] = line.strip().split(":")[-1]
-            seq_sum = glob.glob(os.path.join(base_path, "sequencing_summary*txt"))
-            if not seq_sum:
-                sys.exit("No sequencing summary.txt file found. exiting.")
-            else:
-                # We try and fetch a barcode kit from sequencing summary.
-                # only open up the first 2 lines, as these can grow long.
-                # if barcoding is there, there'll be a barcoding
-                lines = 0
-                head = []
-                with open(seq_sum[0]) as f:
-                    for line in f:
-                        if lines < 2:
-                            head.append(line.strip().split())
-                            lines += 1
-                        else:
-                            break
-                    if "barcode_kit" in head[0]:
-                        info_dict["barcoding"] = True
-                        bkit = head[1][head[0].index("barcode_kit")]
-                        if (
-                            info_dict["kit"] == "SQK-PCB111-24"
-                            and info_dict["barcoding"]
-                        ):
-                            info_dict["barcode_kit"] = "SQK-PCB111-24"
-                        else:
-                            info_dict["barcode_kit"] = bkit
-                        print(f"Barcoding detected: kit = {bkit}")
-                    else:
-                        print("no evidence for barcoding in seq summary.")
-                        info_dict["barcode_kit"] = "no_bc"
-                        info_dict["barcoding"] = False
-                    print(head[0].index("barcode_kit"))
-        else:
-            sys.exit("no json file, no final summary txt file found. exiting.")
-
-    print("flowcell = {}".format(info_dict["flowcell"]))
-    print("kit = {}".format(info_dict["kit"]))
-
-    if (info_dict["do_basecall"]) and (config["basecaller"] == "dorado"):
-        if config["dorado_basecaller"]["dorado_model"] is not None:
-            # record _full_ abnsolute path to model
-            info_dict["model"] = config["dorado_basecaller"]["dorado_model"]
-        else:
-            # default name of model derived from json (see above)
-            model_name = info_dict["model_def"]
-            info_dict["model"] = os.path.join(
-                config["dorado_basecaller"]["model_directory"], model_name
-            )
-
-    print("model = {}".format(info_dict["model"]))
-
+    print(f'flowcell_info_parsed: flowcell = {info_dict["flowcell"]}')
+    print(f'flowcell_info_parsed: kit = {info_dict["kit"]}')
+    print(f'flowcell_info_parsed: barcode_kit = {info_dict["barcode_kit"]}')
     return info_dict
 
 
@@ -451,7 +311,7 @@ def read_samplesheet(config):
                 "Sample_ID": row["Sample_ID"],
             }
         )
-    if len(data["samples"]) > 1 and config["info_dict"]["barcoding"] == False:
+    if len(data["samples"]) > 1 and not config["info_dict"]["barcoding"]:
         print(
             "[red] Danger, barcoding inferred as false, but more then 1 sample in samplesheet. [/red]"
         )
