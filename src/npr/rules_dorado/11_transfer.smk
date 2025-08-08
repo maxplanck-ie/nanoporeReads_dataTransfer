@@ -2,16 +2,15 @@ import time
 import yaml
 from npr.ont_pipeline import get_dest_path
 
-rule transfer:
+rule transfer_11:
     input:
-        flag_mulitqc="flags/08_multiqc.done",
-        flag_modbed=lambda wildcards: "flags/07_modbed.done" if do_modbed else []
+        expand("transfer/Project_{sample_project}/QC/multiqc_report.html", sample_project=sample_projects)
     output:
-        touch("flags/09_transfer.done"),
+        touch("transfer.done"),
     log:
-        file="log/09_transfer.log"
+        file="log/11_transfer.log"
     run:
-        dirs = glob.glob(os.path.join(transfer_dir, 'Project*'))
+        dirs = glob.glob(os.path.join("transfer", 'Project*'))
         with open(log.file, "a") as log:
             if not dirs:
                 ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -27,6 +26,8 @@ rule transfer:
                 log.write(f"{ts}: mkdir {dest}; cp -r {dir} {dest}\n")
                 # copy data over
                 shell("mkdir -p {dest}; cp -r {dir} {dest}")
+                os.chmod(dest, 0o700)
+                
                 # write metadata
                 metayaml = os.path.join(dest, 'metadata.yaml') 
                 with open(metayaml, 'w') as yaml_file:
@@ -38,5 +39,4 @@ rule transfer:
                         os.chmod(os.path.join(r, d), 0o700)
                     for f in files:
                         os.chmod(os.path.join(r, f), 0o700)
-
                 log.write(f"{ts}: Stripped user write permission from {dest}\n")
