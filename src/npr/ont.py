@@ -15,6 +15,9 @@ from importlib.metadata import version
 from pathlib import Path
 from threading import Event
 
+#libs for asynchronous functions
+import asyncio, asyncssh
+
 import rich_click as click
 import snakemake
 import yaml
@@ -80,6 +83,13 @@ from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc
     help="Target a specific flowcell. Can be a substring of the directory to look for in the offload directory (config, or via --directory).",
 )
 @click.option(
+    "--send_to_remote",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Send pod5 files for a specific flowcell to a remote vm. Requires flowcell, organism and protocol to be specified.",
+)
+@click.option(
     "--force",
     default=False,
     is_flag=True,
@@ -93,6 +103,10 @@ def ont(**kwargs):
     if kwargs["force"] and not kwargs["flowcell"]:
         print("Force flag set without specifying a flowcell. Exiting.")
         sys.exit(1)
+    #If send_to_remote specified, require flowcell and organism. Else exit.
+    if kwargs["send_to_remote"] and not all([kwargs["flowcell"],kwargs["organism"],kwargs["protocol"]]):
+        print("Sending to remote requires flowcell, organism and protocol specification.")
+        sys.exit(1)
 
     # print what config is used.
     print(
@@ -101,6 +115,11 @@ def ont(**kwargs):
 
     # Load config from file
     config = yaml.safe_load(open(kwargs["configfile"]))
+
+    #If running on remote, exit if send_to_remote is requested
+    if kwargs["send_to_remote"] and config["is_remote"]:
+        print("The workflow is running on a remote machine. Sending to remote is not possible.")
+        sys.exit(1)
 
     # update config if runtime args have been set
     if kwargs["directory"] is not None:
@@ -202,32 +221,45 @@ def main(config):
 
             send_email("Found flowcell:", msg, config, allreceivers=False)
 
-            config["info_dict"]["transfer_path"] = get_periphery(config)
+            if send_to_remote:
+                Path(
+                    os.path.join(config["info_dict"]["flowcell_path"], "ignore.on.local")
+                ).touch()
+                try:
+                    asyncio.run(transfer_to_remote(flowcell,config))
+                except OSError, asyncssh.Error) as exc:
+                    sys.exit('SSH connection failed: ' + str(exc))
+                msg += "Transfer to remote completed successfully. \n"
+                send_email("Successfully finished flowcell:", msg, config)
+                exit(0)
 
-            print("[green]Starting snakemake. [/green]")
-            print("file    {}".format(config["snakemake"]["snakefile"]))
-            print("config  {}".format(config["info_dict"]["configFile"]))
-            print("workdir {}".format(config["info_dict"]["flowcell_path"]))
-            print("transdir {}".format(config["info_dict"]["transfer_path"]))
+            else:
+                config["info_dict"]["transfer_path"] = get_periphery(config)
 
-            # static parameters are defined in dict config['snakemake']
-            # flowcell specific parameters are taken from config['info_dict']
-            snak_stat = snakemake.snakemake(
-                **config["snakemake"],
-                configfiles=[config["info_dict"]["configFile"]],
-                workdir=config["info_dict"]["flowcell_path"],
-            )
-            if not snak_stat:
-                msg += f"snake crashed with {snak_stat}"
-                send_email("Snakemake failed for flowcell:", msg, config)
-                sys.exit(1)
+                print("[green]Starting snakemake. [/green]")
+                print("file    {}".format(config["snakemake"]["snakefile"]))
+                print("config  {}".format(config["info_dict"]["configFile"]))
+                print("workdir {}".format(config["info_dict"]["flowcell_path"]))
+                print("transdir {}".format(config["info_dict"]["transfer_path"]))
 
-            msg += "pod5 compression: {}\n".format(
-                getfast5foot(
-                    config["info_dict"]["base_path"],
-                    config["info_dict"]["flowcell_path"],
+                # static parameters are defined in dict config['snakemake']
+                # flowcell specific parameters are taken from config['info_dict']
+                snak_stat = snakemake.snakemake(
+                    **config["snakemake"],
+                    configfiles=[config["info_dict"]["configFile"]],
+                    workdir=config["info_dict"]["flowcell_path"],
                 )
-            )
+                if not snak_stat:
+                    msg += f"snake crashed with {snak_stat}"
+                    send_email("Snakemake failed for flowcell:", msg, config)
+                    sys.exit(1)
+
+                msg += "pod5 compression: {}\n".format(
+                    getfast5foot(
+                        config["info_dict"]["base_path"],
+                        config["info_dict"]["flowcell_path"],
+                    )
+                )
             # spread the news
             ship_qcreports(config, flowcell)
             config["QC"] = scan_multiqc(config)

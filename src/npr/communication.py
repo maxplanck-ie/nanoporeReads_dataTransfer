@@ -13,6 +13,7 @@ import requests
 from rich import print
 from scp import SCPClient
 
+import asyncio, asyncssh
 
 def ship_qcreports(config, flowcell):
     """
@@ -177,7 +178,10 @@ def query_parkour(config, flowcell, msg):
     """
     query parkour to update info_dict (protocol and organism)
     """
-
+    if config["remote_vm"]["is_remote"]:
+        msg += "Running on remote vm. Parkour query skipped:\n"
+        return msg
+ 
     if not config["parkour"]["url"]:
         msg += "Parkour URL not specified."
         return msg
@@ -261,3 +265,14 @@ def query_parkour(config, flowcell, msg):
 
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")
+
+
+async def transfer_to_remote(flowcell,config) -> None:
+    base_path = config["info_dict"]["basepath"]
+    pod5_file_list = os.listdir(os.path.join(base_path,"pod5"))
+    report_file_list = [ glob.glob(os.path.join(base_path, x)) for x in ["*json", "*html", "*txt", "SampleSheet.csv"]]
+    pipeline_config = os.path.join(config["info_dict"]["flowcell_path"], "pipeline_config.yaml")
+    async with asyncssh.connect(config["remote_vm"]["user"]) as conn:
+        #result_pod5 = await asynssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
+        #result_reports = await asynssh.scp(report_file_list,(conn,config["remote_vm"]["target"]),compression_algs=None)
+        result_config = await asynssh.scp(pipeline_config,(conn,config["remote_vm"]["target"]),compression_algs=None)

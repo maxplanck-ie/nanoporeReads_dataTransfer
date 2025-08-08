@@ -37,6 +37,23 @@ def analysis_done(flowcell, config):
 
     return False
 
+def ignore_on_local(flowcell, config):
+    """
+    Determine whether flowcell has been sent to remote vm for processing.
+    """
+    loc1 = os.path.join(
+        config["paths"]["outputDir"], os.path.basename(flowcell), "ignore.on.local"
+    )
+    if os.path.exists(loc1):
+        return True
+
+    for old_dir in config["paths"]["old_outputDirs"]:
+        loc2 = os.path.join(old_dir, os.path.basename(flowcell), "ignore.on.local")
+        if os.path.exists(loc2):
+            return True
+
+    return False
+
 
 def filter_flowcell(json, config):
     """
@@ -102,7 +119,7 @@ def find_new_flowcell(config):
             print(f"Working with {flowcell}")
 
         # test and continue if 'analysis.done' exists for this flowcell
-        if analysis_done(flowcell, config):
+        if any([analysis_done(flowcell, config),ignore_on_local(flowcell,config)]):
             if config["options"]["verbosity"]:
                 print(f" {flowcell} found")
             continue
@@ -138,6 +155,8 @@ def find_new_flowcell(config):
 
         # return flowcell to ont()
         msg = "SampleSheet.csv file found.\n"
+        if send_to_remote:
+            msg = msg + "Data transfer to remote is on. \n"
         config["input"] = {"name": os.path.basename(flowcell)}
 
         return (os.path.basename(flowcell), msg, flowcell)
