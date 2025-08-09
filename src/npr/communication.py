@@ -59,15 +59,17 @@ def standard_text(config):
     Include also QC metrics obtained from multiqc report
     """
     QC, SM = config["QC"], config["SM"]
+    # Relevant config keys from info_dict
+    relkeys = ['pipeline_version', 'model', 'parkour_protocol', 'modifications', 'organism', 'flowcell', 'kit', 'barcoding', 'barcode_kit']
 
-    samples = QC.pop("samples")
     msg = (
         f"Project: {config["data"]["projects"]}\n" +
-        f"Output Folder: {config["info_dict"]["transfer_path"]}" +
-        f"Samples: {samples}\n" +
+        f"Output Folder: {config["info_dict"]["transfer_path"]}\n\n" +
         "\n".join([f"{key}: {value}" for key, value in QC.items()]) +
-        "Storage: \n" +
-        "\n".join([f"{key}: {value}" for key, value in SM.items()])
+        "\n\nStorage (% used): \n" +
+        "\n".join([f"{key}: {SM[key]['percentage']}" for key in SM]) +
+        "\n\nConfig: \n" +
+        "\n".join([f"{key}: {value}" for key, value in config["info_dict"].items() if key in relkeys])
     )
     return msg
 
@@ -95,18 +97,21 @@ def send_email(subject, body, config, failure=False):
     if "basecaller" in config:
         info += "\nbasecaller: {}\n".format(config["basecaller"])
     frame = "\n=====\n"
-    body = body + frame + info + frame
-
+    if failure:
+        body = body + frame + info + frame
+    
     mailer["From"] = config["email"]["from"]
-    to_email = "to" if failure else "failure"
-    mailer["To"] = config["email"][to_email]
-    tomailers = config["email"]["to"].split(",")
-    print(f"Email trigger, sending to {tomailers}")
+    if failure:
+        _receivers = config["email"]["failure"].split(',')
+    else:
+        _receivers = config["email"]["to"].split(',')
+    print(f"Email receivers set as {_receivers}")
+    mailer["To"] = ", ".join(_receivers)
     email = MIMEText(body)
     mailer.attach(email)
     if config["email"]["host"] is not None:
         s = smtplib.SMTP(config["email"]["host"])
-        s.sendmail(config["email"]["from"], tomailers, mailer.as_string())
+        s.sendmail(config["email"]["from"], _receivers, mailer.as_string())
 
 
 def query_parkour(config, flowcell, msg):
