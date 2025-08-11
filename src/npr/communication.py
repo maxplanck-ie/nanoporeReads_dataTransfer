@@ -59,11 +59,14 @@ def standard_text(config):
     Include also QC metrics obtained from multiqc report
     """
     QC, SM = config["QC"], config["SM"]
-
+    # Get the project(s)
+    pid_to_fids = query_parkour_project(config)
     samples = QC.pop("samples")
     msg = (
         f"Project: {config["data"]["projects"]}\n" +
-        f"Output Folder: {config["info_dict"]["transfer_path"]}" +
+        f"Output Folder: {config["info_dict"]["transfer_path"]}\n" +
+        f"# Associated flowcells:\n" +
+        ".\n".join([f"{pid}: {len(fids)}" for pid, fids in pid_to_fids.items()]) +
         f"Samples: {samples}\n" +
         "\n".join([f"{key}: {value}" for key, value in QC.items()]) +
         "Storage: \n" +
@@ -118,23 +121,15 @@ def query_parkour(config, flowcell, msg):
         msg += "Parkour URL not specified."
         return msg
 
-    # Old manual escapes.
-    if flowcell == "20221014_1045_X5_FAV39027_f348bc5c":
-        fc = "FAV39027_reuse"
-    elif flowcell == "20221107_1020_X3_FAV08360_71e3fa80":
-        fc = "FAV08360-1"
-    elif flowcell == "20230331_1220_X4_FAV22714_872a401d":
-        fc = "FAV22714-2"
-    else:
-        try:
-            fc = flowcell.split("_")[3]
-        except Exception as e:
-            print(f"[red]Exception: {e}[/red]")
-            msg += 'Parkour Error: flowcell "{}" cannot be queried in parkour.'.format(
-                flowcell
-            )
-            send_email("Error with flowcell:", msg, config, allreceivers=False)
-            sys.exit(1)
+    try:
+        fc = flowcell.split("_")[3]
+    except Exception as e:
+        print(f"[red]Exception: {e}[/red]")
+        msg += 'Parkour Error: flowcell "{}" cannot be queried in parkour.'.format(
+            flowcell
+        )
+        send_email("Error with flowcell:", msg, config, failure=False)
+        sys.exit(1)
     # test for flow cell re-use.
     # flowcell that's re-used gets higher increment.
     postfixes = ["-5", "-4", "-3", "-2", "-1", ""]
@@ -222,3 +217,29 @@ def query_parkour(config, flowcell, msg):
 
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")
+
+
+def query_parkour_project(config):
+    '''
+    Given the populated config (including ['data']['projects'])
+    give back a dictionary with unique FIDs per project.
+
+    Note that a successful query gives back an object as such:
+    {'flowpaths': {'sampleID': ['FID', 'FID2'], 'sampleID2': ['FID3', 'FID4']}'}
+    returns a set of flow cell IDs.
+    '''
+    pid_to_fids = {}
+    for project in config['data']['projects']:
+        pid = project.split('_')[0]
+        res = requests.get(
+            config["parkour"]["url"] + f"/api/requests/{pid}/get_flowcell/",
+            auth=(config["parkour"]["user"], config["parkour"]["password"]),
+            verify=config["parkour"]["pem"]
+        )
+        if res.status_code == 200:
+            parsed = {k: json.loads(v) for k, v in res.json()['flowpaths'].items()}
+            pid_to_fids[project] = set([fid for samplel in parsed.values() for fid in samplel])
+        else:
+            print(f"[red]Parkour query failed for project {project} with status code {res.status_code}[/red]")
+            pid_to_fids[project] = set()
+    return pid_to_fids
