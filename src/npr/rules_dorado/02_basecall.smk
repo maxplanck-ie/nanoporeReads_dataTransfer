@@ -12,12 +12,13 @@ rule basecall_02:
         cmd = config['dorado_basecaller']['dorado_cmd'],
         model_dir = config['dorado_basecaller']['model_directory'],
         model = config['info_dict']['model'],
-        reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict']['organism_genome'] else ""
+        reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict']['organism_genome'] else "",
+        device = config['dorado_basecaller']['device']
     shell:'''
     {params.cmd} basecaller \
         --models-directory {params.model_dir} \
         {params.reference} \
-        -x cuda:all {params.model} {input.pod5} > {output.bam}
+        -x {params.device} {params.model} {input.pod5} > {output.bam}
     '''
 
 rule basecall_demux_and_sort_02:

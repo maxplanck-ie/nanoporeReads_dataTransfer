@@ -35,6 +35,7 @@ parkour:
 dorado_basecaller:
   dorado_cmd: /path/to/dorado
   dorado_version: 'x.x.x'
+  device: 'cuda:all'
   protocol_models:
     'parkour protocol 1': hac@v5.2.0,m5C
     'parkour protocol 2': hac@v5.2.0,m5C,inosine_m6A
