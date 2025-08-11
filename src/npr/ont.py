@@ -102,8 +102,7 @@ def ont(**kwargs):
             )
 
     # snakefile to config['snakemake']
-    config["snakemake"]["snakefile"] = os.path.join(__file__, 'rules_dorado', 'ont_pipeline.smk')
-
+    config["snakemake"]["snakefile"] = str(Path(__file__).parents[0] / 'rules_dorado' / 'ont_pipeline.smk')
     # initialize config['info_dict']
     # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
     # notice that info_dict is flowcell-specific and will be reset/re-evalutated for each
