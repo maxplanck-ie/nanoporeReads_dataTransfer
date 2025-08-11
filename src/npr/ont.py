@@ -101,16 +101,8 @@ def ont(**kwargs):
                 )
             )
 
-    # add rulesPath to config['paths'] _not_ to config['snakemake']
-    # since 'rulesPath' is not a snakemake option
-    config["paths"]["rulesPath"] = os.path.join(
-        os.path.realpath(os.path.dirname(__file__)), config["paths"]["rulesDir"]
-    )
-
     # snakefile to config['snakemake']
-    config["snakemake"]["snakefile"] = os.path.join(
-        config["paths"]["rulesPath"], "ont_pipeline.smk"
-    )
+    config["snakemake"]["snakefile"] = os.path.join(__file__, 'rules_dorado', 'ont_pipeline.smk')
 
     # initialize config['info_dict']
     # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
