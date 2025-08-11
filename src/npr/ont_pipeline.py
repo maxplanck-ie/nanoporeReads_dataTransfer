@@ -3,7 +3,7 @@ import json
 import os
 import re
 import sys
-
+from pathlib import Path
 import pandas as pd
 import requests
 from rich import print
@@ -76,17 +76,15 @@ def find_new_flowcell(config):
             "reports",
             "SampleSheet.csv",
         )
-
-        if not os.path.exists(flowcell_path):
-            os.mkdir(flowcell_path)
-        if not os.path.exists(os.path.join(flowcell_path, "reports")):
-            os.mkdir(os.path.join(flowcell_path, "reports"))
+        Path(flowcell_path, 'reports').mkdir(parents=True, exist_ok=True)
 
         if not os.path.isfile(ss):
+            _ss_msg = f"No SampleSheet.csv file found in {flowcell_path}\n"
             if not get_samplesheet_from_parkour(flowcell.split("_")[-2], config, ss2):
+                _ss_msg += f"Failed to retrieve sampleSheet via parkour for {flowcell.split("_")[-2]}\n"
                 if not os.path.isfile(ss2):
-                    msg = "No SampleSheet.csv file.\n"
-                    send_email("Error for flowcell:", msg, config)
+                    _ss_msg += f"No SampleSheet found at {ss2}\n"
+                    send_email("Error for flowcell:", _ss_msg, config)
                     sys.exit("no sampleSheet.")
 
         # return flowcell to ont()
@@ -126,13 +124,11 @@ def get_samplesheet_from_parkour(flowcell, config, output_csv_path):
 
         except requests.exceptions.RequestException as e:
             print(f"Request failed for flowcell {flowcell_id}: {e}")
+            return False
 
         except OSError as e:
             print(f"File operation failed for flowcell {flowcell_id}: {e}")
-
-    # Raise an error if none of the requests were successful
-    # raise Exception("Failed to retrieve samplesheet for any flowcell ID.")
-    return False
+            return False
 
 
 def read_flowcell_info(config, info_dict, base_path):
