@@ -23,42 +23,6 @@ def analysis_done(flowcell, config):
     if os.path.exists(loc1):
         return True
 
-    for old_dir in config["paths"]["old_outputDirs"]:
-        loc2 = os.path.join(old_dir, os.path.basename(flowcell), "analysis.done")
-        if os.path.exists(loc2):
-            return True
-
-    return False
-
-
-def filter_flowcell(json, config):
-    """
-    Decide whether to keep a flowcell based on exclusion rules defined in config
-    the exclusion rules are specific to our MPI-IE setup
-
-    example json file: "report_PAQ97481_20230818_1514_e1253480.json"
-    example fc direct: "20230818_1512_P2S-00500-A_PAQ97481_e1253480"
-    """
-
-    # get parent directory of json report = flowcell directory
-    fc_dir = os.path.dirname(json)
-    fc_dir = os.path.basename(fc_dir.rstrip("/"))
-    # print("json: {} , fc_dir: {} ".format(json, fc_dir))
-
-    if fc_dir in config["ignore"]["dirs"]:
-        print(f"ignore fc_dir {fc_dir} because of config ")
-        return True
-
-    # MPI-IE specific pattern for flowcells
-    fc_id = fc_dir.split("_")
-    if len(fc_id) > 1:
-        fc_id = fc_id[-2]
-
-    if fc_id in config["ignore"]["flowcells"]:
-        print(f"ignore fc_id {fc_id} because of config ")
-        return True
-
-    # flowcell does not match MPI-IE naming convention: don't filter
     return False
 
 
@@ -75,11 +39,8 @@ def find_new_flowcell(config):
         # depending on the offload_path
         pattern = os.path.join(offload_path, "**", "report*.json")
         jsons = glob.glob(pattern, recursive=True)
-
         for j in jsons:
-            if not filter_flowcell(j, config):
-                # collect full path to json
-                dirs.append(os.path.dirname(j))
+            dirs.append(os.path.dirname(j))
 
     # filter flowcells based on config['target_flowcell']
     if config["target_flowcell"]:
