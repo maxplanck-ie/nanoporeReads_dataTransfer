@@ -2,10 +2,9 @@ import glob
 import os
 import shutil
 import subprocess as sp
-
 import yaml
 from rich import print
-
+from pathlib import Path
 
 def config_to_smkcmd(snakemake_config):
     args = []
@@ -42,7 +41,7 @@ def config_to_smkcmd(snakemake_config):
 
 
 def get_disk_stat(path, checkprint = False):
-    perc_used = round(shutil.disk_usage(path).used / shutil.disk_usage(path).total, 2)
+    perc_used = round(shutil.disk_usage(path).used / shutil.disk_usage(path).total, 2) * 100
     free = round(shutil.disk_usage(path).free / (1024 ** 3), 2)
     used = round(shutil.disk_usage(path).used / (1024 ** 3), 2)
     if checkprint:
@@ -71,54 +70,19 @@ def scan_multiqc(config):
     """
     print("[green]Parse multiqc[/green]")
     QC = {}
-    # get json file from multiqc
-    qc_dir_root = "Project_" + config["data"]["projects"][0]
-    multiqc_path = os.path.join("QC", "multiqc_data", "multiqc_data.json")
-    json1 = os.path.join(
-        config["info_dict"]["transfer_path"], qc_dir_root, multiqc_path
-    )
-
-    if os.path.exists(json1):
-        json = json1
-    else:
-        # for compatibility: revert to old location of QC files
-        multiqc_path = os.path.join("multiqc", "multiqc_data", "multiqc_data.json")
-        json = os.path.join(
-            config["info_dict"]["transfer_path"],
-            "FASTQC_" + qc_dir_root,
-            multiqc_path,
-        )
-
-    if not os.path.exists(json):
-        print(f"[red]Warning. json does not exit: {json}[/red]")
+    project = f"Project_{config['data']['projects'][0]}"
+    json = Path(config["info_dict"]["transfer_path"], project, 'QC', 'multiqc_data', 'multiqc_data.json')
+    if not json.exists():
+        print(f"[red]Warning. json does not exist: {json}[/red]")
         return QC
-
-    jy = yaml.safe_load(open(json))
-    dd = jy["report_saved_raw_data"]["multiqc_fastqc"]
-    QC["samples"] = list(dd.keys())
-    QC["total_sequences"] = [v.get("Total Sequences", None) for v in dd.values()]
-    QC["total_bases"] = [v.get("Total Bases", None) for v in dd.values()]
-
-    QC["percent_gc"] = [v.get("%GC", None) for v in dd.values()]
-    QC["percent_dedup"] = [
-        round(v.get("total_deduplicated_percentage", None), 2) for v in dd.values()
-    ]
-
-
-    screens = list(jy["report_data_sources"].keys())  # list of QC screens (FastQC, ...)
-    if "pycoQC" not in screens:
-        print(f"[red]Warning. no pycoQC metrics in: {json}[/red]")
     else:
-        dd = jy["report_general_stats_data"]["pycoqc"]  # dictionary
-        QC["all_median_phred_score"] = [
-            round(v.get("all_median_phred_score", None), 2) for v in dd.values()
-        ]
-        QC["all_median_read_length"] = [
-            round(v.get("all_median_read_length", None), 2) for v in dd.values()
-        ]
-        QC["all_N50"] = [v.get("all_n50", None) for v in dd.values()]
-
-    return QC
+        jy = yaml.safe_load(json.open())
+        QC['samples'] = [v.replace('pycoqc', '') for v in list(jy['report_general_stats_data']['pycoqc'].keys())]
+        QC['Number of reads'] = [v.get('all_reads', None) for v in jy['report_general_stats_data']['pycoqc'].values()]
+        QC['N50'] = [v.get('all_n50', None) for v in jy['report_general_stats_data']['pycoqc'].values()]
+        QC['median read length'] = [v.get('all_median_read_length', None) for v in jy['report_general_stats_data']['pycoqc'].values()]
+        QC['median phred score'] = [v.get('all_median_phred_score', None) for v in jy['report_general_stats_data']['pycoqc'].values()]
+        return QC
 
 
 def print_header(head):
