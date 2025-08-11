@@ -5,42 +5,25 @@ options:
 # static snakemake params that will passed
 snakemake:                                                                                                
   conda_prefix: /path/to/conda/prefix
-  cores: 4
+  cores: 100
   dryrun: False
   printdag: False
   max_jobs_per_second: 1
-  printshellcmds: true
-  use_conda: true
-  verbose: true
+  printshellcmds: True
+  use_conda: True
+  verbose: False
   rerun_triggers: ['mtime']
   debug: False
-
-# ssh credential for samba host
-sambahost:
-  user: samba_user
-  host: samba_host
-  pkey: path/to/private_key
+  latency_wait: 300
+  rerun-incomplete: True
 
 paths:
-  offloadDir: /path/to/ont/files (fast5 or pod5)      (output from ONT)
-  old_outputDirs:
-    - /path/to/output/old_for_legacy
-    - /path/to/output/old_for_legacy2
-  outputDir: /path/to/output/the_real_one             (aka as work dir)
-  groupDir: /rootpath/to/transfer/for/internal/groups (aka "periphery")
-  external_groupDir: /rootpath/to/transfer/for/external/groups
+  offloadDir: /path/to/ont/offloaddir
+  outputDir: /path/to/output_directory
+  groupDir: /rootpath/for group transfer (i.e. /data if /data/PI/sequencing_data/OxfordNanopore)
+  external_groupDir: /rootpath/to/transfer/for/external/groups (not inside /data)
   deepseq_qc: /path/to/deepseq/qc/ (SAMBA)
   bioinfocoredir: /path/to/bionfo_qc (scp)
-  rulesDir: relative_path_to_snakemake_rules # e.g. rules_dorado ('rules' is deprecated)
-ignore:
-  flowcells:
-    # flowcell IDs to ignore in the offload_path
-    - 'PAK83895'
-    - ...
-  dirs:
-    # flowcell paths to ignore
-    - '20230512_1047_P2-7085206e51685c-A_PAK73534_a5e9ed5e'
-    - ...
 
 # credential to query parkour
 parkour:
@@ -49,53 +32,26 @@ parkour:
   password: password
   pem: path/to/certificate
 
-
-basecaller: dorado
-
 dorado_basecaller:
-  dorado_cmd: /path/to/dorado/basecaller
-  dorado_version: 
-  dorado_options: --recursive
-  dorado_modifications: --modified-bases 5mCG_5hmCG
-  dorado_output: fastq # set to activate bam2fastq conversion (default for legacy)
-  dorado_model: # model name to overwrite inferred name
-  model_directory: /path/to/dorado/models
-
-#fastqc:
-#  memory: 10000
+  dorado_cmd: /path/to/dorado
+  dorado_version: 'x.x.x'
+  protocol_models:
+    'parkour protocol 1': hac@v5.2.0,m5C
+    'parkour protocol 2': hac@v5.2.0,m5C,inosine_m6A
 
 kraken:
   db: /path/to/kraken2/db
 
-multiqc:
-  configfile: /path/to/multiqc/config/file
-
-# organism labels, as set on Parkour
 genome:
-  drosophila: /path/to/genome.fa
-  mouse: /path/to/genome.fa
-  human: /path/to/genome.fa
-  lambdaPhage: /path/to/genome.fa
-  human_rRNA: /path/to/genome.fa
-  mouse_rRNA: /path/to/genome.fa
-
-# organism labels, as set on Parkour
-transcripts:
-  drosophila:  /path/to/genes.bed
-  mouse: /path/to/genes.bed
-  human: /path/to/genes.bed
-
-contamination_report:
-human_genome: /path/to/genome.fa
-human_rRNA: /path/to/genome.fa
-mouse_genome: /path/to/genome.fa
-mouse_rRNA: /path/to/genome.fa
+  'parkour organism (name)':
+    - /path/to/fna
+    - /path/to/genes.bed
 
 porechop:
   sample_reads: 100000 # as porechop is slow, this is the max number of reads per sample to analyze
 
 email:
-  from: a@host
-  to: b@host
-  trigger: c@host
+  from: sender@host
+  failure: fail_recipient@host
+  to: success_recipient@host
   host: host
