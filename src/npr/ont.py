@@ -34,7 +34,7 @@ from npr.ont_pipeline import (
     read_flowcell_info,
     read_samplesheet,
 )
-from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc
+from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc, merge_dicts
 
 
 # set up CLI args.
@@ -227,8 +227,13 @@ def main(config):
                # Path(
                #     os.path.join(config["info_dict"]["flowcell_path"], "ignore.on.local")
                # ).touch()
+                remote_config=yaml.safe_load(open(config["remote_vm"]["remote_config"]))
+                remote_pipeline_config=merge_dicts(config,remote_config)
+                remote_configFile = os.path.join(config["info_dict"]["flowcell_path"], "remote_pipeline_config.yaml")
+                with open(remote_configFile, "w") as f:
+                    yaml.dump(remote_pipeline_config, f, default_flow_style=False)
                 try:
-                    asyncio.run(transfer_to_remote(flowcell,config,msg))
+                    msg = asyncio.run(transfer_to_remote(flowcell,config,msg))
                 except (OSError, asyncssh.Error) as exc:
                     sys.exit('SSH transfer failed: ' + str(exc))
                 msg += "Transfer to remote completed successfully. \n"

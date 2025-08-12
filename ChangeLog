@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* transfer time msg
 * time transfer
 * transfer test working
 * first asyncssh implementation and flags

@@ -465,3 +465,11 @@ def config_to_mapcmd(config):
             return (pref, post)
     else:
         return (None, None)
+
+
+def merge_dicts(x, y):
+    z = {}
+    z = x.copy()
+    if y:
+        z.update(y)
+    return z
