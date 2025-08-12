@@ -93,14 +93,18 @@ def find_new_flowcell(config):
     """
     #################################### offload ####################################
     offload_path = os.path.join(config["paths"]["offloadDir"])
+    is_remote = config["remote_vm"]["is_remote"]
     dirs = []
     if offload_path:
         # Assume that report*.json mark 'ready' flow cells
         # depending on the offload_path
-        pattern = os.path.join(offload_path, "**", "report*.json")
-        jsons = glob.glob(pattern, recursive=True)
+        if is_remote:
+            pattern = os.path.join(offload_path, "**", "remote_pipeline_config.yaml")
+        else:
+            pattern = os.path.join(offload_path, "**", "report*.json")
+        trigger_files = glob.glob(pattern, recursive=True)
 
-        for j in jsons:
+        for j in trigger_files:
             if not filter_flowcell(j, config):
                 # collect full path to json
                 dirs.append(os.path.dirname(j))

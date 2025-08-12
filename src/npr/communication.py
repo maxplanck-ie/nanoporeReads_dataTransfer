@@ -274,6 +274,7 @@ async def transfer_to_remote(flowcell,config,msg):
     pod5_file_list = [os.path.join(pod5_path, f) for f in os.listdir(pod5_path)
             if os.path.isfile(os.path.join(pod5_path, f))]
     #report_file_list = [ glob.glob(os.path.join(base_path, x)) for x in ["*json", "*html", "*txt", "SampleSheet.csv"]]
+    sample_sheet_file = os.path.join(config["info_dict"]["flowcell_path"],"reports","SampleSheet.csv")
     remote_pipeline_config = os.path.join(config["info_dict"]["flowcell_path"], "remote_pipeline_config.yaml")
     async with asyncssh.connect(config["remote_vm"]["host"],username=config["remote_vm"]["un"],client_keys=[config["remote_vm"]["kf"]],passphrase=config["remote_vm"]["p"]) as conn: 
         start=time()
@@ -281,5 +282,6 @@ async def transfer_to_remote(flowcell,config,msg):
         end=time()
         msg += (f"Pod5 file transfer took {(end - start)/60:.2f} minutes.\n")
         #result_reports = await asynssh.scp(report_file_list,(conn,config["remote_vm"]["target"]),compression_algs=None)
+        result_sample_sheet = await asynssh.scp(sample_sheet_file,(conn,config["remote_vm"]["target"]),compression_algs=None)
         result_config = await asyncssh.scp(remote_pipeline_config,(conn,config["remote_vm"]["target"]),compression_algs=None)
         return(msg)
