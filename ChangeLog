@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* add sample sheet transfer
+* transfer time successfully saved to email
 * transfer time msg
 * time transfer
 * transfer test working

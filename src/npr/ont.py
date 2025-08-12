@@ -190,25 +190,32 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
-            if (
-                "organism" not in config["info_dict"]
-                or "protocol" not in config["info_dict"]
-            ):
-                # need parkour query only if 'organism' or 'protocol' is undefined
-                msg = query_parkour(config, flowcell, msg)
-            # The following should be simplified but I did not want to touch
-            # read_flow_cell_info() for nowq
-            config["info_dict"] = read_flowcell_info(
-                config, config["info_dict"], base_path
-            )
+            if not config["remote_vm"]["is_remote"]:
+                if (
+                    "organism" not in config["info_dict"]
+                    or "protocol" not in config["info_dict"]
+                ):
+                    # need parkour query only if 'organism' or 'protocol' is undefined
+                    msg = query_parkour(config, flowcell, msg)
+                # The following should be simplified but I did not want to touch
+                # read_flow_cell_info() for nowq
+                config["info_dict"] = read_flowcell_info(
+                    config, config["info_dict"], base_path
+                )
 
-            # read samplesheet
-            bc_kit, data = read_samplesheet(config)
-            config["data"] = data
-            config["bc_kit"] = bc_kit
-            print(config["data"])
-            print("samplesheet is read sucessfully")
+                # read samplesheet
+                bc_kit, data = read_samplesheet(config)
+                config["data"] = data
+                config["bc_kit"] = bc_kit
+                print(config["data"])
+                print("samplesheet is read sucessfully")
 
+            else:
+               #update current config with remote
+               remote_config_file = os.path.join(config["remote_vm"]["target"],"remote_pipeline_config.yaml")
+               remote_config = yaml.safe_load(open(remote_config_file))
+               config=merge_dicts(remote_config_file,config) 
+            #same for local and remote
             config["info_dict"]["logfile"] = os.path.join(
                 config["info_dict"]["flowcell_path"], "log", "ont.log"
             )
@@ -267,12 +274,13 @@ def main(config):
                         config["info_dict"]["flowcell_path"],
                     )
                 )
-            # spread the news
-            ship_qcreports(config, flowcell)
-            config["QC"] = scan_multiqc(config)
-            config["SM"] = monitor_storage(config)
-            msg = standard_text(config)
-            send_email("Successfully finished flowcell:", msg, config)
+            if not config["remote_vm"]["is_remote"]:
+                # spread the news
+                ship_qcreports(config, flowcell)
+                config["QC"] = scan_multiqc(config)
+                config["SM"] = monitor_storage(config)
+                msg = standard_text(config)
+                send_email("Successfully finished flowcell:", msg, config)
 
             summaryFile = os.path.join(
                 config["info_dict"]["flowcell_path"], "log/summary.yaml"
