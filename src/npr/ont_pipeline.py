@@ -155,7 +155,7 @@ def find_new_flowcell(config):
 
         # return flowcell to ont()
         msg = "SampleSheet.csv file found.\n"
-        if send_to_remote:
+        if config["options"]["send_to_remote"]:
             msg = msg + "Data transfer to remote is on. \n"
         config["input"] = {"name": os.path.basename(flowcell)}
 

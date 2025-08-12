@@ -25,7 +25,7 @@ import yaml
 # CLI / pretty print.
 from rich import print
 
-from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
+from npr.communication import query_parkour, send_email, ship_qcreports, standard_text, transfer_to_remote
 
 # npr libs
 from npr.ont_pipeline import (
@@ -117,7 +117,7 @@ def ont(**kwargs):
     config = yaml.safe_load(open(kwargs["configfile"]))
 
     #If running on remote, exit if send_to_remote is requested
-    if kwargs["send_to_remote"] and config["is_remote"]:
+    if kwargs["send_to_remote"] and config["remote_vm"]["is_remote"]:
         print("The workflow is running on a remote machine. Sending to remote is not possible.")
         sys.exit(1)
 
@@ -168,6 +168,8 @@ def ont(**kwargs):
 
     # add conda env path where executable live
     config["paths"]["conda_env"] = sys.prefix
+    
+    config["options"]["send_to_remote"] = kwargs["send_to_remote"]
 
     # start workflow.
     main(config)
@@ -221,13 +223,13 @@ def main(config):
 
             send_email("Found flowcell:", msg, config, allreceivers=False)
 
-            if send_to_remote:
-                Path(
-                    os.path.join(config["info_dict"]["flowcell_path"], "ignore.on.local")
-                ).touch()
+            if config["options"]["send_to_remote"]:
+               # Path(
+               #     os.path.join(config["info_dict"]["flowcell_path"], "ignore.on.local")
+               # ).touch()
                 try:
                     asyncio.run(transfer_to_remote(flowcell,config))
-                except OSError, asyncssh.Error) as exc:
+                except (OSError, asyncssh.Error) as exc:
                     sys.exit('SSH connection failed: ' + str(exc))
                 msg += "Transfer to remote completed successfully. \n"
                 send_email("Successfully finished flowcell:", msg, config)
