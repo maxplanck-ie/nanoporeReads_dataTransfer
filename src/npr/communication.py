@@ -267,7 +267,7 @@ def query_parkour(config, flowcell, msg):
     sys.exit("parkour failure.")
 
 
-async def transfer_to_remote(flowcell,config) -> None:
+async def transfer_to_remote(flowcell,config,msg):
     asyncssh.set_debug_level(2)
     base_path = config["info_dict"]["base_path"]
     pod5_path = os.path.join(base_path,"pod5")
@@ -279,6 +279,7 @@ async def transfer_to_remote(flowcell,config) -> None:
         start=time()
         result_pod5 = await asyncssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
         end=time()
-        print(f"Transfer took {(end - start)/60:.2f} minutes.")
+        msg += (f"Pod5 file transfer took {(end - start)/60:.2f} minutes.\n")
         #result_reports = await asynssh.scp(report_file_list,(conn,config["remote_vm"]["target"]),compression_algs=None)
         result_config = await asyncssh.scp(pipeline_config,(conn,config["remote_vm"]["target"]),compression_algs=None)
+        return(msg)

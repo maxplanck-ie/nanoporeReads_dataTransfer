@@ -228,9 +228,9 @@ def main(config):
                #     os.path.join(config["info_dict"]["flowcell_path"], "ignore.on.local")
                # ).touch()
                 try:
-                    asyncio.run(transfer_to_remote(flowcell,config))
+                    asyncio.run(transfer_to_remote(flowcell,config,msg))
                 except (OSError, asyncssh.Error) as exc:
-                    sys.exit('SSH connection failed: ' + str(exc))
+                    sys.exit('SSH transfer failed: ' + str(exc))
                 msg += "Transfer to remote completed successfully. \n"
                 send_email("Successfully finished flowcell:", msg, config)
                 exit(0)
