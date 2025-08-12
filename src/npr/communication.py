@@ -3,6 +3,7 @@ import os
 import shutil
 import smtplib
 import sys
+import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
@@ -10,6 +11,9 @@ from time import sleep
 import requests
 from rich import print
 from pathlib import Path
+from dominate.tags import html, div, br, b
+from tabulate import tabulate
+from rich import print
 
 def ship_qcreports(config, flowcell):
     """
@@ -58,22 +62,26 @@ def standard_text(config):
     Draft a short letter to end user that will be part of the success email
     Include also QC metrics obtained from multiqc report
     """
-    QC, SM = config["QC"], config["SM"]
+
+    # Relevant keys from info_dict for email
+    relkeys = ['pipeline_version', 'model', 'parkour_protocol', 'modifications', 'organism', 'flowcell', 'kit', 'barcoding', 'barcode_kit']
     # Get the project(s)
     pid_to_fids = query_parkour_project(config)
-    samples = QC.pop("samples")
-    msg = (
-        f"Project: {config["data"]["projects"]}\n" +
-        f"Output Folder: {config["info_dict"]["transfer_path"]}\n" +
-        f"# Associated flowcells:\n" +
-        ".\n".join([f"{pid}: {len(fids)}" for pid, fids in pid_to_fids.items()]) +
-        f"Samples: {samples}\n" +
-        "\n".join([f"{key}: {value}" for key, value in QC.items()]) +
-        "\n\nStorage (% used): \n" +
-        "\n".join([f"{key}: {SM[key]['percentage']}" for key in SM]) +
-        "\n\nConfig: \n" +
-        "\n".join([f"{key}: {value}" for key, value in config["info_dict"].items() if key in relkeys])
-    )
+
+    # Create the standard succes email
+    msg = f'Project: {config["data"]["projects"]}\n'
+    for pid in pid_to_fids:
+        msg += f'Expected flowcells for {pid}: {len(pid_to_fids[pid])}\n'
+    msg += f'Output Folder: {config["info_dict"]["transfer_path"]}\n' 
+    msg += f'Protocol: {config["info_dict"]["parkour_protocol"]}\n'
+    msg += f'Flowcell: {config["info_dict"]["flowcell"]}\n'
+    msg += f'Kit: {config["info_dict"]["kit"]}\n'
+    msg += f'Barcoding: {config["info_dict"]["barcoding"]}\n'
+    msg += f'Barcode Kit: {config["info_dict"]["barcode_kit"]}\n'
+    # Push in the storage settings:
+    for disk in config["SM"]:
+        msg += f'Storage occupied {disk}: {config["SM"][disk]["percentage"]}%\n'
+
     return msg
 
 
@@ -82,35 +90,45 @@ def send_email(subject, body, config, failure=False):
     Send email including key information about the run
     Also print message to stdout
     """
+    # Set up mailer.
     mailer = MIMEMultipart("alternative")
-    mailer["Subject"] = "[npr] [{}] {} {}".format(
-        version("npr"), subject, os.path.basename(config["info_dict"]["base_path"])
-    )
-
-    # add standard information from config['data'] and config['info_dict'] to each message
-    info = ""
-    if "data" in config and "projects" in config["data"]:
-        info += "Project: {}\n".format(config["data"]["projects"])
-    if "data" in config and "samples" in config["data"]:
-        info += "Samples: {}\n".format(config["data"]["samples"])
-    if "info_dict" in config:
-        info += "\n".join(
-            [f"{key}: {value}" for key, value in config["info_dict"].items()]
-        )
-    if "basecaller" in config:
-        info += "\nbasecaller: {}\n".format(config["basecaller"])
-    frame = "\n=====\n"
-    if failure:
-        body = body + frame + info + frame
-    
+    _fid = os.path.basename(config['info_dict']['base_path'])
+    mailer["Subject"] = f"[npr] [{version("npr")}] {subject} {_fid}"    
     mailer["From"] = config["email"]["from"]
     if failure:
         _receivers = config["email"]["failure"].split(',')
     else:
         _receivers = config["email"]["to"].split(',')
-    print(f"Email receivers set as {_receivers}")
     mailer["To"] = ", ".join(_receivers)
-    email = MIMEText(body)
+
+    # body comes in as a string (\n delimited.)
+    # Convert to HTML to be pretty.
+    _html = html()
+    for _l in body.splitlines():
+        if ':' in _l:
+            label, value = _l.split(":", 1)
+            _html.add(div(b(label + ":"), " " + value, br()))
+        else:
+            _html.add(div(_l, br()))
+    _html.add(br())
+    if 'QC' in config:
+        if 'GI' in config['QC']:
+            for metric in config['QC']['GI']:
+                _html.add(div(b(metric + ":"), " " + f"{config['QC']['GI'][metric]}", br()))
+            _html.add(br())
+    
+    if 'QC' in config and 'QC' in config['QC']:
+        _tablehead = ['Sample name', 'Project', 'Kraken top hit', 'Parkour organism', 'Total bp', 'Total reads', 'N50', 'Median length', 'Median Q', '% reads Q >= 18']
+        _tablecont = []
+        for sid in config['QC']['QC']:
+            _tablecont.append(
+                [sid] + [config['QC']['QC'][sid][k] for k in _tablehead]
+            )
+        _html = _html.render() + tabulate(_tablecont, ['Sample ID'] + _tablehead, tablefmt="html")
+    else:
+        _html = _html.render()
+
+    email = MIMEText(_html, 'html')
     mailer.attach(email)
     if config["email"]["host"] is not None:
         s = smtplib.SMTP(config["email"]["host"])

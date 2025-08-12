@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 import pandas as pd
 import requests
-from rich import print
 
 from npr.communication import send_email
 from npr.snakehelper import get_seqdir, glob2reports
@@ -84,7 +83,7 @@ def find_new_flowcell(config):
                 _ss_msg += f"Failed to retrieve sampleSheet via parkour for {flowcell.split("_")[-2]}\n"
                 if not os.path.isfile(ss2):
                     _ss_msg += f"No SampleSheet found at {ss2}\n"
-                    send_email("Error for flowcell:", _ss_msg, config)
+                    send_email("Error for flowcell:", _ss_msg, config, failure=True)
                     sys.exit("no sampleSheet.")
 
         # return flowcell to ont()

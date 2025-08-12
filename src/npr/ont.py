@@ -10,7 +10,7 @@ import yaml
 from rich import print
 from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
 from npr.ont_pipeline import find_new_flowcell, get_periphery, read_flowcell_info, read_samplesheet
-from npr.snakehelper import getfast5foot, get_disk_stat, scan_multiqc, config_to_smkcmd, print_header
+from npr.snakehelper import getfast5foot, get_disk_stat, get_qc, config_to_smkcmd, print_header
 
 
 # set up CLI args.
@@ -222,7 +222,7 @@ def main(config):
                 )
                 # spread the news
                 ship_qcreports(config, flowcell)
-                config["QC"] = scan_multiqc(config)
+                config["QC"] = get_qc(config)
                 config["SM"] = {
                                     "offload (deepseq)": get_disk_stat(config['paths']['offloadDir']),
                                     "inbox (bioinfo)": get_disk_stat(config['paths']['outputDir']),
