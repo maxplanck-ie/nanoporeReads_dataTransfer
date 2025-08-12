@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* transfer test working
 * first asyncssh implementation and flags
 * pre-commit hooks CI autoupdate
 * file error on merge\_final\_bams

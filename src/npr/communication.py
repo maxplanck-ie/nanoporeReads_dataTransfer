@@ -6,7 +6,7 @@ import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
-from time import sleep
+from time import sleep, time
 
 import paramiko
 import requests
@@ -270,10 +270,15 @@ def query_parkour(config, flowcell, msg):
 async def transfer_to_remote(flowcell,config) -> None:
     asyncssh.set_debug_level(2)
     base_path = config["info_dict"]["base_path"]
-    pod5_file_list = os.listdir(os.path.join(base_path,"pod5"))
-    report_file_list = [ glob.glob(os.path.join(base_path, x)) for x in ["*json", "*html", "*txt", "SampleSheet.csv"]]
+    pod5_path = os.path.join(base_path,"pod5")
+    pod5_file_list = [os.path.join(pod5_path, f) for f in os.listdir(pod5_path)
+            if os.path.isfile(os.path.join(pod5_path, f))]
+    #report_file_list = [ glob.glob(os.path.join(base_path, x)) for x in ["*json", "*html", "*txt", "SampleSheet.csv"]]
     pipeline_config = os.path.join(config["info_dict"]["flowcell_path"], "pipeline_config.yaml")
-    async with asyncssh.connect(config["remote_vm"]["host"],username=config["remote_vm"]["un"],client_keys=[config["remote_vm"]["kf"]],passphrase=config["remote_vm"]["p"]) as conn: #,password=config["remote_vm"]["p"]) as conn:
-        #result_pod5 = await asynssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
+    async with asyncssh.connect(config["remote_vm"]["host"],username=config["remote_vm"]["un"],client_keys=[config["remote_vm"]["kf"]],passphrase=config["remote_vm"]["p"]) as conn: 
+        start=time()
+        result_pod5 = await asyncssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
+        end=time()
+        print(f"Transfer took {(end - start)/60:.2f} minutes.")
         #result_reports = await asynssh.scp(report_file_list,(conn,config["remote_vm"]["target"]),compression_algs=None)
         result_config = await asyncssh.scp(pipeline_config,(conn,config["remote_vm"]["target"]),compression_algs=None)
