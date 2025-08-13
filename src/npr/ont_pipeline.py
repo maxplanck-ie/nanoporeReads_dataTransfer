@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 import requests
-
+from rich import print
 from npr.communication import send_email
 from npr.snakehelper import get_seqdir, glob2reports
 
@@ -179,42 +179,41 @@ def read_flowcell_info(config, info_dict, base_path):
             elif name == "Dorado":
                 info_dict["software"]["Dorado"] = value
 
-    if json_file:
-        print("[green]Reading info from json[/green]")
-        with open(json_file[0]) as f:  # assume only 1 file
-            jsondata = json.load(f)
+    print("[green]Reading info from json[/green]")
+    with open(json_file[0]) as f:  # assume only 1 file
+        jsondata = json.load(f)
 
-        if "flowcell" not in info_dict:
-            info_dict["flowcell"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
-                "flow cell"
-            ]["string_value"]
-        if "kit" not in info_dict:
-            info_dict["kit"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
-                "kit"
-            ]["string_value"]
-        # HTML file is not reporting barcoding, we need it from the json
-        info_dict["barcoding"] = bool(
-            jsondata["protocol_run_info"]["meta_info"]["tags"]["barcoding"][
-                "bool_value"
-            ]
-        )
+    if "flowcell" not in info_dict:
+        info_dict["flowcell"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
+            "flow cell"
+        ]["string_value"]
+    if "kit" not in info_dict:
+        info_dict["kit"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
+            "kit"
+        ]["string_value"]
+    # HTML file is not reporting barcoding, we need it from the json
+    info_dict["barcoding"] = bool(
+        jsondata["protocol_run_info"]["meta_info"]["tags"]["barcoding"][
+            "bool_value"
+        ]
+    )
 
-        for rg in jsondata["protocol_run_info"]["args"]:
-            if rg == "--barcoding" and not info_dict["barcoding"]:
-                print("Json bool for barcoding wrong ! Override !")
-                info_dict["barcoding"] = True
-            if rg.startswith("barcoding_kits"):
-                start = rg.find("[") + 1
-                stop = rg.find("]")
-                info_dict["barcode_kit"] = rg[start:stop].replace('"', "")
-        if "barcode_kit" not in info_dict:
-            if info_dict["barcoding"]:
-                print(
-                    "[red] Not barcoding kit found in json. Default to flowcell kit.[/red]"
-                )
-                info_dict["barcode_kit"] = info_dict["kit"]
-            else:
-                info_dict["barcode_kit"] = "no_bc"
+    for rg in jsondata["protocol_run_info"]["args"]:
+        if rg == "--barcoding" and not info_dict["barcoding"]:
+            print("Json bool for barcoding wrong ! Override !")
+            info_dict["barcoding"] = True
+        if rg.startswith("barcoding_kits"):
+            start = rg.find("[") + 1
+            stop = rg.find("]")
+            info_dict["barcode_kit"] = rg[start:stop].replace('"', "")
+    if "barcode_kit" not in info_dict:
+        if info_dict["barcoding"]:
+            print(
+                "[red] Not barcoding kit found in json. Default to flowcell kit.[/red]"
+            )
+            info_dict["barcode_kit"] = info_dict["kit"]
+        else:
+            info_dict["barcode_kit"] = "no_bc"
 
     print(f'flowcell_info_parsed: flowcell = {info_dict["flowcell"]}')
     print(f'flowcell_info_parsed: kit = {info_dict["kit"]}')

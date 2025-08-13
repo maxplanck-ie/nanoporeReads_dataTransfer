@@ -153,8 +153,19 @@ def main(config):
             print_header('read_samplesheet')
             bc_kit, data = read_samplesheet(config)
             config["data"] = data
-            config["bc_kit"] = bc_kit
-            print(config["data"])
+            config['info_dict']["barcode_kit_parkour"] = bc_kit
+            # If barcoding is used, we define another sample 'unclassified', to have the QC done on those as well.
+            if config["info_dict"]["barcoding"]:
+                assert config['info_dict']['barcode_kit'] == config['info_dict']['barcode_kit_parkour']
+                config['data']['00L000000'] = {
+                    'Sample_ID': '00L000000',
+                    'Sample_Name': 'unclassified',
+                    'Sample_Project': config['data']['projects'][0],
+                    'barcode_kits': config['info_dict']['barcode_kit'],
+                    'index_id': 'unclassified'
+                }
+                config['data']['samples'].append('00L000000')
+                print("[red] Unclassified sample included in the samplesheet. [/red]")
             print("samplesheet is read sucessfully")
 
             # Snakemake setup.
