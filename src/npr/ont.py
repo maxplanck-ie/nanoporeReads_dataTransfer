@@ -217,7 +217,7 @@ def main(config):
                remote_pipeline_config = yaml.safe_load(open(remote_pipeline_config_file))
                #config=merge_dicts(remote_pipeline_config,config) 
                config = remote_pipeline_config
-               config = sanitize_info_dict_for_remote(config,flowcell,basepath)
+               config = sanitize_info_dict_for_remote(config,flowcell,base_path)
             #same for local and remote
             config["info_dict"]["logfile"] = os.path.join(
                 config["info_dict"]["flowcell_path"], "log", "ont.log"
