@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* automatically set target dir on the vm
 * fix
 * bam\_fail and mkdir
 * more rules

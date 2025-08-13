@@ -3,6 +3,7 @@ import os
 import shutil
 import smtplib
 import sys
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
