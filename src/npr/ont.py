@@ -144,14 +144,14 @@ def ont(**kwargs):
 
     # add rulesPath to config['paths'] _not_ to config['snakemake']
     # since 'rulesPath' is not a snakemake option
-    config["paths"]["rulesPath"] = os.path.join(
-        os.path.realpath(os.path.dirname(__file__)), config["paths"]["rulesDir"]
-    )
+    #config["paths"]["rulesPath"] = os.path.join(
+    #    os.path.realpath(os.path.dirname(__file__)), config["paths"]["rulesDir"]
+    #)
 
     # snakefile to config['snakemake']
-    config["snakemake"]["snakefile"] = os.path.join(
-        config["paths"]["rulesPath"], "ont_pipeline.smk"
-    )
+    #config["snakemake"]["snakefile"] = os.path.join(
+    #    config["paths"]["rulesPath"], "ont_pipeline.smk"
+    #)
 
     # initialize config['info_dict']
     # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
@@ -222,6 +222,18 @@ def main(config):
             config["info_dict"]["logfile"] = os.path.join(
                 config["info_dict"]["flowcell_path"], "log", "ont.log"
             )
+
+            # add rulesPath to config['paths'] _not_ to config['snakemake']
+            # since 'rulesPath' is not a snakemake option
+            config["paths"]["rulesPath"] = os.path.join(
+            os.path.realpath(os.path.dirname(__file__)), config["paths"]["rulesDir"]
+            )
+
+            # snakefile to config['snakemake']
+            config["snakemake"]["snakefile"] = os.path.join(
+            config["paths"]["rulesPath"], "ont_pipeline.smk"
+             )
+            config["info_dict"]["transfer_path"] = get_periphery(config)
 
             # write the updated config file under the output path
             configFile = os.path.join(
