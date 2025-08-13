@@ -1,6 +1,20 @@
 CHANGES
 =======
 
+* transfer bam files
+* start with a few rules
+* mv snakemake paths
+* fix key
+* no logging
+* don't send email on remote
+* typo
+* fix
+* sanitize info dict on remote
+* test
+* fix merge config
+* ignore on local - remote
+* ignore old offload dirs on remote
+* fix
 * remote implementation
 * add sample sheet transfer
 * transfer time successfully saved to email

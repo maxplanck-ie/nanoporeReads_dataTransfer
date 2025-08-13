@@ -102,8 +102,8 @@ rule finalize:
         "flags/00_start.done",
         "flags/00_prepare.done",
 
-       # "flags/00_prepare_bam.done", 
-       # expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names),
+        "flags/00_prepare_bam.done", 
+        expand("bam/{sample_id}_{sample_name}.bam",zip, sample_id=sample_ids, sample_name=sample_names),
         
        # "flags/04_seqsum.done", 
        # expand("transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.seqsum",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
