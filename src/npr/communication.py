@@ -159,7 +159,7 @@ def send_email(subject, body, config, allreceivers=True):
 
 
     if config["remote_vm"]["is_remote"]:
-        logging.info(body)
+        print(body)
     else:          
         mailer = MIMEMultipart("alternative")
         mailer["Subject"] = "[npr] [{}] {} {}".format(
