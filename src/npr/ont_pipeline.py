@@ -29,11 +29,11 @@ def analysis_done(flowcell, config):
     )
     if os.path.exists(loc1):
         return True
-
-    for old_dir in config["paths"]["old_outputDirs"]:
-        loc2 = os.path.join(old_dir, os.path.basename(flowcell), "analysis.done")
-        if os.path.exists(loc2):
-            return True
+    if not config["remote_vm"]["is_remote"]:
+        for old_dir in config["paths"]["old_outputDirs"]:
+            loc2 = os.path.join(old_dir, os.path.basename(flowcell), "analysis.done")
+            if os.path.exists(loc2):
+                return True
 
     return False
 
