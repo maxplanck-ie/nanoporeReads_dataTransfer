@@ -4,6 +4,7 @@
 # Max Plank Institute for Immunobiology and Epigenetics
 
 import glob
+import re
 
 # default libs
 import os
