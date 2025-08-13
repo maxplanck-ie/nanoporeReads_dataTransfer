@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* fix
 * bam\_fail and mkdir
 * more rules
 * transfer bam files

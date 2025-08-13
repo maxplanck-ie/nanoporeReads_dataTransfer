@@ -249,11 +249,13 @@ def main(config):
                # Path(
                #     os.path.join(config["info_dict"]["flowcell_path"], "ignore.on.local")
                # ).touch()
+
                 remote_config=yaml.safe_load(open(config["remote_vm"]["remote_config"]))
                 remote_pipeline_config=merge_dicts(config,remote_config)
                 remote_configFile = os.path.join(config["info_dict"]["flowcell_path"], "remote_pipeline_config.yaml")
                 with open(remote_configFile, "w") as f:
                     yaml.dump(remote_pipeline_config, f, default_flow_style=False)
+                config["remote_vm"]["target"]=re.sub(config["paths"]["offloadDir"],remote_config["paths"]["offloadDir"],config["info_dict"]["base_path"])
                 try:
                     msg = asyncio.run(transfer_to_remote(flowcell,config,msg))
                 except (OSError, asyncssh.Error) as exc:
