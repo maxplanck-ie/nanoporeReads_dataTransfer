@@ -48,6 +48,9 @@ def find_new_flowcell(config):
             pattern = os.path.join(offload_path, "*")
             # I guess we can skip filtering here ?
             dirs = [d for d in glob.glob(pattern) if config["target_flowcell"] in d]
+    
+    # Sort directories increasingly by sequencing date.
+    dirs = sorted(dirs, key=lambda x: x.split('/')[-1].split('_')[0])
 
     # Iterate over all flowcell in dir
     for flowcell in dirs:
