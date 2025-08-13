@@ -33,6 +33,7 @@ from npr.ont_pipeline import (
     get_periphery,
     read_flowcell_info,
     read_samplesheet,
+    sanitize_info_dict_for_remote
 )
 from npr.snakehelper import getfast5foot, monitor_storage, scan_multiqc, merge_dicts
 
@@ -212,10 +213,11 @@ def main(config):
 
             else:
                #update current config with remote
-               remote_pipeline_config_file = os.path.join(config["remote_vm"]["target"],"remote_pipeline_config.yaml")
+               remote_pipeline_config_file = os.path.join(base_path,"remote_pipeline_config.yaml")
                remote_pipeline_config = yaml.safe_load(open(remote_pipeline_config_file))
                #config=merge_dicts(remote_pipeline_config,config) 
                config = remote_pipeline_config
+               config = sanitize_info_dict_for_remote(config,flowcell,basepath)
             #same for local and remote
             config["info_dict"]["logfile"] = os.path.join(
                 config["info_dict"]["flowcell_path"], "log", "ont.log"

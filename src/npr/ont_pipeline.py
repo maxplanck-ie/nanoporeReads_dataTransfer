@@ -418,6 +418,17 @@ def read_flowcell_info(config, info_dict, base_path):
     return info_dict
 
 
+def sanitize_info_dict_for_remote(config,flowcell,basepath):
+    flowcell = config["target_flowcell"]
+    
+    config["info_dict"]["base_path"] = base_path
+    flowcell_path = os.path.join(config["paths"]["outputDir"], flowcell)
+    if not os.path.exists(flowcell_path):
+        os.mkdir(flowcell_path)
+    config["info_dict"]["flowcell_path"] = flowcell_path
+    return config
+
+
 def read_samplesheet(config):
     """
     read samplesheet
