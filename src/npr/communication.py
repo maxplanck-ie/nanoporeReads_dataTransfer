@@ -141,10 +141,6 @@ def send_email(subject, body, config, allreceivers=True):
     Send email including key information about the run
     Also print message to stdout
     """
-    mailer = MIMEMultipart("alternative")
-    mailer["Subject"] = "[npr] [{}] {} {}".format(
-        version("npr"), subject, os.path.basename(config["info_dict"]["base_path"])
-    )
 
     # add standard information from config['data'] and config['info_dict'] to each message
     info = ""
@@ -161,17 +157,26 @@ def send_email(subject, body, config, allreceivers=True):
     frame = "\n=====\n"
     body = body + frame + info + frame
 
-    mailer["From"] = config["email"]["from"]
-    to_email = "to" if allreceivers else "trigger"
-    mailer["To"] = config["email"][to_email]
-    tomailers = config["email"]["to"].split(",")
-    print(f"Email trigger, sending to {tomailers}")
-    email = MIMEText(body)
-    mailer.attach(email)
-    if config["email"]["host"] is not None:
-        s = smtplib.SMTP(config["email"]["host"])
-        s.sendmail(config["email"]["from"], tomailers, mailer.as_string())
-    print("[green]Subject: {}\n{}[/green]".format(mailer["Subject"], body))
+
+    if config["remote_vm"]["is_remote"]:
+        logging.info(body)
+    else:          
+        mailer = MIMEMultipart("alternative")
+        mailer["Subject"] = "[npr] [{}] {} {}".format(
+            version("npr"), subject, os.path.basename(config["info_dict"]["base_path"])
+        )
+
+        mailer["From"] = config["email"]["from"]
+        to_email = "to" if allreceivers else "trigger"
+        mailer["To"] = config["email"][to_email]
+        tomailers = config["email"]["to"].split(",")
+        print(f"Email trigger, sending to {tomailers}")
+        email = MIMEText(body)
+        mailer.attach(email)
+        if config["email"]["host"] is not None:
+            s = smtplib.SMTP(config["email"]["host"])
+            s.sendmail(config["email"]["from"], tomailers, mailer.as_string())
+        print("[green]Subject: {}\n{}[/green]".format(mailer["Subject"], body))
 
 
 def query_parkour(config, flowcell, msg):
