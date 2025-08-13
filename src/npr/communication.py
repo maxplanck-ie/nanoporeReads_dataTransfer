@@ -289,7 +289,7 @@ async def transfer_to_remote(flowcell,config,msg):
     remote_pipeline_config = os.path.join(config["info_dict"]["flowcell_path"], "remote_pipeline_config.yaml")
     async with asyncssh.connect(config["remote_vm"]["host"],username=config["remote_vm"]["un"],client_keys=[config["remote_vm"]["kf"]],passphrase=config["remote_vm"]["p"]) as conn: 
         await conn.run('mkdir -p' + os.path.join(config["remote_vm"]["target"]))
-        await conn.run('mkdir -p '+ os.path.join(config["remote_vm"]["target"],"bam_pass ") + os.path.join(config["remote_vm"]["target"],"bam_fail"), check=True)
+        await conn.run('mkdir -p '+ os.path.join(config["remote_vm"]["target"],"pod5 ")+ os.path.join(config["remote_vm"]["target"],"bam_pass ") + os.path.join(config["remote_vm"]["target"],"bam_fail"), check=True)
         start=time()
         result_pod5 = await asyncssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
         result_bam_pass = await asyncssh.scp(bam_pass_file_list,(conn,os.path.join(config["remote_vm"]["target"],"bam_pass")),compression_algs=None)
