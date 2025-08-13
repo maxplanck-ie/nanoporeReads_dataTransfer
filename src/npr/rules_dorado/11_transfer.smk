@@ -1,5 +1,6 @@
 import time
 import yaml
+import shutil
 from npr.ont_pipeline import get_dest_path
 
 rule transfer_11:
@@ -32,6 +33,18 @@ rule transfer_11:
                 metayaml = os.path.join(dest, 'metadata.yaml') 
                 with open(metayaml, 'w') as yaml_file:
                     yaml.dump(config['info_dict'], yaml_file, default_flow_style=False)
+
+                # Include a transfer of the 'raw reports'
+                reports_dir = os.path.join(dest, "raw_sequencer_reports")
+                if not os.path.exists(reports_dir):
+                    os.makedirs(reports_dir)
+                    os.chmod(reports_dir, 0o700)
+                for raw_report in os.listdir("reports"):
+                    inf = os.path.join("reports", raw_report)
+                    outf = os.path.join(reports_dir, raw_report)
+                    if os.path.isfile(inf):
+                        shutil.copy2(inf, outf)
+                        os.chmod(outf, 0o700)
 
                 # strip user write permission from destination directory 'dest'
                 for r, dirs, files in os.walk(dest):

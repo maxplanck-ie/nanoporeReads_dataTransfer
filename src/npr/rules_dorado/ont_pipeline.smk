@@ -4,9 +4,7 @@ import glob
 import re
 import shutil
 import pandas as pd
-from rich import print 
-from npr.communication import  send_email
-
+from rich import print
 
 # # define project-specific paths and variable
 # org  = config['info_dict']['organism']

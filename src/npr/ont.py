@@ -10,7 +10,7 @@ import yaml
 from rich import print
 from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
 from npr.ont_pipeline import find_new_flowcell, get_periphery, read_flowcell_info, read_samplesheet
-from npr.snakehelper import getfast5foot, get_disk_stat, scan_multiqc, config_to_smkcmd, print_header
+from npr.snakehelper import getfast5foot, get_disk_stat, get_qc, config_to_smkcmd, print_header
 
 
 # set up CLI args.
@@ -101,17 +101,8 @@ def ont(**kwargs):
                 )
             )
 
-    # add rulesPath to config['paths'] _not_ to config['snakemake']
-    # since 'rulesPath' is not a snakemake option
-    config["paths"]["rulesPath"] = os.path.join(
-        os.path.realpath(os.path.dirname(__file__)), config["paths"]["rulesDir"]
-    )
-
     # snakefile to config['snakemake']
-    config["snakemake"]["snakefile"] = os.path.join(
-        config["paths"]["rulesPath"], "ont_pipeline.smk"
-    )
-
+    config["snakemake"]["snakefile"] = str(Path(__file__).parents[0] / 'rules_dorado' / 'ont_pipeline.smk')
     # initialize config['info_dict']
     # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
     # notice that info_dict is flowcell-specific and will be reset/re-evalutated for each
@@ -162,8 +153,19 @@ def main(config):
             print_header('read_samplesheet')
             bc_kit, data = read_samplesheet(config)
             config["data"] = data
-            config["bc_kit"] = bc_kit
-            print(config["data"])
+            config['info_dict']["barcode_kit_parkour"] = bc_kit
+            # If barcoding is used, we define another sample 'unclassified', to have the QC done on those as well.
+            if config["info_dict"]["barcoding"]:
+                assert config['info_dict']['barcode_kit'] == config['info_dict']['barcode_kit_parkour']
+                config['data']['00L000000'] = {
+                    'Sample_ID': '00L000000',
+                    'Sample_Name': 'unclassified',
+                    'Sample_Project': config['data']['projects'][0],
+                    'barcode_kits': config['info_dict']['barcode_kit'],
+                    'index_id': 'unclassified'
+                }
+                config['data']['samples'].append('00L000000')
+                print("[red] Unclassified sample included in the samplesheet. [/red]")
             print("samplesheet is read sucessfully")
 
             # Snakemake setup.
@@ -231,7 +233,7 @@ def main(config):
                 )
                 # spread the news
                 ship_qcreports(config, flowcell)
-                config["QC"] = scan_multiqc(config)
+                config["QC"] = get_qc(config)
                 config["SM"] = {
                                     "offload (deepseq)": get_disk_stat(config['paths']['offloadDir']),
                                     "inbox (bioinfo)": get_disk_stat(config['paths']['outputDir']),

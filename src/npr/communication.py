@@ -3,13 +3,15 @@ import os
 import shutil
 import smtplib
 import sys
+import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
-from time import sleep
 import requests
 from rich import print
 from pathlib import Path
+from dominate.tags import html, div, br, b
+from tabulate import tabulate
 
 def ship_qcreports(config, flowcell):
     """
@@ -58,19 +60,24 @@ def standard_text(config):
     Draft a short letter to end user that will be part of the success email
     Include also QC metrics obtained from multiqc report
     """
-    QC, SM = config["QC"], config["SM"]
-    # Relevant config keys from info_dict
-    relkeys = ['pipeline_version', 'model', 'parkour_protocol', 'modifications', 'organism', 'flowcell', 'kit', 'barcoding', 'barcode_kit']
 
-    msg = (
-        f"Project: {config["data"]["projects"]}\n" +
-        f"Output Folder: {config["info_dict"]["transfer_path"]}\n\n" +
-        "\n".join([f"{key}: {value}" for key, value in QC.items()]) +
-        "\n\nStorage (% used): \n" +
-        "\n".join([f"{key}: {SM[key]['percentage']}" for key in SM]) +
-        "\n\nConfig: \n" +
-        "\n".join([f"{key}: {value}" for key, value in config["info_dict"].items() if key in relkeys])
-    )
+    # Get the project(s)
+    pid_to_fids = query_parkour_project(config)
+
+    # Create the standard succes email
+    msg = f'Project: {config["data"]["projects"]}\n'
+    for pid in pid_to_fids:
+        msg += f'Expected flowcells for {pid}: {len(pid_to_fids[pid])}\n'
+    msg += f'Output Folder: {config["info_dict"]["transfer_path"]}\n' 
+    msg += f'Protocol: {config["info_dict"]["parkour_protocol"]}\n'
+    msg += f'Flowcell: {config["info_dict"]["flowcell"]}\n'
+    msg += f'Kit: {config["info_dict"]["kit"]}\n'
+    msg += f'Barcoding: {config["info_dict"]["barcoding"]}\n'
+    msg += f'Barcode Kit: {config["info_dict"]["barcode_kit"]}\n'
+    # Push in the storage settings:
+    for disk in config["SM"]:
+        msg += f'Storage occupied {disk}: {config["SM"][disk]["percentage"]}%\n'
+
     return msg
 
 
@@ -79,35 +86,45 @@ def send_email(subject, body, config, failure=False):
     Send email including key information about the run
     Also print message to stdout
     """
+    # Set up mailer.
     mailer = MIMEMultipart("alternative")
-    mailer["Subject"] = "[npr] [{}] {} {}".format(
-        version("npr"), subject, os.path.basename(config["info_dict"]["base_path"])
-    )
-
-    # add standard information from config['data'] and config['info_dict'] to each message
-    info = ""
-    if "data" in config and "projects" in config["data"]:
-        info += "Project: {}\n".format(config["data"]["projects"])
-    if "data" in config and "samples" in config["data"]:
-        info += "Samples: {}\n".format(config["data"]["samples"])
-    if "info_dict" in config:
-        info += "\n".join(
-            [f"{key}: {value}" for key, value in config["info_dict"].items()]
-        )
-    if "basecaller" in config:
-        info += "\nbasecaller: {}\n".format(config["basecaller"])
-    frame = "\n=====\n"
-    if failure:
-        body = body + frame + info + frame
-    
+    _fid = os.path.basename(config['info_dict']['base_path'])
+    mailer["Subject"] = f"[{config['email']['subject']}] [{version('npr')}] {subject} {_fid}"    
     mailer["From"] = config["email"]["from"]
     if failure:
         _receivers = config["email"]["failure"].split(',')
     else:
         _receivers = config["email"]["to"].split(',')
-    print(f"Email receivers set as {_receivers}")
     mailer["To"] = ", ".join(_receivers)
-    email = MIMEText(body)
+
+    # body comes in as a string (\n delimited.)
+    # Convert to HTML to be pretty.
+    _html = html()
+    for _l in body.splitlines():
+        if ':' in _l:
+            label, value = _l.split(":", 1)
+            _html.add(div(b(label + ":"), " " + value, br()))
+        else:
+            _html.add(div(_l, br()))
+    _html.add(br())
+    if 'QC' in config:
+        if 'GI' in config['QC']:
+            for metric in config['QC']['GI']:
+                _html.add(div(b(metric + ":"), " " + f"{config['QC']['GI'][metric]}", br()))
+            _html.add(br())
+    
+    if 'QC' in config and 'QC' in config['QC']:
+        _tablehead = ['Sample name', 'Project', 'Kraken top hit', 'Parkour organism', 'Total bp', 'Total reads', 'N50', 'Median length', 'Median Q', '% reads Q >= 18']
+        _tablecont = []
+        for sid in config['QC']['QC']:
+            _tablecont.append(
+                [sid] + [config['QC']['QC'][sid][k] for k in _tablehead]
+            )
+        _html = _html.render() + tabulate(_tablecont, ['Sample ID'] + _tablehead, tablefmt="html")
+    else:
+        _html = _html.render()
+
+    email = MIMEText(_html, 'html')
     mailer.attach(email)
     if config["email"]["host"] is not None:
         s = smtplib.SMTP(config["email"]["host"])
@@ -123,23 +140,15 @@ def query_parkour(config, flowcell, msg):
         msg += "Parkour URL not specified."
         return msg
 
-    # Old manual escapes.
-    if flowcell == "20221014_1045_X5_FAV39027_f348bc5c":
-        fc = "FAV39027_reuse"
-    elif flowcell == "20221107_1020_X3_FAV08360_71e3fa80":
-        fc = "FAV08360-1"
-    elif flowcell == "20230331_1220_X4_FAV22714_872a401d":
-        fc = "FAV22714-2"
-    else:
-        try:
-            fc = flowcell.split("_")[3]
-        except Exception as e:
-            print(f"[red]Exception: {e}[/red]")
-            msg += 'Parkour Error: flowcell "{}" cannot be queried in parkour.'.format(
-                flowcell
-            )
-            send_email("Error with flowcell:", msg, config, allreceivers=False)
-            sys.exit(1)
+    try:
+        fc = flowcell.split("_")[3]
+    except Exception as e:
+        print(f"[red]Exception: {e}[/red]")
+        msg += 'Parkour Error: flowcell "{}" cannot be queried in parkour.'.format(
+            flowcell
+        )
+        send_email("Error with flowcell:", msg, config, failure=False)
+        sys.exit(1)
     # test for flow cell re-use.
     # flowcell that's re-used gets higher increment.
     postfixes = ["-5", "-4", "-3", "-2", "-1", ""]
@@ -196,6 +205,8 @@ def query_parkour(config, flowcell, msg):
                 protocol = "dna"
             elif "RNA" in protocol:
                 protocol = "rna"
+            elif "16S" in protocol:
+                protocol = "dna"
             else:
                 print(protocol)
                 print("protocol not found. Default to dna.")
@@ -227,3 +238,29 @@ def query_parkour(config, flowcell, msg):
 
     send_email("Error with flowcell:", msg, config)
     sys.exit("parkour failure.")
+
+
+def query_parkour_project(config):
+    '''
+    Given the populated config (including ['data']['projects'])
+    give back a dictionary with unique FIDs per project.
+
+    Note that a successful query gives back an object as such:
+    {'flowpaths': {'sampleID': ['FID', 'FID2'], 'sampleID2': ['FID3', 'FID4']}'}
+    returns a set of flow cell IDs.
+    '''
+    pid_to_fids = {}
+    for project in config['data']['projects']:
+        pid = project.split('_')[0]
+        res = requests.get(
+            config["parkour"]["url"] + f"/api/requests/{pid}/get_flowcell/",
+            auth=(config["parkour"]["user"], config["parkour"]["password"]),
+            verify=config["parkour"]["pem"]
+        )
+        if res.status_code == 200:
+            parsed = {k: json.loads(v) for k, v in res.json()['flowpaths'].items()}
+            pid_to_fids[project] = set([fid for samplel in parsed.values() for fid in samplel])
+        else:
+            print(f"[red]Parkour query failed for project {project} with status code {res.status_code}[/red]")
+            pid_to_fids[project] = set()
+    return pid_to_fids

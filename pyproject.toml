@@ -15,7 +15,8 @@ requires-python = ">=3.10"
 dependencies = [
   "rich-click",
   "snakemake >= 9",
-  "pandas >= 2"
+  "pandas >= 2",
+  "dominate >= 2.9"
 ]
 
 [project.scripts]
