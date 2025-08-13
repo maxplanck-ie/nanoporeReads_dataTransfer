@@ -278,14 +278,18 @@ async def transfer_to_remote(flowcell,config,msg):
     pod5_path = os.path.join(base_path,"pod5")
     pod5_file_list = [os.path.join(pod5_path, f) for f in os.listdir(pod5_path)
             if os.path.isfile(os.path.join(pod5_path, f))]
+    bam_pass_path = os.path.join(base_path,"bam_pass")
+    bam_pass_file_list = [os.path.join(bam_pass_path, f) for f in os.listdir(bam_pass_path)
+            if os.path.isfile(os.path.join(bam_pass_path, f))]
     #report_file_list = [ glob.glob(os.path.join(base_path, x)) for x in ["*json", "*html", "*txt", "SampleSheet.csv"]]
     sample_sheet_file = os.path.join(config["info_dict"]["flowcell_path"],"reports","SampleSheet.csv")
     remote_pipeline_config = os.path.join(config["info_dict"]["flowcell_path"], "remote_pipeline_config.yaml")
     async with asyncssh.connect(config["remote_vm"]["host"],username=config["remote_vm"]["un"],client_keys=[config["remote_vm"]["kf"]],passphrase=config["remote_vm"]["p"]) as conn: 
         start=time()
-        result_pod5 = await asyncssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
+        #result_pod5 = await asyncssh.scp(pod5_file_list,(conn,os.path.join(config["remote_vm"]["target"],"pod5")),compression_algs=None)
+        result_bam_pass = await asyncssh.scp(bam_pass_file_list,(conn,os.path.join(config["remote_vm"]["target"],"bam_pass")),compression_algs=None)
         end=time()
-        msg += (f"Pod5 file transfer took {(end - start)/60:.2f} minutes.\n")
+        msg += (f"Bam file transfer took {(end - start)/60:.2f} minutes.\n")
         #result_reports = await asyncssh.scp(report_file_list,(conn,config["remote_vm"]["target"]),compression_algs=None)
         result_sample_sheet = await asyncssh.scp(sample_sheet_file,(conn,config["remote_vm"]["target"]),compression_algs=None)
         result_config = await asyncssh.scp(remote_pipeline_config,(conn,config["remote_vm"]["target"]),compression_algs=None)
