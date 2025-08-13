@@ -1,0 +1,39 @@
+name: conda_build_envs
+on: [push, pull_request]
+defaults:
+  run:
+      shell: bash -l {0}
+
+jobs:
+  get_conda_envs:
+    runs-on: ubuntu-latest
+    outputs:
+      env-files: ${{ steps.get_envs.outputs.env-files }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get_envs
+        name: list conda envs
+        run: |
+          files=$(find src/npr/rules_dorado/envs -type f | jq -R -s -c 'split("\n")[:-1]')
+          echo "files set to: $files"
+          echo "env-files=$files" >> $GITHUB_OUTPUT
+  build:
+    needs: get_conda_envs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env-file: ${{ fromJson(needs.get_conda_envs.outputs.env-files) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          channels: conda-forge,bioconda
+          channel-priority: true
+          environment-file:  ${{ matrix.env-file }}
+          cache-downloads: true
+          environment-name: snakemake_env_test
+          activate-environment: snakemake_env_test
+          conda-remove-defaults: true
+      - name: conda info
+        run: |
+          conda info

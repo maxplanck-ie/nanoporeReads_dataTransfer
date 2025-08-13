@@ -3,11 +3,10 @@ import json
 import os
 import re
 import sys
-
+from pathlib import Path
 import pandas as pd
 import requests
 from rich import print
-
 from npr.communication import send_email
 from npr.snakehelper import get_seqdir, glob2reports
 
@@ -23,42 +22,6 @@ def analysis_done(flowcell, config):
     if os.path.exists(loc1):
         return True
 
-    for old_dir in config["paths"]["old_outputDirs"]:
-        loc2 = os.path.join(old_dir, os.path.basename(flowcell), "analysis.done")
-        if os.path.exists(loc2):
-            return True
-
-    return False
-
-
-def filter_flowcell(json, config):
-    """
-    Decide whether to keep a flowcell based on exclusion rules defined in config
-    the exclusion rules are specific to our MPI-IE setup
-
-    example json file: "report_PAQ97481_20230818_1514_e1253480.json"
-    example fc direct: "20230818_1512_P2S-00500-A_PAQ97481_e1253480"
-    """
-
-    # get parent directory of json report = flowcell directory
-    fc_dir = os.path.dirname(json)
-    fc_dir = os.path.basename(fc_dir.rstrip("/"))
-    # print("json: {} , fc_dir: {} ".format(json, fc_dir))
-
-    if fc_dir in config["ignore"]["dirs"]:
-        print(f"ignore fc_dir {fc_dir} because of config ")
-        return True
-
-    # MPI-IE specific pattern for flowcells
-    fc_id = fc_dir.split("_")
-    if len(fc_id) > 1:
-        fc_id = fc_id[-2]
-
-    if fc_id in config["ignore"]["flowcells"]:
-        print(f"ignore fc_id {fc_id} because of config ")
-        return True
-
-    # flowcell does not match MPI-IE naming convention: don't filter
     return False
 
 
@@ -75,11 +38,8 @@ def find_new_flowcell(config):
         # depending on the offload_path
         pattern = os.path.join(offload_path, "**", "report*.json")
         jsons = glob.glob(pattern, recursive=True)
-
         for j in jsons:
-            if not filter_flowcell(j, config):
-                # collect full path to json
-                dirs.append(os.path.dirname(j))
+            dirs.append(os.path.dirname(j))
 
     # filter flowcells based on config['target_flowcell']
     if config["target_flowcell"]:
@@ -88,6 +48,9 @@ def find_new_flowcell(config):
             pattern = os.path.join(offload_path, "*")
             # I guess we can skip filtering here ?
             dirs = [d for d in glob.glob(pattern) if config["target_flowcell"] in d]
+    
+    # Sort directories increasingly by sequencing date.
+    dirs = sorted(dirs, key=lambda x: x.split('/')[-1].split('_')[0])
 
     # Iterate over all flowcell in dir
     for flowcell in dirs:
@@ -115,17 +78,15 @@ def find_new_flowcell(config):
             "reports",
             "SampleSheet.csv",
         )
-
-        if not os.path.exists(flowcell_path):
-            os.mkdir(flowcell_path)
-        if not os.path.exists(os.path.join(flowcell_path, "reports")):
-            os.mkdir(os.path.join(flowcell_path, "reports"))
+        Path(flowcell_path, 'reports').mkdir(parents=True, exist_ok=True)
 
         if not os.path.isfile(ss):
+            _ss_msg = f"No SampleSheet.csv file found in {flowcell_path}\n"
             if not get_samplesheet_from_parkour(flowcell.split("_")[-2], config, ss2):
+                _ss_msg += f"Failed to retrieve sampleSheet via parkour for {flowcell.split('_')[-2]}\n"
                 if not os.path.isfile(ss2):
-                    msg = "No SampleSheet.csv file.\n"
-                    send_email("Error for flowcell:", msg, config)
+                    _ss_msg += f"No SampleSheet found at {ss2}\n"
+                    send_email("Error for flowcell:", _ss_msg, config, failure=True)
                     sys.exit("no sampleSheet.")
 
         # return flowcell to ont()
@@ -165,13 +126,11 @@ def get_samplesheet_from_parkour(flowcell, config, output_csv_path):
 
         except requests.exceptions.RequestException as e:
             print(f"Request failed for flowcell {flowcell_id}: {e}")
+            return False
 
         except OSError as e:
             print(f"File operation failed for flowcell {flowcell_id}: {e}")
-
-    # Raise an error if none of the requests were successful
-    # raise Exception("Failed to retrieve samplesheet for any flowcell ID.")
-    return False
+            return False
 
 
 def read_flowcell_info(config, info_dict, base_path):
@@ -188,7 +147,7 @@ def read_flowcell_info(config, info_dict, base_path):
         os.mkdir(flowcell_path)
     info_dict["flowcell_path"] = flowcell_path
     # Copy over reports.
-    for globStr in ["*json", "*html", "*txt", "SampleSheet.csv"]:
+    for globStr in ["*json", "*html", "*txt", "SampleSheet.csv", "sequencing_summary*"]:
         glob2reports(globStr, base_path, flowcell_path)
     json_file = glob.glob(os.path.join(flowcell_path, "reports", "*json"))
     html_file = glob.glob(os.path.join(flowcell_path, "reports", "*html"))
@@ -220,42 +179,41 @@ def read_flowcell_info(config, info_dict, base_path):
             elif name == "Dorado":
                 info_dict["software"]["Dorado"] = value
 
-    if json_file:
-        print("[green]Reading info from json[/green]")
-        with open(json_file[0]) as f:  # assume only 1 file
-            jsondata = json.load(f)
+    print("[green]Reading info from json[/green]")
+    with open(json_file[0]) as f:  # assume only 1 file
+        jsondata = json.load(f)
 
-        if "flowcell" not in info_dict:
-            info_dict["flowcell"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
-                "flow cell"
-            ]["string_value"]
-        if "kit" not in info_dict:
-            info_dict["kit"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
-                "kit"
-            ]["string_value"]
-        # HTML file is not reporting barcoding, we need it from the json
-        info_dict["barcoding"] = bool(
-            jsondata["protocol_run_info"]["meta_info"]["tags"]["barcoding"][
-                "bool_value"
-            ]
-        )
+    if "flowcell" not in info_dict:
+        info_dict["flowcell"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
+            "flow cell"
+        ]["string_value"]
+    if "kit" not in info_dict:
+        info_dict["kit"] = jsondata["protocol_run_info"]["meta_info"]["tags"][
+            "kit"
+        ]["string_value"]
+    # HTML file is not reporting barcoding, we need it from the json
+    info_dict["barcoding"] = bool(
+        jsondata["protocol_run_info"]["meta_info"]["tags"]["barcoding"][
+            "bool_value"
+        ]
+    )
 
-        for rg in jsondata["protocol_run_info"]["args"]:
-            if rg == "--barcoding" and not info_dict["barcoding"]:
-                print("Json bool for barcoding wrong ! Override !")
-                info_dict["barcoding"] = True
-            if rg.startswith("barcoding_kits"):
-                start = rg.find("[") + 1
-                stop = rg.find("]")
-                info_dict["barcode_kit"] = rg[start:stop].replace('"', "")
-        if "barcode_kit" not in info_dict:
-            if info_dict["barcoding"]:
-                print(
-                    "[red] Not barcoding kit found in json. Default to flowcell kit.[/red]"
-                )
-                info_dict["barcode_kit"] = info_dict["kit"]
-            else:
-                info_dict["barcode_kit"] = "no_bc"
+    for rg in jsondata["protocol_run_info"]["args"]:
+        if rg == "--barcoding" and not info_dict["barcoding"]:
+            print("Json bool for barcoding wrong ! Override !")
+            info_dict["barcoding"] = True
+        if rg.startswith("barcoding_kits"):
+            start = rg.find("[") + 1
+            stop = rg.find("]")
+            info_dict["barcode_kit"] = rg[start:stop].replace('"', "")
+    if "barcode_kit" not in info_dict:
+        if info_dict["barcoding"]:
+            print(
+                "[red] Not barcoding kit found in json. Default to flowcell kit.[/red]"
+            )
+            info_dict["barcode_kit"] = info_dict["kit"]
+        else:
+            info_dict["barcode_kit"] = "no_bc"
 
     print(f'flowcell_info_parsed: flowcell = {info_dict["flowcell"]}')
     print(f'flowcell_info_parsed: kit = {info_dict["kit"]}')

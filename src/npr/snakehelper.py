@@ -1,11 +1,10 @@
 import glob
 import os
 import shutil
-import subprocess as sp
-
-import yaml
+from pathlib import Path
+import pandas as pd
+import json
 from rich import print
-
 
 def config_to_smkcmd(snakemake_config):
     args = []
@@ -42,7 +41,7 @@ def config_to_smkcmd(snakemake_config):
 
 
 def get_disk_stat(path, checkprint = False):
-    perc_used = round(shutil.disk_usage(path).used / shutil.disk_usage(path).total, 2)
+    perc_used = round(shutil.disk_usage(path).used / shutil.disk_usage(path).total, 2) * 100
     free = round(shutil.disk_usage(path).free / (1024 ** 3), 2)
     used = round(shutil.disk_usage(path).used / (1024 ** 3), 2)
     if checkprint:
@@ -64,66 +63,88 @@ def get_disk_stat(path, checkprint = False):
     )
     
 
-def scan_multiqc(config):
+def get_qc(config):
     """
-    Collect QC metrices from multiqc json file
-    Warning: Assumes 1 project per flowcell
+    Collect QC metrices from a flow cell.
+    Idea is to get (per sample)
+     - total number of reads
+     - N50
+     - total bps
+     - median read length
+     - median Q score
+     - kraken organism vs parkour organism
+    
+    And include more general information:
+     - model
+     - parkour protocol
+     - modifications
+     - reference genome
+     - flowcell
+     - kit
+     - barcoding
+     - barcode_kit
     """
-    print("[green]Parse multiqc[/green]")
+    print("[green]get_qc[/green]")
+
     QC = {}
-    # get json file from multiqc
-    qc_dir_root = "Project_" + config["data"]["projects"][0]
-    multiqc_path = os.path.join("QC", "multiqc_data", "multiqc_data.json")
-    json1 = os.path.join(
-        config["info_dict"]["transfer_path"], qc_dir_root, multiqc_path
-    )
+    # GI will contain the general information. Single layer information
+    # QC will contain sample specific metrics, so lists per parameter.
+    QC['GI'] = {}
+    # Metrics
+    # General information
+    QC['GI']['Model'] = config['info_dict']['model']
+    QC['GI']['Parkour Protocol'] = config['info_dict']['parkour_protocol']
+    QC['GI']['Modifications'] = config['info_dict']['modifications']
+    QC['GI']['Reference genome'] = config['info_dict']['organism_label']
+    QC['GI']['Flowcell'] = config['info_dict']['flowcell']
+    QC['GI']['Kit'] = config['info_dict']['kit']
+    QC['GI']['Barcoding'] = config['info_dict']['barcoding']
+    QC['GI']['Barcode Kit'] = config['info_dict']['barcode_kit']
 
-    if os.path.exists(json1):
-        json = json1
-    else:
-        # for compatibility: revert to old location of QC files
-        multiqc_path = os.path.join("multiqc", "multiqc_data", "multiqc_data.json")
-        json = os.path.join(
-            config["info_dict"]["transfer_path"],
-            "FASTQC_" + qc_dir_root,
-            multiqc_path,
-        )
-
-    if not os.path.exists(json):
-        print(f"[red]Warning. json does not exit: {json}[/red]")
-        return QC
-
-    jy = yaml.safe_load(open(json))
-    dd = jy["report_saved_raw_data"]["multiqc_fastqc"]
-    QC["samples"] = list(dd.keys())
-    QC["total_sequences"] = [v.get("Total Sequences", None) for v in dd.values()]
-    QC["total_bases"] = [v.get("Total Bases", None) for v in dd.values()]
-
-    QC["percent_gc"] = [v.get("%GC", None) for v in dd.values()]
-    QC["percent_dedup"] = [
-        round(v.get("total_deduplicated_percentage", None), 2) for v in dd.values()
-    ]
-
-
-    screens = list(jy["report_data_sources"].keys())  # list of QC screens (FastQC, ...)
-    if "pycoQC" not in screens:
-        print(f"[red]Warning. no pycoQC metrics in: {json}[/red]")
-    else:
-        dd = jy["report_general_stats_data"]["pycoqc"]  # dictionary
-        QC["all_median_phred_score"] = [
-            round(v.get("all_median_phred_score", None), 2) for v in dd.values()
-        ]
-        QC["all_median_read_length"] = [
-            round(v.get("all_median_read_length", None), 2) for v in dd.values()
-        ]
-        QC["all_N50"] = [v.get("all_n50", None) for v in dd.values()]
-
+    # Initiate GC for all samples
+    QC['QC'] = {}
+    for sid in config['data']['samples']:
+        QC['QC'][sid] = {
+            'Sample name': config['data'][sid]['Sample_Name'],
+            'Project': config['data'][sid]['Sample_Project'],
+            'Kraken top hit': None,
+            'Parkour organism': config['info_dict']['organism'],
+            'Total bp': None,
+            'Total reads': None,
+            'N50': None,
+            'Median length': None,
+            'Median Q': None,
+            '% reads Q >= 18': '0%'
+        }
+    for project in config['data']['projects']:
+        QCpath = Path(config['info_dict']['transfer_path'], f'Project_{project}', 'QC')
+        # kraken
+        for kraken_report in QCpath.glob("*kraken.report"):
+            _sampleid = kraken_report.stem.split('_')[0]
+            assert _sampleid in QC['QC'], f"Sample ID {_sampleid} not found in QC['QC']"
+            krakdf = pd.read_csv(kraken_report, sep='\t', header=None)
+            QC['QC'][_sampleid]['Kraken top hit'] = krakdf.iloc[krakdf[2].idxmax()][5].replace(' ', '')
+        # pycoqc metrics
+        for pycoqc_report in QCpath.glob("*pycoqc.json"):
+            _sampleid = pycoqc_report.stem.split('_')[0]
+            assert _sampleid in QC['QC'], f"Sample ID {_sampleid} not found in QC['QC']"
+            with open(pycoqc_report) as f:
+                pycoqc_data = json.load(f)
+                QC['QC'][_sampleid]['Total reads'] = pycoqc_data['All Reads']['basecall']['reads_number']
+                QC['QC'][_sampleid]['Total bp'] = pycoqc_data['All Reads']['basecall']['bases_number']
+                QC['QC'][_sampleid]['N50'] = pycoqc_data['All Reads']['basecall']['N50']
+                QC['QC'][_sampleid]['Median length'] = pycoqc_data['All Reads']['basecall']['len_percentiles'][49]
+                QC['QC'][_sampleid]['Median Q'] = pycoqc_data['All Reads']['basecall']['qual_score_percentiles'][49]
+                for index, qscore in enumerate(pycoqc_data['All Reads']['basecall']['qual_score_percentiles']):
+                    if qscore >= 18:
+                        QC['QC'][_sampleid]['% reads Q >= 18'] = f'{index}%'
+                        break
     return QC
 
 
 def print_header(head):
-    left = 50
-    right = 50 - len(head)
+    left = 40
+    right = 40 - len(head)
     print(f"\n\n[bold] {left * '-'} {head} {right * '-'} [/bold]")
 
 def glob2reports(globStr, base_path, flowcell_path):
