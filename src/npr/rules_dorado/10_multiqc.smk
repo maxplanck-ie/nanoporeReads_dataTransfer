@@ -2,15 +2,15 @@ rule multiqc_10:
     input:
         fqc = expand(
             "transfer/Project_{sample_project}/QC/{sample_id}_{sample_name}_falqoqc.html",
-            sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
+            zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
         ),
         pycoqc = expand(
             "transfer/Project_{sample_project}/QC/{sample_id}_{sample_name}.pycoqc.html",
-            sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
+            zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
         ),
         kraken = expand(
             "transfer/Project_{sample_project}/QC/{sample_id}_{sample_name}_kraken.report",
-            sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
+            zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
         ),
         sampleSheet = "reports/SampleSheet.csv",
         modkit = expected_modkit
