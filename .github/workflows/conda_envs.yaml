@@ -11,6 +11,7 @@ jobs:
       env-files: ${{ steps.get_envs.outputs.env-files }}
     steps:
       - uses: actions/checkout@v4
+      - name: list conda envs
         run: |
           files = $(find src/npr/rules_dorado/envs -type f | jq -R -s -c 'split("\n")[:-1]')
           echo "matrix=$files" >> $GITHUB_OUTPUT
@@ -31,6 +32,6 @@ jobs:
           environment-name: ${{ matrix.env-file }}
           activate-environment: ${{ matrix.env-file }}
           conda-remove-defaults: true
-      - name: info ${{ matrix.env-file }}
+      - name: conda info
         run: |
           conda info
