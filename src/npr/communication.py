@@ -205,6 +205,8 @@ def query_parkour(config, flowcell, msg):
                 protocol = "dna"
             elif "RNA" in protocol:
                 protocol = "rna"
+            elif "16S" in protocol:
+                protocol = "dna"
             else:
                 print(protocol)
                 print("protocol not found. Default to dna.")
