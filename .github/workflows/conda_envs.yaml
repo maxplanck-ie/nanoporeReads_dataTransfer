@@ -29,10 +29,10 @@ jobs:
         with:
           channels: conda-forge,bioconda
           channel-priority: true
-          environment-file: env.yml
+          environment-file:  ${{ matrix.env-file }}
           cache-downloads: true
-          environment-name: ${{ matrix.env-file }}
-          activate-environment: ${{ matrix.env-file }}
+          environment-name: snakemake_env_test
+          activate-environment: snakemake_env_test
           conda-remove-defaults: true
       - name: conda info
         run: |
