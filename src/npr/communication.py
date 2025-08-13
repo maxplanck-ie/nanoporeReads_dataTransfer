@@ -89,7 +89,7 @@ def send_email(subject, body, config, failure=False):
     # Set up mailer.
     mailer = MIMEMultipart("alternative")
     _fid = os.path.basename(config['info_dict']['base_path'])
-    mailer["Subject"] = f"[{config['subject']}] [{version('npr')}] {subject} {_fid}"    
+    mailer["Subject"] = f"[{config['email']['subject']}] [{version('npr')}] {subject} {_fid}"    
     mailer["From"] = config["email"]["from"]
     if failure:
         _receivers = config["email"]["failure"].split(',')

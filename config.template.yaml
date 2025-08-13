@@ -56,3 +56,4 @@ email:
   failure: fail_recipient@host
   to: success_recipient@host
   host: host
+  subject: 'npr'
