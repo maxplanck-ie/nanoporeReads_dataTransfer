@@ -7,13 +7,11 @@ import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
-from time import sleep
 import requests
 from rich import print
 from pathlib import Path
 from dominate.tags import html, div, br, b
 from tabulate import tabulate
-from rich import print
 
 def ship_qcreports(config, flowcell):
     """
@@ -63,8 +61,6 @@ def standard_text(config):
     Include also QC metrics obtained from multiqc report
     """
 
-    # Relevant keys from info_dict for email
-    relkeys = ['pipeline_version', 'model', 'parkour_protocol', 'modifications', 'organism', 'flowcell', 'kit', 'barcoding', 'barcode_kit']
     # Get the project(s)
     pid_to_fids = query_parkour_project(config)
 
@@ -93,7 +89,7 @@ def send_email(subject, body, config, failure=False):
     # Set up mailer.
     mailer = MIMEMultipart("alternative")
     _fid = os.path.basename(config['info_dict']['base_path'])
-    mailer["Subject"] = f"[npr] [{version("npr")}] {subject} {_fid}"    
+    mailer["Subject"] = f"[{config['subject']}] [{version('npr')}] {subject} {_fid}"    
     mailer["From"] = config["email"]["from"]
     if failure:
         _receivers = config["email"]["failure"].split(',')

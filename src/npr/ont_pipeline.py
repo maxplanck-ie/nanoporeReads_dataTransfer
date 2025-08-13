@@ -83,7 +83,7 @@ def find_new_flowcell(config):
         if not os.path.isfile(ss):
             _ss_msg = f"No SampleSheet.csv file found in {flowcell_path}\n"
             if not get_samplesheet_from_parkour(flowcell.split("_")[-2], config, ss2):
-                _ss_msg += f"Failed to retrieve sampleSheet via parkour for {flowcell.split("_")[-2]}\n"
+                _ss_msg += f"Failed to retrieve sampleSheet via parkour for {flowcell.split('_')[-2]}\n"
                 if not os.path.isfile(ss2):
                     _ss_msg += f"No SampleSheet found at {ss2}\n"
                     send_email("Error for flowcell:", _ss_msg, config, failure=True)
