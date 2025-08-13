@@ -8,6 +8,7 @@ from threading import Event
 import rich_click as click
 import yaml
 from rich import print
+import datetime
 from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
 from npr.ont_pipeline import find_new_flowcell, get_periphery, read_flowcell_info, read_samplesheet
 from npr.snakehelper import getfast5foot, get_disk_stat, get_qc, config_to_smkcmd, print_header
@@ -139,6 +140,7 @@ def main(config):
 
         flowcell, msg, base_path = find_new_flowcell(config)
         if flowcell:
+            config["start_time"] = datetime.datetime.now()
             print_header(flowcell)
             print_header('parkour')
             msg = query_parkour(config, flowcell, msg)

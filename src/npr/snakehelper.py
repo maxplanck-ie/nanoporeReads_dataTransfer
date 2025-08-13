@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 import json
 from rich import print
+import datetime
 
 def config_to_smkcmd(snakemake_config):
     args = []
@@ -139,6 +140,11 @@ def get_qc(config):
                     if qscore >= 18:
                         QC['QC'][_sampleid]['% reads Q >= 18'] = f'{index}%'
                         break
+    _elapsed = datetime.datetime.now() - config['start_time']
+    days = _elapsed.days
+    hours, remainder = divmod(_elapsed.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    QC['GI']['Elapsed time'] = f"{days}d {hours}h {minutes}m {seconds}s"
     return QC
 
 
