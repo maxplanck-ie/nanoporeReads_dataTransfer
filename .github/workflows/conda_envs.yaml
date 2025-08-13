@@ -13,7 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: list conda envs
         run: |
-          files = $(find src/npr/rules_dorado/envs -type f | jq -R -s -c 'split("\n")[:-1]')
+          files=$(find src/npr/rules_dorado/envs -type f | jq -R -s -c 'split("\n")[:-1]')
+          echo "files set to: $files"
           echo "matrix=$files" >> $GITHUB_OUTPUT
   build:
     needs: get_conda_envs
