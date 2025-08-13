@@ -147,7 +147,7 @@ def read_flowcell_info(config, info_dict, base_path):
         os.mkdir(flowcell_path)
     info_dict["flowcell_path"] = flowcell_path
     # Copy over reports.
-    for globStr in ["*json", "*html", "*txt", "SampleSheet.csv"]:
+    for globStr in ["*json", "*html", "*txt", "SampleSheet.csv", "sequencing_summary*"]:
         glob2reports(globStr, base_path, flowcell_path)
     json_file = glob.glob(os.path.join(flowcell_path, "reports", "*json"))
     html_file = glob.glob(os.path.join(flowcell_path, "reports", "*html"))
