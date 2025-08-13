@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* bam\_fail and mkdir
+* more rules
 * transfer bam files
 * start with a few rules
 * mv snakemake paths
