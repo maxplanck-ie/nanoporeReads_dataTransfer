@@ -34,9 +34,9 @@ jobs:
           channel-priority: true
           environment-file: env.yml
           cache-downloads: true
-          environment-name: ${ matrix.env-file }
-          activate-environment: ${ matrix.env-file }
+          environment-name: ${{ matrix.env-file }}
+          activate-environment: ${{ matrix.env-file }}
           conda-remove-defaults: true
-      - name: info - ${ matrix.env-file }
+      - name: info - ${{ matrix.env-file }}
         run: |
           conda info
