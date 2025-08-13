@@ -1,11 +1,5 @@
-# pytests
-
 name: conda_build_envs
-
-on:
-  push:
-  pull_request:
-
+on: [push, pull_request]
 defaults:
   run:
       shell: bash -l {0}
@@ -37,6 +31,6 @@ jobs:
           environment-name: ${{ matrix.env-file }}
           activate-environment: ${{ matrix.env-file }}
           conda-remove-defaults: true
-      - name: info - ${{ matrix.env-file }}
+      - name: info ${{ matrix.env-file }}
         run: |
           conda info
