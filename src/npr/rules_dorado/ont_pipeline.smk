@@ -114,10 +114,10 @@ rule finalize:
         "flags/05_porechop.done", 
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_porechop.info",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-       # "flags/06_align.done",
-       # expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
+        "flags/06_align.done",
+        expand("transfer/Project_{sample_project}/" + analysis_name+ "/Samples/{sample_id}_{sample_name}.align.bam",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
         
-       # do_modbed_output,
+        do_modbed_output,
 
        # "flags/08_fastqc.done",
        # expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_fastqc.html",zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects),
