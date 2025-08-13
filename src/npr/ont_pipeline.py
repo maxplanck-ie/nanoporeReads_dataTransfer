@@ -427,6 +427,7 @@ def sanitize_info_dict_for_remote(config,flowcell,basepath):
         os.mkdir(flowcell_path)
     config["info_dict"]["flowcell_path"] = flowcell_path
     print (flowcell_path)
+    config["options"]["send_to_remote"] = False
     return config
 
 
