@@ -212,9 +212,9 @@ def main(config):
 
             else:
                #update current config with remote
-               remote_config_file = os.path.join(config["remote_vm"]["target"],"remote_pipeline_config.yaml")
-               remote_config = yaml.safe_load(open(remote_config_file))
-               config=merge_dicts(remote_config_file,config) 
+               remote_pipeline_config_file = os.path.join(config["remote_vm"]["target"],"remote_pipeline_config.yaml")
+               remote_pipeline_config = yaml.safe_load(open(remote_pipeline_config_file))
+               config=merge_dicts(remote_pipeline_config,config) 
             #same for local and remote
             config["info_dict"]["logfile"] = os.path.join(
                 config["info_dict"]["flowcell_path"], "log", "ont.log"
