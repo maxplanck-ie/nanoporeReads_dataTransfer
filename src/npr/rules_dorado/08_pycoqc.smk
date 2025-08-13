@@ -11,5 +11,5 @@ rule pycoQC_08:
     conda: "envs/pycoqc.yaml"
     shell: """
     pycoQC --summary_file {input.seqsum} --bam_file {input.bam} \
-      -o {output.html} -j {output.json}
+      --min_pass_qual 0 -o {output.html} -j {output.json}
     """
