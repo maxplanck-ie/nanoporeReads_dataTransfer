@@ -8,8 +8,8 @@ import pandas as pd
 import requests
 from rich import print
 from npr.communication import send_email
-from npr.snakehelper import get_seqdir, glob2reports
-
+from npr.snakehelper import get_seqdir, glob2reports, print_header
+import yaml
 
 def analysis_done(flowcell, config):
     """
@@ -348,3 +348,42 @@ def remove_spaces(input_string):
         # Remove empty spaces
         return input_string.replace(" ", "")
     return input_string
+
+
+def load_config(**kwargs):
+    print_header("Loading config")
+    # Crash of force and no flowcell.
+    if kwargs["force"] and not kwargs["flowcell"]:
+        print("[red] Force flag set without specifying a flowcell. Exiting.[/red]")
+        sys.exit(1)
+
+    print(f"[green] Configfile: {kwargs["configfile"]} [/green]")
+
+    # Load config from file
+    config = yaml.safe_load(open(kwargs["configfile"]))
+
+    # update config if runtime args have been set
+    if kwargs["directory"] is not None:
+        print(f"[red] Override {config['paths']['offloadDir']} with {kwargs['directory']} through CLI [/red]")
+        config["paths"]["offloadDir"] = kwargs["directory"]
+
+    if kwargs["dryrun"] is not False:
+        print("[red] Override dryrun through CLI [/red]")
+        config["snakemake"]["dryrun"] = True
+
+    if kwargs["flowcell"] is not False:
+        print(f"[red] Set flowcell as {kwargs["flowcell"]} through CLI [/red]")
+        config["target_flowcell"] = kwargs["flowcell"]
+        print(f"[red] Set force processing as {kwargs["force"]} through CLI [/red]")
+        config["force_processing"] = kwargs["force"]
+
+    # Set path to snakemake file.
+    config["snakemake"]["snakefile"] = str(Path(__file__).parents[0] / 'rules_dorado' / 'ont_pipeline.smk')
+
+    # initialize config['info_dict']
+    # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
+    # notice that info_dict is flowcell-specific and will be reset/re-evalutated for each
+    if "info_dict" not in config:
+        config["info_dict"] = {}
+
+    return config

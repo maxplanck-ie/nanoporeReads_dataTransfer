@@ -21,8 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ont = "npr.ont:ont"
-genmodel = "npr.models:main"
+ont = "npr.ont:main"
 
 [tool.setuptools.package-data]
 "ont" = ["*.smk", "*.yaml"]
