@@ -16,7 +16,8 @@ dependencies = [
   "rich-click",
   "snakemake >= 9",
   "pandas >= 2",
-  "dominate >= 2.9"
+  "dominate >= 2.9",
+  "pyparsing"
 ]
 
 [project.scripts]

@@ -13,7 +13,8 @@ rule multiqc_10:
             zip, sample_id=sample_ids, sample_name=sample_names, sample_project=sample_projects
         ),
         sampleSheet = "reports/SampleSheet.csv",
-        modkit = expected_modkit
+        modkit = expected_modkit,
+        porechop = 'flags/porechop.done'
     output:
         sampleDict = "transfer/Project_{sample_project}/QC/sample_names.tsv",
         qcrep = "transfer/Project_{sample_project}/QC/multiqc_report.html",

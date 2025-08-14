@@ -5,7 +5,7 @@ from npr.ont_pipeline import get_dest_path
 
 rule transfer_11:
     input:
-        expand("transfer/Project_{sample_project}/QC/multiqc_report.html", sample_project=sample_projects)
+        expand("transfer/Project_{sample_project}/QC/multiqc_report.html", sample_project=set(sample_projects))
     output:
         touch("transfer.done"),
     log:
