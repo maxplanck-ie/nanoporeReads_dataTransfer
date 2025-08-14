@@ -129,8 +129,8 @@ rule finalize:
         "flags/08_kraken.done",
         expand("transfer/Project_{sample_project}/QC/Samples/{sample_id}_{sample_name}_kraken.report",zip, sample_id=sample_ids,sample_name=sample_names, sample_project=sample_projects),
 
-       # "flags/08_multiqc.done",
-       # "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html",
+        "flags/08_multiqc.done",
+        "transfer/Project_" + Project_id + "/QC/multiqc/multiqc_report.html",
 
        # "flags/09_transfer.done",
     
