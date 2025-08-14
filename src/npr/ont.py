@@ -1,7 +1,6 @@
 import os
 import signal
 import sys
-from importlib.metadata import version
 from pathlib import Path
 import subprocess as sp
 from threading import Event
@@ -10,7 +9,7 @@ import yaml
 from rich import print
 import datetime
 from npr.communication import query_parkour, send_email, ship_qcreports, standard_text
-from npr.ont_pipeline import find_new_flowcell, get_periphery, read_flowcell_info, read_samplesheet
+from npr.ont_pipeline import find_new_flowcell, get_periphery, read_flowcell_info, read_samplesheet, load_config
 from npr.snakehelper import getfast5foot, get_disk_stat, get_qc, config_to_smkcmd, print_header
 
 
@@ -41,18 +40,6 @@ from npr.snakehelper import getfast5foot, get_disk_stat, get_qc, config_to_smkcm
     help="Run snakemake as --dryrun",
 )
 @click.option(
-    "--organism",
-    default=None,
-    show_default=True,
-    help="If known, specify organism as --organism",
-)
-@click.option(
-    "--protocol",
-    default=None,
-    show_default=True,
-    help="If known, specify protocol as --protocol",
-)
-@click.option(
     "-f",
     "--flowcell",
     default=None,
@@ -66,67 +53,9 @@ from npr.snakehelper import getfast5foot, get_disk_stat, get_qc, config_to_smkcm
     show_default=True,
     help="If a flowcell is specified, force it to run (even if the appropriate flag is not set in that folder).",
 )
-
-# run workflow.
-def ont(**kwargs):
-    # Crash of force and no flowcell.
-    if kwargs["force"] and not kwargs["flowcell"]:
-        print("Force flag set without specifying a flowcell. Exiting.")
-        sys.exit(1)
-
-    # print what config is used.
-    print(
-        "Starting pipeline with config: [green]{}[/green]".format(kwargs["configfile"])
-    )
-
-    # Load config from file
-    config = yaml.safe_load(open(kwargs["configfile"]))
-
-    # update config if runtime args have been set
-    if kwargs["directory"] is not None:
-        config["paths"]["offloadDir"] = kwargs["directory"]
-    print("Watching directory: [green]{}[/green]".format(config["paths"]["offloadDir"]))
-
-    if kwargs["dryrun"] is not False:
-        config["snakemake"]["dryrun"] = True
-        if config["options"]["verbosity"]:
-            print("Use snakemake in dryrun.")
-
-    if kwargs["flowcell"] is not False:
-        config["target_flowcell"] = kwargs["flowcell"]
-        config["force_processing"] = kwargs["force"]
-        if config["options"]["verbosity"]:
-            print(
-                "Target flowcell is [green]{}[/green].".format(
-                    config["target_flowcell"]
-                )
-            )
-
-    # snakefile to config['snakemake']
-    config["snakemake"]["snakefile"] = str(Path(__file__).parents[0] / 'rules_dorado' / 'ont_pipeline.smk')
-    # initialize config['info_dict']
-    # this applies only to the _first_ flowcell (used to sidetrack Parkour query)
-    # notice that info_dict is flowcell-specific and will be reset/re-evalutated for each
-    if "info_dict" not in config:
-        config["info_dict"] = {}
-    if kwargs["organism"] is not None:
-        config["info_dict"]["organism"] = kwargs["organism"]
-        print("Set organism to {}".format(config["info_dict"]["organism"]))
-    if kwargs["protocol"] is not None:
-        config["info_dict"]["protocol"] = kwargs["protocol"]
-        print("Set protocol to {}".format(config["info_dict"]["protocol"]))
-    # ensure that pipeline version is tracked in metadata.yml
-    config["info_dict"]["pipeline_version"] = version("npr")
-
-    # add conda env path where executable live
-    config["paths"]["conda_env"] = sys.prefix
-
-    # start workflow.
-    main(config)
-
-
-def main(config):
+def main(**kwargs):
     while True:
+        config = load_config(**kwargs)
         # Set HUP
         HUP = Event()
 
@@ -254,9 +183,6 @@ def main(config):
                 Path(
                     os.path.join(config["info_dict"]["flowcell_path"], "analysis.done")
                 ).touch()
-
-                # wipe config['info_dict']
-                config["info_dict"] = {}
                 
         else:
             print("No flowcells found. I go back to sleep.")
