@@ -1,7 +1,6 @@
 import os
 import signal
 import sys
-from importlib.metadata import version
 from pathlib import Path
 import subprocess as sp
 from threading import Event

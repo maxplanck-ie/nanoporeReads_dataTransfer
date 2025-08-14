@@ -357,7 +357,7 @@ def load_config(**kwargs):
         print("[red] Force flag set without specifying a flowcell. Exiting.[/red]")
         sys.exit(1)
 
-    print(f"[green] Configfile: {kwargs["configfile"]} [/green]")
+    print(f"[green] Configfile: {kwargs['configfile']} [/green]")
 
     # Load config from file
     config = yaml.safe_load(open(kwargs["configfile"]))
@@ -372,9 +372,9 @@ def load_config(**kwargs):
         config["snakemake"]["dryrun"] = True
 
     if kwargs["flowcell"] is not False:
-        print(f"[red] Set flowcell as {kwargs["flowcell"]} through CLI [/red]")
+        print(f"[red] Set flowcell as {kwargs['flowcell']} through CLI [/red]")
         config["target_flowcell"] = kwargs["flowcell"]
-        print(f"[red] Set force processing as {kwargs["force"]} through CLI [/red]")
+        print(f"[red] Set force processing as {kwargs['force']} through CLI [/red]")
         config["force_processing"] = kwargs["force"]
 
     # Set path to snakemake file.
