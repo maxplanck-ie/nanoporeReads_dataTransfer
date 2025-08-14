@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.2.0...v4.2.1) (2025-08-14)
+
+
+### Bug Fixes
+
+* porechop input for mqc, mqc output expand on project set ([#263](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/263)) ([9962bfb](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/9962bfbdb7a8893bd555d21396316a5d1f3682a0))
+
 ## [4.2.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.1.0...v4.2.0) (2025-08-13)
 
 
