@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.2.1...v4.3.0) (2025-08-14)
+
+
+### Features
+
+* implement GPU check ([#265](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/265)) ([97b7ef3](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/97b7ef34f49960afcf9d41d1bcf876a2f75852bc))
+
 ## [4.2.1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.2.0...v4.2.1) (2025-08-14)
 
 
