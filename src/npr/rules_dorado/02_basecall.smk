@@ -1,6 +1,30 @@
 from rich import print
 import subprocess as sp
 import sys
+import pandas as pd
+from io import StringIO
+import time
+
+def gpu_is_free(util_cap=20):
+    """
+    Check utilization of GPUs. return True if they are free.
+    util_cap is % of utilization below which we consider the GPU to be free.
+    Note that all GPUs must be free for this to return True
+    """
+    try:
+        _smic = ['nvidia-smi', '--query-gpu=index,name,utilization.gpu', '--format=csv']
+        smio = sp.check_output(_smic, text=True)
+        gpudf = pd.read_csv(StringIO(smio), index_col=0)
+        for _util in gpudf[' utilization.gpu [%]']:
+            if int(_util.strip().replace('%', '')) > util_cap:
+                return False
+    except sp.CalledProcessError as e:
+        print("[red] nvidia-smi call failed. [/red]")
+        print(f"[red] cmd = {e.cmd} [/red]")
+        print(f"[red] output = {e.output} [/red]")
+        return False
+    return True
+
 
 rule basecall_02:
     input:
@@ -15,13 +39,18 @@ rule basecall_02:
         reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict']['organism_genome'] else "",
         device = config['dorado_basecaller']['device'],
         demux = f"--kit-name {config['info_dict']['barcode_kit']}" if config['info_dict']['barcoding'] else "",
-    shell:'''
-    {params.cmd} basecaller \
-        --models-directory {params.model_dir} \
-        {params.reference} {params.demux} \
-        -x {params.device} \
-        {params.model} {input.pod5} > {output.bam}
-    '''
+    run:
+        _waiting_time = 600
+        while not gpu_is_free():
+            print(f"[yellow] Waiting {_waiting_time/60}min. for GPU to be free... [/yellow]")
+            time.sleep(_waiting_time)
+        shell(f"{params.cmd} basecaller \
+            --models-directory {params.model_dir} \
+            {params.reference} {params.demux} \
+            -x {params.device} \
+            {params.model} {input.pod5} > {output.bam}"
+        )
+
 
 rule basecall_demux_and_sort_02:
     input:
