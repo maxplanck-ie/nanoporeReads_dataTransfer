@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.3.0...v4.3.1) (2025-09-04)
+
+
+### Bug Fixes
+
+* relax wildcard constraint to include dashes in filenames. ([#268](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/268)) ([141c9b8](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/141c9b823c3b99b0feccd8f6a3096f286c6f70a3))
+
 ## [4.3.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.2.1...v4.3.0) (2025-08-14)
 
 
