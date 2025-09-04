@@ -49,7 +49,7 @@ def expand_project_path(path, metadata=metadata, wc_mapping=wc_mapping):
 # clarify ambiguities if {sample_id}_{sample_name} = "{23L000001}_{MySample_Part_1}"
 wildcard_constraints:
         sample_id="[0-9]{2}L[0-9]{6}",
-        sample_name="[a-zA-Z0-9_]+"
+        sample_name="[a-zA-Z0-9_-]+"
 
 rule finalize:
     input:
