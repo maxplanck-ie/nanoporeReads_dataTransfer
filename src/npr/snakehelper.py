@@ -131,14 +131,17 @@ def get_qc(config):
             assert _sampleid in QC['QC'], f"Sample ID {_sampleid} not found in QC['QC']"
             with open(pycoqc_report) as f:
                 pycoqc_data = json.load(f)
-                QC['QC'][_sampleid]['Total reads'] = pycoqc_data['All Reads']['basecall']['reads_number']
-                QC['QC'][_sampleid]['Total bp'] = pycoqc_data['All Reads']['basecall']['bases_number']
-                QC['QC'][_sampleid]['N50'] = pycoqc_data['All Reads']['basecall']['N50']
+                QC['QC'][_sampleid]['Total reads'] = f"{pycoqc_data['All Reads']['basecall']['reads_number']:.2e}"
+                QC['QC'][_sampleid]['Total bp'] = f"{pycoqc_data['All Reads']['basecall']['bases_number']:.2e}"
+                if 'alignment' in pycoqc_data['All Reads']:
+                    QC['QC'][_sampleid]['N50'] = pycoqc_data['All Reads']['alignment']['N50']
+                else:
+                    QC['QC'][_sampleid]['N50'] = pycoqc_data['All Reads']['basecall']['N50']
                 QC['QC'][_sampleid]['Median length'] = pycoqc_data['All Reads']['basecall']['len_percentiles'][49]
                 QC['QC'][_sampleid]['Median Q'] = pycoqc_data['All Reads']['basecall']['qual_score_percentiles'][49]
                 for index, qscore in enumerate(pycoqc_data['All Reads']['basecall']['qual_score_percentiles']):
                     if qscore >= 18:
-                        QC['QC'][_sampleid]['% reads Q >= 18'] = f'{index}%'
+                        QC['QC'][_sampleid]['% reads Q >= 18'] = f'{100-index}%'
                         break
     _elapsed = datetime.datetime.now() - config['start_time']
     days = _elapsed.days
