@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.2](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.3.1...v4.3.2) (2025-09-05)
+
+
+### Bug Fixes
+
+* email reporting number consistency ([#270](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/270)) ([c368a17](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/c368a17183f2f896437f2353b85b5e26a7c39bc6))
+
 ## [4.3.1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.3.0...v4.3.1) (2025-09-04)
 
 
