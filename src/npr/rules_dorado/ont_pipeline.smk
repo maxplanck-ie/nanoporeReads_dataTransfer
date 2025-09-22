@@ -21,6 +21,7 @@ sample_projects = metadata['Sample_Project'].tolist()
 
 
 # Mapping options
+mapping_options = ''
 spliced_protocols=['rna','cdna']
 if config["info_dict"]["organism_genome"] and config['info_dict']['protocol'] in spliced_protocols:
     mapping_options = ' -x splice '
