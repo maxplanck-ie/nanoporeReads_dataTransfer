@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.3.2...v4.4.0) (2025-09-25)
+
+
+### Features
+
+* enable spliced mapping for cdna and rna protocols ([#275](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/275)) ([23abab0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/23abab013e1f4001abbd571b2c10addd7cccf5ab))
+
 ## [4.3.2](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.3.1...v4.3.2) (2025-09-05)
 
 
