@@ -19,6 +19,14 @@ sample_ids = metadata['Sample_ID'].tolist()
 sample_names = metadata['Sample_Name'].tolist()
 sample_projects = metadata['Sample_Project'].tolist()
 
+
+# Mapping options
+mapping_options = ''
+spliced_protocols=['rna','cdna']
+if config["info_dict"]["organism_genome"] and config['info_dict']['protocol'] in spliced_protocols:
+    mapping_options = '-x splice'
+
+
 # Conditional modkit output
 expected_modkit = (expand(
         "transfer/Project_{sample_project}/Data/{sample_id}_{sample_name}.pileup.bed.gz.tbi",

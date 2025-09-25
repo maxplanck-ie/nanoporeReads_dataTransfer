@@ -39,6 +39,7 @@ rule basecall_02:
         reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict']['organism_genome'] else "",
         device = config['dorado_basecaller']['device'],
         demux = f"--kit-name {config['info_dict']['barcode_kit']}" if config['info_dict']['barcoding'] else "",
+        map_opts = f' --mm2-opts "{mapping_options}"' if mapping_options else ""
     run:
         _waiting_time = 600
         while not gpu_is_free():
@@ -48,6 +49,7 @@ rule basecall_02:
             --models-directory {params.model_dir} \
             {params.reference} {params.demux} \
             -x {params.device} \
+            {params.map_opts} \
             {params.model} {input.pod5} > {output.bam}"
         )
 
