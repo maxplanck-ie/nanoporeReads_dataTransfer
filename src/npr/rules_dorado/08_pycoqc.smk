@@ -10,10 +10,10 @@ rule pycoQC_08:
         sample_id = "[0-9]{2}L[0-9]{6}"
     conda: "envs/pycoqc.yaml"
     run:
-        use_bam = not "Nanopore 16S Barcoding Kit" in config['info_dict']['parkour_protocol']
-        bam_input = f"--bam_file {input.bam}" if use_bam else ""
+        _bamstr = ""        
+        if (config['info_dict'].get('organism_genome') and "Nanopore 16S Barcoding Kit" not in config['info_dict']['parkour_protocol']):
+            _bamstr = f"--bam_file {input.bam}"
 
-        shell(f"""
-        pycoQC --summary_file {input.seqsum} {bam_input} \
-        --min_pass_qual 0 -o {output.html} -j {output.json}
-        """)
+        shell(f"pycoQC --summary_file {input.seqsum} {_bamstr} \
+            --min_pass_qual 0 -o {output.html} -j {output.json}"
+        )
