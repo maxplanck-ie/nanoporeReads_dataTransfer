@@ -92,8 +92,6 @@ def find_new_flowcell(config):
         # return flowcell to ont()
         msg = "SampleSheet.csv file found.\n"
         config["input"] = {"name": os.path.basename(flowcell)}
-        print("Here is the config:")
-        print(config["info_dict"]["base_path"] )
         pod5_dir = os.path.join(flowcell, "pod5")
         podCount = next(os.walk( pod5_dir))[2]
         podCount_value = len(podCount)
