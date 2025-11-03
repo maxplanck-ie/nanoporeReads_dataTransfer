@@ -92,8 +92,23 @@ def find_new_flowcell(config):
         # return flowcell to ont()
         msg = "SampleSheet.csv file found.\n"
         config["input"] = {"name": os.path.basename(flowcell)}
+        print("Here is the config:")
+        print(config["info_dict"]["base_path"] )
+        pod5_dir = os.path.join(flowcell, "pod5")
+        podCount = next(os.walk( pod5_dir))[2]
+        podCount_value = len(podCount)
+        pod5Summary_file = glob.glob(os.path.join(flowcell, "final_summary_*.txt"))[0]
+        podSummary = pd.read_csv(pod5Summary_file, sep="=", header=None, names=["key", "value"])
+        podSummary_value = int(podSummary.loc[podSummary["key"] == "pod5_files_in_final_dest", "value"].values[0])
+        if podCount_value == podSummary_value:
+            msg += f"Pod5 file count verified ({podCount_value} files match summary).\n"
+            return (os.path.basename(flowcell), msg, flowcell)
+        else:
+            print("No  pod match!")
+            print({flowcell})
 
-        return (os.path.basename(flowcell), msg, flowcell)
+            print(f"{flowcell}: pod5 count = {podCount_value}, expected {podSummary_value}. flow cell is not ready yet.")
+            return (None, None, None)
 
     return (None, None, None)
 
