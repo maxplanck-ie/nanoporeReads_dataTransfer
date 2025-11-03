@@ -228,7 +228,7 @@ def query_parkour(config, flowcell, msg):
                 # encoded in config as list of [genome.fa, genes.bed]
                 config["info_dict"]["organism_genome"] = None if "Nanopore 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else config["genome"][_org][0] 
                 config["info_dict"]["organism_genes"] =  None if "Nanopore 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else config["genome"][_org][1]
-                config["info_dict"]["organism_label"] = None if "Nanoporadd e 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else organism_tupe[1]
+                config["info_dict"]["organism_label"] = None if "Nanopore 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else organism_tupe[1]
             return msg
 
     msg += f"Parkour query failed for {fc}.\n"
