@@ -136,7 +136,6 @@ def main(**kwargs):
             print(f"Starting snakemake with command:\n {' '.join(_smk_cmd)}\n")
             rg = sp.Popen(_smk_cmd, stdout=sp.PIPE, stderr=sp.STDOUT, text=True, bufsize=1, universal_newlines=True)
             ols = []
-
             for line in iter(rg.stdout.readline, ''):
                 print(line, end='')
                 ols.append(line)
