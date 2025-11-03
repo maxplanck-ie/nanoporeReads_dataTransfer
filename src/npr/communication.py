@@ -224,11 +224,11 @@ def query_parkour(config, flowcell, msg):
                 config["info_dict"]["organism_label"] = None
             else:
                 _org = organism_tupe[0]
-                config["info_dict"]["organism"] = _org
+                config["info_dict"]["organism"] = "16S-metagenome" if "Nanopore 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else _org
                 # encoded in config as list of [genome.fa, genes.bed]
-                config["info_dict"]["organism_genome"] = config["genome"][_org][0]
-                config["info_dict"]["organism_genes"] = config["genome"][_org][1]
-                config["info_dict"]["organism_label"] = organism_tupe[1]
+                config["info_dict"]["organism_genome"] = None if "Nanopore 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else config["genome"][_org][0] 
+                config["info_dict"]["organism_genes"] =  None if "Nanopore 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else config["genome"][_org][1]
+                config["info_dict"]["organism_label"] = None if "Nanoporadd e 16S Barcoding Kit" in config["info_dict"]['parkour_protocol'] else organism_tupe[1]
             return msg
 
     msg += f"Parkour query failed for {fc}.\n"
@@ -263,4 +263,4 @@ def query_parkour_project(config):
         else:
             print(f"[red]Parkour query failed for project {project} with status code {res.status_code}[/red]")
             pid_to_fids[project] = set()
-    return pid_to_fids
+    return pid_to_
