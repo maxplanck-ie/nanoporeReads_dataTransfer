@@ -4,8 +4,9 @@ import sys
 import pandas as pd
 from io import StringIO
 import time
+import psutil
 
-def gpu_is_free(util_cap=20):
+def gpu_and_is_free(util_cap=20, mem_cap_gb=400):
     """
     Check utilization of GPUs. return True if they are free.
     util_cap is % of utilization below which we consider the GPU to be free.
@@ -17,12 +18,20 @@ def gpu_is_free(util_cap=20):
         gpudf = pd.read_csv(StringIO(smio), index_col=0)
         for _util in gpudf[' utilization.gpu [%]']:
             if int(_util.strip().replace('%', '')) > util_cap:
+                print(f"[yellow]GPU busy: {_util.strip()} utilization > {util_cap}%[/yellow]")
                 return False
     except sp.CalledProcessError as e:
         print("[red] nvidia-smi call failed. [/red]")
         print(f"[red] cmd = {e.cmd} [/red]")
         print(f"[red] output = {e.output} [/red]")
         return False
+    
+    mem = psutil.virtual_memory()
+    avail_gb = mem.available / (1024 ** 3) 
+    if avail_gb < mem_cap_gb:
+        print(f"[yellow]Available RAM = {avail_gb:.1f} GB < {mem_cap_gb} GB. Waiting...[/yellow]")
+        return False
+            
     return True
 
 
@@ -36,21 +45,22 @@ rule basecall_02:
         cmd = config['dorado_basecaller']['dorado_cmd'],
         model_dir = config['dorado_basecaller']['model_directory'],
         model = config['info_dict']['model'],
-        reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict']['organism_genome'] else "",
+        #reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict']['organism_genome'] else "",
         device = config['dorado_basecaller']['device'],
         demux = f"--kit-name {config['info_dict']['barcode_kit']}" if config['info_dict']['barcoding'] else "",
-        map_opts = f' --mm2-opts "{mapping_options}"' if mapping_options else ""
+        map_opts = f' --mm2-opts "{mapping_options}"' if mapping_options else "",
+        reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict'].get('organism_genome') and "Nanopore 16S Barcoding Kit" not in config['info_dict']['parkour_protocol'] else ""
     run:
         _waiting_time = 600
-        while not gpu_is_free():
-            print(f"[yellow] Waiting {_waiting_time/60}min. for GPU to be free... [/yellow]")
+        while not gpu_and_is_free():
+            print(f"[yellow] Waiting {_waiting_time/60}min. for GPU and RAM to be free... [/yellow]")
             time.sleep(_waiting_time)
         shell(f"{params.cmd} basecaller \
             --models-directory {params.model_dir} \
             {params.reference} {params.demux} \
             -x {params.device} \
             {params.map_opts} \
-            {params.model} {input.pod5} > {output.bam}"
+            {params.model} {input.pod5} > {output.bam}", check=False
         )
 
 
