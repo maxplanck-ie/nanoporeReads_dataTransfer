@@ -60,7 +60,7 @@ rule basecall_02:
             {params.reference} {params.demux} \
             -x {params.device} \
             {params.map_opts} \
-            {params.model} {input.pod5} > {output.bam}", check=False
+            {params.model} {input.pod5} > {output.bam}"
         )
 
 
