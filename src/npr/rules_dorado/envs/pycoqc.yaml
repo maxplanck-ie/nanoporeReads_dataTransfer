@@ -6,3 +6,5 @@ dependencies:
   - pip
   - pip:
     - pycoQC == 2.5.2
+  - lzma
+  - xz
