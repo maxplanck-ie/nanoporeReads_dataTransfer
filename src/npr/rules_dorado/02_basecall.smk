@@ -6,7 +6,7 @@ from io import StringIO
 import time
 import psutil
 
-def gpu_and_is_free(util_cap=20, mem_cap_gb=400):
+def gpu_and_ram_is_free(util_cap=20, mem_cap_gb=400):
     """
     Check utilization of GPUs. return True if they are free.
     util_cap is % of utilization below which we consider the GPU to be free.
@@ -52,7 +52,7 @@ rule basecall_02:
         reference = f"--reference {config['info_dict']['organism_genome']}" if config['info_dict'].get('organism_genome') and "Nanopore 16S Barcoding Kit" not in config['info_dict']['parkour_protocol'] else ""
     run:
         _waiting_time = 600
-        while not gpu_and_is_free():
+        while not gpu_and_ram_is_free():
             print(f"[yellow] Waiting {_waiting_time/60}min. for GPU and RAM to be free... [/yellow]")
             time.sleep(_waiting_time)
         shell(f"{params.cmd} basecaller \
