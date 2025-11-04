@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.5.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.4.0...v4.5.0) (2025-11-04)
+
+
+### Features
+
+* pod5 file number vertification [#280](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/280) ([0fb16f1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/0fb16f1db494e85920f717e760f05365348e228a))
+
+
+### Bug Fixes
+
+* Ignore reference organism upon alignment during basecalling (if 16s ont data) [#278](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/278) ([0fb16f1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/0fb16f1db494e85920f717e760f05365348e228a))
+* Pod5 check and 16s ONT data processing  ([#281](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/281)) ([0fb16f1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/0fb16f1db494e85920f717e760f05365348e228a))
+* pycoQC: No bam consideration if 16s ONT data. ([0fb16f1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/0fb16f1db494e85920f717e760f05365348e228a))
+
 ## [4.4.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.3.2...v4.4.0) (2025-09-25)
 
 
