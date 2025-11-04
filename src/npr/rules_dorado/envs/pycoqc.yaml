@@ -3,6 +3,7 @@ channels:
   - bioconda
 dependencies:
   - setuptools
+  - python=3.13
   - pip
   - pip:
-    - pycoQC == 2.5.2
+      - pycoQC==2.5.2

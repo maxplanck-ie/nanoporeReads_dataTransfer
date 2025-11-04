@@ -9,7 +9,11 @@ rule pycoQC_08:
     wildcard_constraints:
         sample_id = "[0-9]{2}L[0-9]{6}"
     conda: "envs/pycoqc.yaml"
-    shell: """
-    pycoQC --summary_file {input.seqsum} --bam_file {input.bam} \
-      --min_pass_qual 0 -o {output.html} -j {output.json}
-    """
+    run:
+        _bamstr = ""        
+        if (config['info_dict'].get('organism_genome') and "Nanopore 16S Barcoding Kit" not in config['info_dict']['parkour_protocol']):
+            _bamstr = f"--bam_file {input.bam}"
+
+        shell(f"pycoQC --summary_file {input.seqsum} {_bamstr} \
+            --min_pass_qual 0 -o {output.html} -j {output.json}"
+        )

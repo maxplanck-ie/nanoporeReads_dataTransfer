@@ -96,7 +96,7 @@ def get_qc(config):
     QC['GI']['Model'] = config['info_dict']['model']
     QC['GI']['Parkour Protocol'] = config['info_dict']['parkour_protocol']
     QC['GI']['Modifications'] = config['info_dict']['modifications']
-    QC['GI']['Reference genome'] = config['info_dict']['organism_label']
+    QC["GI"]["Reference genome"] = "16S-metagenome" if "Nanopore 16S Barcoding Kit" in config['info_dict']['parkour_protocol'] else config['info_dict']['parkour_protocol']
     QC['GI']['Flowcell'] = config['info_dict']['flowcell']
     QC['GI']['Kit'] = config['info_dict']['kit']
     QC['GI']['Barcoding'] = config['info_dict']['barcoding']
