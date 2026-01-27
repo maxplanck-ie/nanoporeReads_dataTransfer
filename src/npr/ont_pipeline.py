@@ -93,7 +93,7 @@ def find_new_flowcell(config):
         msg = "SampleSheet.csv file found.\n"
         config["input"] = {"name": os.path.basename(flowcell)}
         pod5_dir = os.path.join(flowcell, "pod5")
-        podCount = next(os.walk( pod5_dir))[2]
+        podCount = glob.glob(os.path.join(pod5_dir, "*.pod5"))
         podCount_value = len(podCount)
         pod5Summary_file = glob.glob(os.path.join(flowcell, "final_summary_*.txt"))[0]
         podSummary = pd.read_csv(pod5Summary_file, sep="=", header=None, names=["key", "value"])
