@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.0...v4.5.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* using glob to detect pod5 files in target dir ([#285](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/285)) ([5935979](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/5935979e3a79ec5690eac1ffd0db789016229587))
+
 ## [4.5.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.4.0...v4.5.0) (2025-11-04)
 
 
