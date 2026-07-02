@@ -92,7 +92,7 @@ def find_new_flowcell(config):
         # return flowcell to ont()
         msg = "SampleSheet.csv file found.\n"
         config["input"] = {"name": os.path.basename(flowcell)}
-        pod5_dir = os.path.join(flowcell, "pod5")
+        pod5_dir = os.path.join(flowcell, "pod5*")
         podCount = glob.glob(os.path.join(pod5_dir, "*.pod5"))
         podCount_value = len(podCount)
         pod5Summary_file = glob.glob(os.path.join(flowcell, "final_summary_*.txt"))[0]
