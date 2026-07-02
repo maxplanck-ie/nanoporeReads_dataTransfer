@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.2](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.1...v4.5.2) (2026-07-02)
+
+
+### Bug Fixes
+
+* counting skip pods to match the number in final_transfer ([#288](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/288)) ([37dd849](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/37dd84927e8642b078c72beae32a0e998b2fc0c0))
+
 ## [4.5.1](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.0...v4.5.1) (2026-05-28)
 
 
