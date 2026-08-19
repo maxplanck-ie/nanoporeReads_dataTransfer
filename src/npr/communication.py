@@ -157,7 +157,7 @@ def query_parkour(config, flowcell, msg):
         d = {"flowcell_id": fc + pf}
         flowcellqueries.append(fc + pf)
         res = requests.get(
-            config["parkour"]["url"] + "/api/analysis_list/analysis_list/",
+            config["parkour"]["url"].rstrip("/") + "/api/analysis_list/analysis_list/",
             auth=(config["parkour"]["user"], config["parkour"]["password"]),
             params=d,
             verify=config["parkour"]["pem"],
@@ -253,7 +253,7 @@ def query_parkour_project(config):
     for project in config['data']['projects']:
         pid = project.split('_')[0]
         res = requests.get(
-            config["parkour"]["url"] + f"/api/requests/{pid}/get_flowcell/",
+            config["parkour"]["url"].rstrip("/") + f"/api/requests/{pid}/get_flowcell/",
             auth=(config["parkour"]["user"], config["parkour"]["password"]),
             verify=config["parkour"]["pem"]
         )

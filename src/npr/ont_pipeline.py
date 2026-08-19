@@ -93,8 +93,11 @@ def find_new_flowcell(config):
         msg = "SampleSheet.csv file found.\n"
         config["input"] = {"name": os.path.basename(flowcell)}
         pod5_dir = os.path.join(flowcell, "pod5*")
-        podCount = glob.glob(os.path.join(pod5_dir, "*.pod5"))
+        podCount = glob.glob(os.path.join(pod5_dir, "*.pod5")) + glob.glob(
+            os.path.join(pod5_dir, "*", "*.pod5")
+        )
         podCount_value = len(podCount)
+        print(podCount_value)
         pod5Summary_file = glob.glob(os.path.join(flowcell, "final_summary_*.txt"))[0]
         podSummary = pd.read_csv(pod5Summary_file, sep="=", header=None, names=["key", "value"])
         podSummary_value = int(podSummary.loc[podSummary["key"] == "pod5_files_in_final_dest", "value"].values[0])
@@ -123,7 +126,7 @@ def get_samplesheet_from_parkour(flowcell, config, output_csv_path):
 
         try:
             res = requests.get(
-                config["parkour"]["url"] + "/api/flowcells/retrieve_samplesheet/",
+                config["parkour"]["url"].rstrip("/") + "/api/flowcells/retrieve_samplesheet/",
                 auth=(config["parkour"]["user"], config["parkour"]["password"]),
                 params=params,
                 verify=config["parkour"]["pem"],
