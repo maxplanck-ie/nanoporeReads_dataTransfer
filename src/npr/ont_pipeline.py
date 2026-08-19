@@ -93,9 +93,9 @@ def find_new_flowcell(config):
         msg = "SampleSheet.csv file found.\n"
         config["input"] = {"name": os.path.basename(flowcell)}
         pod5_dir = os.path.join(flowcell, "pod5*")
-        podCount = glob.glob(os.path.join(pod5_dir, "*.pod5")) + glob.glob(
-            os.path.join(pod5_dir, "*", "*.pod5")
-        )
+        # This is udpated because of change in the strucuture of one of the flow-cells with pod5s location. 
+        # This could be restructured upon finalizing for the amplicon sequencing integration.
+        podCount = glob.glob(os.path.join(pod5_dir, "*.pod5")) + glob.glob( os.path.join(pod5_dir, "*", "*.pod5") )
         podCount_value = len(podCount)
         print(podCount_value)
         pod5Summary_file = glob.glob(os.path.join(flowcell, "final_summary_*.txt"))[0]
