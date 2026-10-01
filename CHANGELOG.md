@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.5.3](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.2...v4.5.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* double slash in parkour api urls ([eec1e5f](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/eec1e5ff210923e9a27ea305ae964787e78f7fb1))
+* pod5 file structure changed due to specific format required for plasmid workflow ([eec1e5f](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/eec1e5ff210923e9a27ea305ae964787e78f7fb1))
+
 ## [4.5.2](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.1...v4.5.2) (2026-07-02)
 
 
