@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.6.0](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.3...v4.6.0) (2026-11-17)
+
+
+### Features
+
+* added RB barcode logic ([#294](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/issues/294)) ([9e1fa37](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/commit/9e1fa37a92b3577f841150f456a340ec30f33172))
+
 ## [4.5.3](https://github.com/maxplanck-ie/nanoporeReads_dataTransfer/compare/v4.5.2...v4.5.3) (2026-10-01)
 
 
