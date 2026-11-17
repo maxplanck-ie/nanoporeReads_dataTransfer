@@ -281,7 +281,8 @@ def read_samplesheet(config):
                 "barcode_kits": config["info_dict"]["barcode_kit"],
                 "index_id": row["I7_Index_ID"]
                 .replace("BP", "barcode")
-                .replace("NB", "barcode"),
+                .replace("NB", "barcode")
+                .replace("RB", "barcode"),
                 "Sample_ID": row["Sample_ID"],
             }
         )
